@@ -12,7 +12,8 @@ void print_csr(csr_matrix *csr) {
         printf("CSR matrix is NULL\n");
         return;
     }
-    printf("CSR Matrix: %d rows, %d cols, %d non-zero entries\n", csr->rows, csr->cols, csr->nnz);
+    printf("CSR Matrix: %d rows, %d cols, %d non-zero entries (%f per cent)\n",\
+         csr->rows, csr->cols, csr->nnz, (csr->nnz / (float)(csr->rows * csr->cols)) * 100);
     printf("Row Pointer: ");
     for (int i = 0; i <= csr->rows; ++i) {
         printf("%d ", csr->row_ptr[i]);
@@ -96,6 +97,7 @@ int matrix_to_csr(
     end = clock();
     elapsed_seconds = (double)(end - start) / CLOCKS_PER_SEC;
 
-    printf("  Conversion Time taken: %f seconds, %d non-zero entries\n", elapsed_seconds, nnz);
+    printf("  Conversion Time taken: %f seconds, %d non-zero entries (%f per cent)\n",\
+         elapsed_seconds, nnz, (nnz / (float)(rows * cols)) * 100);
 	return 0;
 }

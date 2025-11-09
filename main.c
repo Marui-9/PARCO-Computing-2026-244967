@@ -60,6 +60,11 @@ void serial_mat_vect(float A[], float x[], float y[], int m, int n);
 void *Pth_mat_vect(void* rank);
 void Omp_mat_vect(int thread_count, csr_matrix *csr_A);
 
+int compare_doubles(const void *a, const void *b) {
+   double diff = (*(double*)a - *(double*)b);
+   return (diff > 0) - (diff < 0);
+}
+
 /*------------------------------------------------------------------*/
 int main(int argc, char* argv[]) {
    //long       thread;
@@ -81,6 +86,11 @@ int main(int argc, char* argv[]) {
    // printf("Enter desired integer percentage of nonzero entries (0-100)\n");
    // scanf("%d", &percent_nonzero);
    A = import_matrix(matrix_file, &m, &n);
+   if (!A) {
+      fprintf(stderr, "Failed to import matrix from %s\n", matrix_file);
+      fprintf(stderr, "Matrix may be too large to load as dense format.\n");
+      return 1;
+   }
    x = generate_vector(n);
    y = malloc((size_t)m * sizeof(float));
    printf("Matrix loaded from file: %s\n", matrix_file);
@@ -103,12 +113,18 @@ int main(int argc, char* argv[]) {
    //Print_vector("Vector: ", x, n);
 
    // Run multiple iterations to get average performance
-   int num_iterations = 10;
-   double total_serial_time = 0.0;
-   double total_parallel_time = 0.0;
+   int num_iterations = 16;
+   double *serial_times = malloc(num_iterations * sizeof(double));
+   double *parallel_times = malloc(num_iterations * sizeof(double));
+   
+   if (!serial_times || !parallel_times) {
+      fprintf(stderr, "Failed to allocate timing arrays\n");
+      return 1;
+   }
    
    printf("\nRunning %d iterations...\n", num_iterations);
-    printf("Using OpenMP with %d threads\n", thread_count);
+   printf("Using OpenMP with %d threads\n", thread_count);
+   
    for (int iter = 0; iter < num_iterations; iter++) {
       printf("Iteration %d/%d\n", iter + 1, num_iterations);
       
@@ -116,25 +132,42 @@ int main(int argc, char* argv[]) {
       start_time_serial = omp_get_wtime();
       serial_mat_vect(A, x, y, m, n);
       end_time_serial = omp_get_wtime();
-      total_serial_time += (end_time_serial - start_time_serial);
+      serial_times[iter] = end_time_serial - start_time_serial;
       
       //---------OPENMP VERSION----------
       start_time = omp_get_wtime();
       Omp_mat_vect(thread_count, csr_A);
       end_time = omp_get_wtime();
-      total_parallel_time += (end_time - start_time);
+      parallel_times[iter] = end_time - start_time;
    }
    
-   // Calculate averages
-   double avg_serial_time = total_serial_time / num_iterations;
-   double avg_parallel_time = total_parallel_time / num_iterations;
+   // sort the times
+   qsort(serial_times, num_iterations, sizeof(double), compare_doubles);
+   qsort(parallel_times, num_iterations, sizeof(double), compare_doubles);
+   
+   // use best 90% of runs 
+   int percentile_count = (int)(num_iterations * 0.9);
+   if (percentile_count == 0) percentile_count = 1;
+   
+   double sum_serial = 0.0;
+   double sum_parallel = 0.0;
+   for (int i = 0; i < percentile_count; i++) {
+      sum_serial += serial_times[i];
+      sum_parallel += parallel_times[i];
+   }
+   
+   double avg_serial_time = sum_serial / percentile_count;
+   double avg_parallel_time = sum_parallel / percentile_count;
    double avg_speedup = avg_serial_time / avg_parallel_time;
    
-   printf("\n=== Results (averaged over %d iterations) ===\n", num_iterations);
-   printf("Average serial execution time:   %.6f seconds\n", avg_serial_time);
-   printf("Average parallel execution time: %.6f seconds\n", avg_parallel_time);
+   printf("\n=== Results (90th percentile of %d runs, using best %d) ===\n", 
+          num_iterations, percentile_count);
+   printf("Average serial execution time:   %.6f milliseconds\n", avg_serial_time * 1000);
+   printf("Average parallel execution time: %.6f milliseconds\n", avg_parallel_time * 1000);
    printf("Average speedup: %.2fx\n", avg_speedup);
 
+   free(serial_times);
+   free(parallel_times);
    free(A);
    free(x);
    //free(y); causes core dump

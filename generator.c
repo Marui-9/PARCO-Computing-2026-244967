@@ -52,9 +52,19 @@ float * import_matrix(const char *filename,
 
     // Allocate matrix in row-major format
     size_t total_size = (size_t)rows * (size_t)cols;
+    
+    // Check if allocation is feasible (warn if > 1GB)
+    size_t bytes_needed = total_size * sizeof(float);
+    if (bytes_needed > 1024UL * 1024 * 1024) {
+        fprintf(stderr, "Warning: Matrix requires %.2f GB of memory\n", 
+                bytes_needed / (1024.0 * 1024 * 1024));
+        fprintf(stderr, "This may fail or cause system instability.\n");
+    }
+    
     float *matrix = calloc(total_size, sizeof(float));
     if (!matrix) {
-        fprintf(stderr, "Allocation failed for matrix\n");
+        fprintf(stderr, "Allocation failed for matrix (%zu MB needed)\n",
+                bytes_needed / (1024 * 1024));
         fclose(file);
         return NULL;
     }
