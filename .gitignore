@@ -1,0 +1,5 @@
+
+# Core dumps and debug files
+vgcore.*
+core
+core.*
