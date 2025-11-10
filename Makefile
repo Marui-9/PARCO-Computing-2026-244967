@@ -2,7 +2,7 @@
 CC ?= gcc
 CFLAGS ?= -O3 -Wall -Wextra -march=native -fopenmp
 LDLIBS ?=
-OUT ?= executable
+OUT ?= run
 SRCS := main.c generator.c m_to_csr.c
 OBJS := $(SRCS:.c=.o)
 
@@ -30,3 +30,5 @@ clean:
 
 run: all
 	./$(OUT)
+
+#gcc -O3 -Wall -Wextra -march=native -fopenmp -c main.c -o main.o
