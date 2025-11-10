@@ -2,7 +2,7 @@
 CC ?= gcc
 CFLAGS ?= -O3 -Wall -Wextra -march=native -fopenmp
 LDLIBS ?=
-OUT ?= run
+OUT ?= executable
 SRCS := main.c generator.c m_to_csr.c
 OBJS := $(SRCS:.c=.o)
 
@@ -32,3 +32,4 @@ run: all
 	./$(OUT)
 
 #gcc -O3 -Wall -Wextra -march=native -fopenmp -c main.c -o main.o
+#for threads in {1..16}; do echo "Testing with $threads threads"; ./executable $threads bcsstk30.mtx; done

@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
    //long       thread;
    //pthread_t* thread_handles;
 
-   srand((unsigned)time(NULL));
+ //  srand((unsigned)time(NULL));
    if (argc != 3) Usage(argv[0]);
    thread_count = atoi(argv[1]);
    //matrix file path
@@ -92,7 +92,18 @@ int main(int argc, char* argv[]) {
    }
    x = generate_vector(n);
    y = malloc((size_t)m * sizeof(float));
+   
+   // Calculate nonzero percentage
+   int nnz_count = 0;
+   size_t total_size = (size_t)m * (size_t)n;
+   for (size_t i = 0; i < total_size; i++) {
+      if (A[i] != 0.0f) nnz_count++;
+   }
+   double nnz_percentage = (nnz_count / (double)total_size) * 100.0;
+   
    printf("Matrix loaded from file: %s\n", matrix_file);
+   printf("Matrix dimensions: %d rows × %d cols, %.2f%% non-zero entries\n", 
+          m, n, nnz_percentage);
    //Print_matrix("Matrix:", A, m, n);
       
    csr_matrix *csr_A;
@@ -122,10 +133,9 @@ int main(int argc, char* argv[]) {
    }
    
    printf("\nRunning %d iterations...\n", num_iterations);
-   printf("Using OpenMP with %d threads\n", thread_count);
    
    for (int iter = 0; iter < num_iterations; iter++) {
-      printf("Iteration %d/%d\n", iter + 1, num_iterations);
+      //printf("Iteration %d/%d\n", iter + 1, num_iterations);
       
       //---------SERIAL VERSION---------
       start_time_serial = omp_get_wtime();
