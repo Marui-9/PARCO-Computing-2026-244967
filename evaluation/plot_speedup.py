@@ -119,34 +119,6 @@ ax3.legend(loc='best', fontsize=8, ncol=2)
 ax3.set_xticks(thread_counts)
 ax3.set_ylim(bottom=0, top=110)
 
-# ==================== PLOT 4: Strong Scaling (Log-Log) ====================
-for matrix in matrices:
-    matrix_data = df[df['matrix_name'] == matrix].sort_values('threads')
-    ax4.loglog(matrix_data['threads'], matrix_data['speedup_x'], 
-               marker='o', linewidth=2, markersize=7, label=matrix, alpha=0.8)
-
-# Add ideal scaling line (log-log appears as straight line)
-threads_range = np.array([1, max_threads])
-ax4.loglog(threads_range, threads_range, 'k--', linewidth=2, 
-           alpha=0.5, label='Ideal (linear)')
-
-ax4.set_xlabel('Number of Threads (log scale)', fontsize=12, fontweight='bold')
-ax4.set_ylabel('Speedup (log scale)', fontsize=12, fontweight='bold')
-ax4.set_title('Strong Scaling Analysis (Log-Log)', fontsize=14, fontweight='bold')
-ax4.grid(True, alpha=0.3, linestyle='--', which='both')
-ax4.legend(loc='best', fontsize=8, ncol=2)
-ax4.set_xticks(thread_counts)
-ax4.set_xticklabels(thread_counts)
-
-plt.tight_layout()
-
-# Save the plot
-output_file = csv_file.replace('.csv', '_analysis.png')
-plt.savefig(output_file, dpi=300, bbox_inches='tight')
-print(f"Plot saved to: {output_file}")
-
-# Don't display interactively (comment out to enable)
-# plt.show()
 
 # Print summary statistics
 print("\n=== Speedup Summary ===")

@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
    //Print_vector("Vector: ", x, n);
 
    // Run multiple iterations to get average performance
-   int num_iterations = 16;
+   int num_iterations = 166;
    double *serial_times = malloc(num_iterations * sizeof(double));
    double *parallel_times = malloc(num_iterations * sizeof(double));
    
@@ -272,7 +272,7 @@ void *Pth_mat_vect(void* rank) {
  */
 void Omp_mat_vect(int thread_count, csr_matrix *csr_A) {
    int i, j;
-   #pragma omp parallel for num_threads(thread_count) \
+   #pragma omp parallel for schedule (guided, 8) num_threads(thread_count) \
       default(none) shared(csr_A, x, y, m, n) private(i, j)
    for (i = 0; i < m; i++) {
      // printf("Thread %d processing row %d\n", omp_get_thread_num(), i);

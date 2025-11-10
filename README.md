@@ -35,6 +35,12 @@ make
 # Example:
 ./executable 8 2k_0p15.mtx
 ```
+### Run various alternative implementations of matrix vector multiplication
+```bash
+./test_config <threads> <matrix_file> <n_iterations>
+# Example:
+ ./test_config 8 6k_6p3.mtx 60
+```
 
 ### Run Full Benchmarks
 ```bash
