@@ -47,6 +47,13 @@ make
 # Generate plots from results
 ./plot_results.sh
 ```
+### Generate Speedup Plots
+```bash
+cd evaluation
+python3 plot_speedup.py results.csv
+```
+
+
 
 ## Matrix Naming Convention
 
