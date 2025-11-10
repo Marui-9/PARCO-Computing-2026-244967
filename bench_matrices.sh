@@ -5,7 +5,7 @@
 set -euo pipefail
 
 EXE="./executable"
-OUT_CSV="evaluation/results.csv"
+OUT_CSV="evaluation/matrices_results.csv"
 TIMEOUT_SECS=120   # kill any run that exceeds this
 
 # Thread configuration - customize as needed
