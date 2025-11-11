@@ -6,6 +6,7 @@ set -euo pipefail
 
 EXE="./test_config"
 OUT_CSV="evaluation/configurations_results.csv"
+OUT_LOG="evaluation/configurations_results.txt"
 TIMEOUT_SECS=300   # kill any run that exceeds this (5 minutes per matrix/thread combo)
 ITERATIONS=50      # number of iterations per configuration
 
@@ -48,6 +49,21 @@ mkdir -p "$(dirname "$OUT_CSV")"
 # CSV header
 printf '%s\n' "matrix,rows,cols,density_pct,nnz,threads,configuration,time_ms,speedup,efficiency_pct,std_dev_ms,improvement_pct,exit_code,notes" > "$OUT_CSV"
 
+# Initialize log file
+{
+  echo "========================================================================"
+  echo "CONFIGURATION BENCHMARK LOG"
+  echo "========================================================================"
+  echo "Started at: $(date)"
+  echo "Executable: $EXE"
+  echo "Timeout per run: ${TIMEOUT_SECS}s"
+  echo "Iterations per config: $ITERATIONS"
+  echo "Thread counts: $THREAD_COUNTS"
+  echo "Matrices found: ${#MATRICES[@]}"
+  echo "========================================================================"
+  echo ""
+} > "$OUT_LOG"
+
 cleanup() { :; }
 trap cleanup EXIT
 
@@ -58,8 +74,10 @@ echo ""
 
 for mtx in "${MATRICES[@]}"; do
   echo "=== Matrix: $mtx ==="
+  echo "=== Processing Matrix: $mtx ===" >> "$OUT_LOG"
   if [ ! -f "$mtx" ]; then
     echo "  SKIP: file not found: $mtx"
+    echo "  SKIP: file not found: $mtx" >> "$OUT_LOG"
     printf '%s\n' "\"$mtx\",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,FILE_NOT_FOUND,\"file not found\"" >> "$OUT_CSV"
     continue
   fi
@@ -142,10 +160,12 @@ for mtx in "${MATRICES[@]}"; do
 
     if [ "$config_count" -eq 0 ]; then
       echo "    WARNING: No configuration results parsed"
+      echo "    WARNING: No configuration results parsed for $mtx_basename, threads=$threads" >> "$OUT_LOG"
       notes="${notes}${notes:+; }NO_CONFIGS"
       printf '%s\n' "\"$mtx_basename\",$ROWS,$COLS,$DENSITY,$NNZ,$threads,\"NONE\",NA,NA,NA,NA,NA,$exitcode,\"$notes\"" >> "$OUT_CSV"
     else
       echo "    Parsed $config_count configurations"
+      echo "    $mtx_basename (threads=$threads): Parsed $config_count configurations" >> "$OUT_LOG"
     fi
 
     rm -f "$tmpout"
@@ -155,4 +175,17 @@ done
 
 echo "=== Benchmark Complete ==="
 echo "Results written to: $OUT_CSV"
+echo "Log written to: $OUT_LOG"
 wc -l "$OUT_CSV"
+
+# Append completion info to log
+{
+  echo ""
+  echo "========================================================================"
+  echo "BENCHMARK COMPLETED"
+  echo "========================================================================"
+  echo "Completed at: $(date)"
+  echo "CSV results: $OUT_CSV"
+  echo "Total data rows: $(( $(wc -l < "$OUT_CSV") - 1 ))"
+  echo "========================================================================"
+} >> "$OUT_LOG"
