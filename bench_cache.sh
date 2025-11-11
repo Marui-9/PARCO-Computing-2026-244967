@@ -8,7 +8,7 @@ EXECUTABLE="./executable"
 TIMEOUT_SECONDS=120
 
 # Thread counts to test
-THREAD_COUNTS=(1 2 4 8 12 16 18)
+THREAD_COUNTS=(1 2 4 8 12 16 18 20 22 24)
 
 # Check if executable exists
 if [ ! -f "$EXECUTABLE" ]; then

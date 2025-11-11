@@ -13,7 +13,7 @@ TIMEOUT_SECS=120   # kill any run that exceeds this
 # THREAD_COUNTS=$(seq 1 16)
 
 # Option 2: Powers of 2 (more common for benchmarking)
-THREAD_COUNTS="2 4 8 12 16 18"
+THREAD_COUNTS="2 4 8 12 16 18 20 22 24"
 
 # Option 3: Specific values
 # THREAD_COUNTS="1 4 8 12 16 20 24"

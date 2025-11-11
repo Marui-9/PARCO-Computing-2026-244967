@@ -3,8 +3,8 @@
 #PBS -o ./benchmarks.out
 #PBS -e ./benchmarks.err
 #PBS -q short_cpuQ
-#PBS -l walltime=2:00:00
-#PBS -l select=1:ncpus=16:mem=4gb
+#PBS -l walltime=4:00:00
+#PBS -l select=1:ncpus=24:mem=10gb
 
 # Load modules
 module load gcc91
