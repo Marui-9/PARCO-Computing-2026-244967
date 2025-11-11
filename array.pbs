@@ -13,4 +13,4 @@ gcc --version
 # Select the working directory
 cd "$PBS_O_WORKDIR"
 gcc array_addition.c -o arr_add
-./arr_add
+./arr_add   

@@ -1,55 +1,39 @@
 #!/bin/bash
+#Job name
 #PBS -N benchmarks
-#PBS -o benchmarks.out
-#PBS -e benchmarks.err
+#Output and error files
+#PBS -o ./benchmarks.out
+#PBS -e ./benchmarks.err
+#Queue name
 #PBS -q short_cpuQ
+#Set the maximum wall time
 #PBS -l walltime=4:00:00
+#Set the number of nodes and the memory
 #PBS -l select=1:ncpus=24:mem=10gb
 
-# Print diagnostic info
-echo "Job started at: $(date)"
-echo "Working directory: $PBS_O_WORKDIR"
-echo "Node: $(hostname)"
-echo "CPUs available: $(nproc)"
+# Load modules
+module load gcc91
 
 # Select the working directory
-cd "$PBS_O_WORKDIR" || { echo "Failed to cd to $PBS_O_WORKDIR"; exit 1; }
-echo "Current directory: $(pwd)"
+cd "$PBS_O_WORKDIR"
 
-# Load modules
-echo "Loading gcc91 module..."
-module load gcc91 || { echo "Failed to load gcc91 module"; exit 1; }
-
-# Check gcc version
-echo "GCC version:"
-gcc-9.1.0 --version || gcc --version
-
-# Compile the project (remove -march=native which might cause issues)
-echo "Compiling main executable..."
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c main.c -o main.o || { echo "Failed to compile main.c"; exit 1; }
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c generator.c -o generator.o || { echo "Failed to compile generator.c"; exit 1; }
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c m_to_csr.c -o m_to_csr.o || { echo "Failed to compile m_to_csr.c"; exit 1; }
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -o executable main.o generator.o m_to_csr.o -lm || { echo "Failed to link executable"; exit 1; }
+# Compile the project
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c main.c -o main.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c generator.c -o generator.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c m_to_csr.c -o m_to_csr.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -o executable main.o generator.o m_to_csr.o -lm
 
 # Compile test configurations
-echo "Compiling test_config executable..."
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c test_configurations.c -o test_configurations.o || { echo "Failed to compile test_configurations.c"; exit 1; }
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -o test_config test_configurations.o generator.o m_to_csr.o -lm || { echo "Failed to link test_config"; exit 1; }
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c test_configurations.c -o test_configurations.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -o test_config test_configurations.o generator.o m_to_csr.o -lm
 
-echo "Compilation successful!"
-ls -lh executable test_config
-
-echo ""
 echo "=== Starting Cache Benchmark ==="
 bash bench_cache.sh
 
-echo ""
 echo "=== Starting Configurations Benchmark ==="
 bash bench_configurations.sh
 
-echo ""
 echo "=== Starting Matrices Benchmark ==="
 bash bench_matrices.sh
 
-echo ""
-echo "=== All benchmarks completed at: $(date) ==="
+echo "=== All benchmarks completed ==="
