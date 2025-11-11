@@ -1,14 +1,9 @@
 #!/bin/bash
-#Job name
 #PBS -N benchmarks
-#Output and error files
 #PBS -o ./benchmarks.out
 #PBS -e ./benchmarks.err
-#Queue name
 #PBS -q short_cpuQ
-#Set the maximum wall time
 #PBS -l walltime=4:00:00
-#Set the number of nodes and the memory
 #PBS -l select=1:ncpus=24:mem=10gb
 
 # Load modules
