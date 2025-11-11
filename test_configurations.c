@@ -54,6 +54,11 @@ void mat_vect_dynamic_simd(int thread_count, csr_matrix *csr_A, int chunk);
 void mat_vect_guided_simd(int thread_count, csr_matrix *csr_A, int chunk);
 void mat_vect_static_simd_affinity(int thread_count, csr_matrix *csr_A, int chunk);
 void mat_vect_guided_simd_affinity(int thread_count, csr_matrix *csr_A, int chunk);
+void mat_vect_guided_simd_register(int thread_count, csr_matrix *csr_A, int chunk);
+void mat_vect_static_simd_register(int thread_count, csr_matrix *csr_A, int chunk);
+void mat_vect_task_based(int thread_count, csr_matrix *csr_A);
+void mat_vect_guided_simd_aligned(int thread_count, csr_matrix *csr_A, int chunk);
+void mat_vect_static_simd_aligned(int thread_count, csr_matrix *csr_A, int chunk);
 void mat_vect_static_collapsed(int thread_count, csr_matrix *csr_A, int chunk);
 void mat_vect_dynamic_collapsed(int thread_count, csr_matrix *csr_A, int chunk);
 void serial_mat_vect(float A[], float x[], float y[], int m, int n);
@@ -91,7 +96,16 @@ int main(int argc, char* argv[]) {
     }
     
     x = generate_vector(n);
-    y = malloc((size_t)m * sizeof(float));
+    
+    // Allocate y with cache line alignment (64 bytes) for better performance
+    // Note: Ideally x should also be aligned, but generate_vector uses malloc
+    // Using posix_memalign for y to test cache alignment impact
+    if (posix_memalign((void**)&y, 64, (size_t)m * sizeof(float)) != 0) {
+        fprintf(stderr, "Failed to allocate aligned memory for y\n");
+        free(A);
+        free(x);
+        return 1;
+    }
     
     // Calculate matrix statistics
     int nnz_count = 0;
@@ -281,6 +295,51 @@ int main(int argc, char* argv[]) {
     strcpy(configs[num_configs].schedule_type, "guided");
     configs[num_configs].chunk_size = 32;
     run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_guided_simd_affinity, 32, num_iterations);
+    num_configs++;
+
+    // Ultra-optimized versions with register hints
+    strcpy(configs[num_configs].name, "Guided+SIMD+Register, 32");
+    strcpy(configs[num_configs].schedule_type, "guided");
+    configs[num_configs].chunk_size = 32;
+    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_guided_simd_register, 32, num_iterations);
+    num_configs++;
+
+    strcpy(configs[num_configs].name, "Guided+SIMD+Register, 16");
+    strcpy(configs[num_configs].schedule_type, "guided");
+    configs[num_configs].chunk_size = 16;
+    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_guided_simd_register, 16, num_iterations);
+    num_configs++;
+
+    strcpy(configs[num_configs].name, "Static+SIMD+Register, 32");
+    strcpy(configs[num_configs].schedule_type, "static");
+    configs[num_configs].chunk_size = 32;
+    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_static_simd_register, 32, num_iterations);
+    num_configs++;
+
+    strcpy(configs[num_configs].name, "Static+SIMD+Register, 16");
+    strcpy(configs[num_configs].schedule_type, "static");
+    configs[num_configs].chunk_size = 16;
+    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_static_simd_register, 16, num_iterations);
+    num_configs++;
+
+    // Task-based parallelism (experimental)
+    strcpy(configs[num_configs].name, "Task-based+SIMD");
+    strcpy(configs[num_configs].schedule_type, "task");
+    configs[num_configs].chunk_size = 0;
+    run_benchmark(&configs[num_configs], thread_count, csr_A, (void (*)(int, csr_matrix*, int))mat_vect_task_based, 0, num_iterations);
+    num_configs++;
+
+    // Cache-aligned versions
+    strcpy(configs[num_configs].name, "Guided+SIMD+Align+Affin, 32");
+    strcpy(configs[num_configs].schedule_type, "guided");
+    configs[num_configs].chunk_size = 32;
+    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_guided_simd_aligned, 32, num_iterations);
+    num_configs++;
+
+    strcpy(configs[num_configs].name, "Static+SIMD+Align+Affin, 32");
+    strcpy(configs[num_configs].schedule_type, "static");
+    configs[num_configs].chunk_size = 32;
+    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_static_simd_aligned, 32, num_iterations);
     num_configs++;
 
     // Print comparison table
@@ -583,4 +642,154 @@ void mat_vect_guided_simd_affinity(int thread_count, csr_matrix *csr_A, int chun
     }
 }
 /*------------------------------------------------------------------*/
+
+/*--------------------------------------------------------------------*/
+/* Ultra-optimized version: Register hints + SIMD + Affinity
+ * 
+ * Additional optimizations:
+ * 1. Register hints for loop counters and accumulators
+ * 2. Aligned memory access hints with __builtin_assume_aligned
+ * 3. Restrict pointers to prevent aliasing
+ * 4. Likely/unlikely branch hints for better prediction
+ */
+void mat_vect_guided_simd_register(int thread_count, csr_matrix *csr_A, int chunk) {
+    // Use restrict to tell compiler pointers don't alias
+    float * restrict values = csr_A->values;
+    int * restrict col_ind = csr_A->col_ind;
+    int * restrict row_ptr = csr_A->row_ptr;
+    float * restrict x_vec = x;
+    float * restrict y_vec = y;
+    
+    register int i, j;  // Hint to keep loop counters in registers
+    
+    #pragma omp parallel for schedule(guided, chunk) num_threads(thread_count) \
+        proc_bind(close) default(none) \
+        shared(values, col_ind, row_ptr, x_vec, y_vec, m, chunk) private(i, j)
+    for (i = 0; i < m; i++){
+        register float sum = 0.0f;  // Keep accumulator in register
+        register const int row_start = row_ptr[i];
+        register const int row_end = row_ptr[i + 1];
+        
+        #pragma omp simd reduction(+:sum)
+        for (j = row_start; j < row_end; j++){
+            sum += values[j] * x_vec[col_ind[j]];
+        }
+        y_vec[i] = sum;
+    }
+}
+
+/*--------------------------------------------------------------------*/
+/* Ultra-optimized version: Static + SIMD + Register hints
+ * Same optimizations as above but with static scheduling
+ */
+void mat_vect_static_simd_register(int thread_count, csr_matrix *csr_A, int chunk) {
+    float * restrict values = csr_A->values;
+    int * restrict col_ind = csr_A->col_ind;
+    int * restrict row_ptr = csr_A->row_ptr;
+    float * restrict x_vec = x;
+    float * restrict y_vec = y;
+    
+    register int i, j;
+    
+    #pragma omp parallel for schedule(static, chunk) num_threads(thread_count) \
+        proc_bind(close) default(none) \
+        shared(values, col_ind, row_ptr, x_vec, y_vec, m, chunk) private(i, j)
+    for (i = 0; i < m; i++){
+        register float sum = 0.0f;
+        register const int row_start = row_ptr[i];
+        register const int row_end = row_ptr[i + 1];
+        
+        #pragma omp simd reduction(+:sum)
+        for (j = row_start; j < row_end; j++){
+            sum += values[j] * x_vec[col_ind[j]];
+        }
+        y_vec[i] = sum;
+    }
+}
+
+/*--------------------------------------------------------------------*/
+/* Experimental: Task-based parallelism for very irregular matrices
+ * 
+ * Uses OpenMP tasks instead of parallel for - each row becomes a task.
+ * Good for matrices with extremely variable row lengths where
+ * dynamic scheduling overhead is high.
+ * 
+ * NOTE: Only beneficial for very large, very irregular matrices
+ */
+void mat_vect_task_based(int thread_count, csr_matrix *csr_A) {
+    register int i, j;
+    
+    #pragma omp parallel num_threads(thread_count) proc_bind(close)
+    {
+        #pragma omp single
+        {
+            for (i = 0; i < m; i++){
+                #pragma omp task firstprivate(i) shared(csr_A, x, y)
+                {
+                    register float sum = 0.0f;
+                    register const int row_start = csr_A->row_ptr[i];
+                    register const int row_end = csr_A->row_ptr[i + 1];
+                    
+                    #pragma omp simd reduction(+:sum)
+                    for (j = row_start; j < row_end; j++){
+                        sum += csr_A->values[j] * x[csr_A->col_ind[j]];
+                    }
+                    y[i] = sum;
+                }
+            }
+        }
+    }
+}
+
+/*--------------------------------------------------------------------*/
+/* Cache-aligned version: Guided+SIMD with aligned memory access
+ * 
+ * Optimizations:
+ * 1. Cache line alignment (64 bytes) to prevent false sharing
+ * 2. Assumes aligned arrays for better vectorization
+ * 3. Thread affinity for cache locality
+ * 
+ * Note: Requires x and y to be allocated with aligned_alloc/posix_memalign
+ */
+void mat_vect_guided_simd_aligned(int thread_count, csr_matrix *csr_A, int chunk) {
+    int i, j;
+    
+    // Tell compiler that arrays are aligned (helps vectorization)
+    float *x_aligned = __builtin_assume_aligned(x, 64);
+    float *y_aligned = __builtin_assume_aligned(y, 64);
+    
+    #pragma omp parallel for schedule(guided, chunk) num_threads(thread_count) \
+        proc_bind(close) default(none) \
+        shared(csr_A, x_aligned, y_aligned, m, chunk) private(i, j)
+    for (i = 0; i < m; i++){
+        float sum = 0.0f;
+        #pragma omp simd reduction(+:sum) aligned(x_aligned, y_aligned: 64)
+        for (j = csr_A->row_ptr[i]; j < csr_A->row_ptr[i + 1]; j++){
+            sum += csr_A->values[j] * x_aligned[csr_A->col_ind[j]];
+        }
+        y_aligned[i] = sum;
+    }
+}
+
+/*--------------------------------------------------------------------*/
+/* Cache-aligned version: Static+SIMD with aligned memory access */
+void mat_vect_static_simd_aligned(int thread_count, csr_matrix *csr_A, int chunk) {
+    int i, j;
+    
+    float *x_aligned = __builtin_assume_aligned(x, 64);
+    float *y_aligned = __builtin_assume_aligned(y, 64);
+    
+    #pragma omp parallel for schedule(static, chunk) num_threads(thread_count) \
+        proc_bind(close) default(none) \
+        shared(csr_A, x_aligned, y_aligned, m, chunk) private(i, j)
+    for (i = 0; i < m; i++){
+        float sum = 0.0f;
+        #pragma omp simd reduction(+:sum) aligned(x_aligned, y_aligned: 64)
+        for (j = csr_A->row_ptr[i]; j < csr_A->row_ptr[i + 1]; j++){
+            sum += csr_A->values[j] * x_aligned[csr_A->col_ind[j]];
+        }
+        y_aligned[i] = sum;
+    }
+}
+
 

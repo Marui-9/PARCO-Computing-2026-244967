@@ -9,9 +9,21 @@ Analyze configurations_results.csv to examine speedup behavior across:
 
 import pandas as pd
 import numpy as np
+import os
+
+# Determine the correct path to the CSV file
+# Works whether run from parent directory or evaluation directory
+if os.path.exists('configurations_results.csv'):
+    csv_path = 'configurations_results.csv'
+elif os.path.exists('evaluation/configurations_results.csv'):
+    csv_path = 'evaluation/configurations_results.csv'
+else:
+    print("Error: configurations_results.csv not found!")
+    print("Run this script from either the project root or evaluation/ directory")
+    exit(1)
 
 # Read the CSV file
-df = pd.read_csv('evaluation/configurations_results.csv')
+df = pd.read_csv(csv_path)
 
 # Clean up configuration names (remove trailing commas)
 df['configuration'] = df['configuration'].str.strip()
