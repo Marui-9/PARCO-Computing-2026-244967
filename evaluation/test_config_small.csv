@@ -1,0 +1,2 @@
+matrix,rows,cols,density_pct,nnz,threads,configuration,schedule,chunk_size,time_ms,speedup,efficiency_pct,std_dev_ms,improvement_pct,exit_code,notes
+"2k_0p22.mtx",1624,1624,0.23,6050,4,"Static (default)","NA","NA",1.050,2.71,11.3,0.005,0.00,0,"success"

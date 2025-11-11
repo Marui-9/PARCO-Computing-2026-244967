@@ -9,7 +9,7 @@
  *               test_configurations.c generator.c m_to_csr.c -lm
  * Usage:
  *     ./test_config <thread_count> <matrix_file> [iterations]
- *     Example: ./test_config 8 2k_0p15.mtx 50
+ *     Example: ./test_config 8 2k_0p52.mtx 50
  *
  * Notes:  
  *     - Runs multiple configurations and outputs comparison table
@@ -52,6 +52,8 @@ void mat_vect_auto(int thread_count, csr_matrix *csr_A);
 void mat_vect_static_simd(int thread_count, csr_matrix *csr_A, int chunk);
 void mat_vect_dynamic_simd(int thread_count, csr_matrix *csr_A, int chunk);
 void mat_vect_guided_simd(int thread_count, csr_matrix *csr_A, int chunk);
+void mat_vect_static_simd_affinity(int thread_count, csr_matrix *csr_A, int chunk);
+void mat_vect_guided_simd_affinity(int thread_count, csr_matrix *csr_A, int chunk);
 void mat_vect_static_collapsed(int thread_count, csr_matrix *csr_A, int chunk);
 void mat_vect_dynamic_collapsed(int thread_count, csr_matrix *csr_A, int chunk);
 void serial_mat_vect(float A[], float x[], float y[], int m, int n);
@@ -65,7 +67,7 @@ int compare_doubles(const void *a, const void *b);
 int main(int argc, char* argv[]) {
     if (argc < 3 || argc > 4) {
         fprintf(stderr, "usage: %s <thread_count> <matrix_file> [iterations]\n", argv[0]);
-        fprintf(stderr, "Example: %s 8 2k_0p15.mtx 50\n", argv[0]);
+        fprintf(stderr, "Example: %s 8 2k_0p52.mtx 50\n", argv[0]);
         exit(1);
     }
 
@@ -260,6 +262,25 @@ int main(int argc, char* argv[]) {
     strcpy(configs[num_configs].schedule_type, "guided");
     configs[num_configs].chunk_size = 32;
     run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_guided_simd, 32, num_iterations);
+    num_configs++;
+
+    // Optimized versions with thread affinity
+    strcpy(configs[num_configs].name, "Static+SIMD+Affinity, 16");
+    strcpy(configs[num_configs].schedule_type, "static");
+    configs[num_configs].chunk_size = 16;
+    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_static_simd_affinity, 16, num_iterations);
+    num_configs++;
+
+    strcpy(configs[num_configs].name, "Static+SIMD+Affinity, 32");
+    strcpy(configs[num_configs].schedule_type, "static");
+    configs[num_configs].chunk_size = 32;
+    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_static_simd_affinity, 32, num_iterations);
+    num_configs++;
+
+    strcpy(configs[num_configs].name, "Guided+SIMD+Affinity, 32");
+    strcpy(configs[num_configs].schedule_type, "guided");
+    configs[num_configs].chunk_size = 32;
+    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_guided_simd_affinity, 32, num_iterations);
     num_configs++;
 
     // Print comparison table
@@ -508,4 +529,58 @@ void mat_vect_guided_simd(int thread_count, csr_matrix *csr_A, int chunk) {
         y[i] = sum;
     }
 }
+/*--------------------------------------------------------------------*/
+/* Optimized version: Static+SIMD with thread affinity binding
+ * 
+ * This function demonstrates the performance benefits of combining:
+ * 1. SIMD vectorization for inner loop computation
+ * 2. Static scheduling with configurable chunk size
+ * 3. Thread affinity (proc_bind=close) to prevent thread migration
+ * 
+ * Thread affinity keeps threads on the same core/socket, improving:
+ * - Cache locality (L1/L2 cache stays warm)
+ * - Reduced NUMA traffic (on multi-socket systems)
+ * - Lower thread migration overhead
+ * 
+ * The chunk parameter allows testing different chunk sizes (e.g., 16, 32)
+ */
+void mat_vect_static_simd_affinity(int thread_count, csr_matrix *csr_A, int chunk) {
+    int i, j;
+    #pragma omp parallel for schedule(static, chunk) num_threads(thread_count) \
+        proc_bind(close) default(none) shared(csr_A, x, y, m, chunk) private(i, j)
+    for (i = 0; i < m; i++){
+        float sum = 0.0f;
+        #pragma omp simd reduction(+:sum)
+        for (j = csr_A->row_ptr[i]; j < csr_A->row_ptr[i + 1]; j++){
+            sum += csr_A->values[j] * x[csr_A->col_ind[j]];
+        }
+        y[i] = sum;
+    }
+}
+/*--------------------------------------------------------------------*/
+/* Optimized version: Guided+SIMD with thread affinity binding
+ * 
+ * Combines guided scheduling with SIMD and thread affinity:
+ * 1. Guided scheduling: Adaptive chunk sizes for load balancing
+ *    - Starts with large chunks (good cache locality)
+ *    - Ends with small chunks (good load balance)
+ * 2. SIMD vectorization for computation
+ * 3. Thread affinity for cache warmth
+ * 
+ * Best for matrices with highly irregular row distributions
+ */
+void mat_vect_guided_simd_affinity(int thread_count, csr_matrix *csr_A, int chunk) {
+    int i, j;
+    #pragma omp parallel for schedule(guided, chunk) num_threads(thread_count) \
+        proc_bind(close) default(none) shared(csr_A, x, y, m, chunk) private(i, j)
+    for (i = 0; i < m; i++){
+        float sum = 0.0f;
+        #pragma omp simd reduction(+:sum)
+        for (j = csr_A->row_ptr[i]; j < csr_A->row_ptr[i + 1]; j++){
+            sum += csr_A->values[j] * x[csr_A->col_ind[j]];
+        }
+        y[i] = sum;
+    }
+}
 /*------------------------------------------------------------------*/
+
