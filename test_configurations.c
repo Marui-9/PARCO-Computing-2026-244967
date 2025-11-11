@@ -95,11 +95,11 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
-    x = generate_vector(n);
+    // Use aligned vector allocation for better cache performance
+    x = generate_vector_aligned(n);
     
     // Allocate y with cache line alignment (64 bytes) for better performance
-    // Note: Ideally x should also be aligned, but generate_vector uses malloc
-    // Using posix_memalign for y to test cache alignment impact
+    // Both x and y are now aligned to 64-byte boundaries for optimal SIMD access
     if (posix_memalign((void**)&y, 64, (size_t)m * sizeof(float)) != 0) {
         fprintf(stderr, "Failed to allocate aligned memory for y\n");
         free(A);

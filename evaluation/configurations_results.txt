@@ -1,0 +1,118 @@
+========================================================================
+CONFIGURATION BENCHMARK LOG
+========================================================================
+Started at: Tue Nov 11 19:22:33 CET 2025
+Executable: ./test_config
+Timeout per run: 300s
+Iterations per config: 50
+Thread counts: 1 2 4 8 12 16 18 20 22 24
+Matrices found: 9
+========================================================================
+
+=== Processing Matrix: matrices/10k_1p5.mtx ===
+    10k_1p5.mtx (threads=1): Parsed 30 configurations
+    10k_1p5.mtx (threads=2): Parsed 30 configurations
+    10k_1p5.mtx (threads=4): Parsed 30 configurations
+    10k_1p5.mtx (threads=8): Parsed 30 configurations
+    10k_1p5.mtx (threads=12): Parsed 30 configurations
+    10k_1p5.mtx (threads=16): Parsed 30 configurations
+    10k_1p5.mtx (threads=18): Parsed 30 configurations
+    10k_1p5.mtx (threads=20): Parsed 30 configurations
+    10k_1p5.mtx (threads=22): Parsed 30 configurations
+    10k_1p5.mtx (threads=24): Parsed 30 configurations
+=== Processing Matrix: matrices/11k_0p35.mtx ===
+    11k_0p35.mtx (threads=1): Parsed 30 configurations
+    11k_0p35.mtx (threads=2): Parsed 30 configurations
+    11k_0p35.mtx (threads=4): Parsed 30 configurations
+    11k_0p35.mtx (threads=8): Parsed 30 configurations
+    11k_0p35.mtx (threads=12): Parsed 30 configurations
+    11k_0p35.mtx (threads=16): Parsed 30 configurations
+    11k_0p35.mtx (threads=18): Parsed 30 configurations
+    11k_0p35.mtx (threads=20): Parsed 30 configurations
+    11k_0p35.mtx (threads=22): Parsed 30 configurations
+    11k_0p35.mtx (threads=24): Parsed 30 configurations
+=== Processing Matrix: matrices/11k_0p38.mtx ===
+    11k_0p38.mtx (threads=1): Parsed 30 configurations
+    11k_0p38.mtx (threads=2): Parsed 30 configurations
+    11k_0p38.mtx (threads=4): Parsed 30 configurations
+    11k_0p38.mtx (threads=8): Parsed 30 configurations
+    11k_0p38.mtx (threads=12): Parsed 30 configurations
+    11k_0p38.mtx (threads=16): Parsed 30 configurations
+    11k_0p38.mtx (threads=18): Parsed 30 configurations
+    11k_0p38.mtx (threads=20): Parsed 30 configurations
+    11k_0p38.mtx (threads=22): Parsed 30 configurations
+    11k_0p38.mtx (threads=24): Parsed 30 configurations
+=== Processing Matrix: matrices/15k_0p41.mtx ===
+    15k_0p41.mtx (threads=1): Parsed 30 configurations
+    15k_0p41.mtx (threads=2): Parsed 30 configurations
+    15k_0p41.mtx (threads=4): Parsed 30 configurations
+    15k_0p41.mtx (threads=8): Parsed 30 configurations
+    15k_0p41.mtx (threads=12): Parsed 30 configurations
+    15k_0p41.mtx (threads=16): Parsed 30 configurations
+    15k_0p41.mtx (threads=18): Parsed 30 configurations
+    15k_0p41.mtx (threads=20): Parsed 30 configurations
+    15k_0p41.mtx (threads=22): Parsed 30 configurations
+    15k_0p41.mtx (threads=24): Parsed 30 configurations
+=== Processing Matrix: matrices/2k_0p22.mtx ===
+    2k_0p22.mtx (threads=1): Parsed 30 configurations
+    2k_0p22.mtx (threads=2): Parsed 30 configurations
+    2k_0p22.mtx (threads=4): Parsed 30 configurations
+    2k_0p22.mtx (threads=8): Parsed 30 configurations
+    2k_0p22.mtx (threads=12): Parsed 30 configurations
+    2k_0p22.mtx (threads=16): Parsed 30 configurations
+    2k_0p22.mtx (threads=18): Parsed 30 configurations
+    2k_0p22.mtx (threads=20): Parsed 30 configurations
+    2k_0p22.mtx (threads=22): Parsed 30 configurations
+    2k_0p22.mtx (threads=24): Parsed 30 configurations
+=== Processing Matrix: matrices/2k_0p52.mtx ===
+    2k_0p52.mtx (threads=1): Parsed 30 configurations
+    2k_0p52.mtx (threads=2): Parsed 30 configurations
+    2k_0p52.mtx (threads=4): Parsed 30 configurations
+    2k_0p52.mtx (threads=8): Parsed 30 configurations
+    2k_0p52.mtx (threads=12): Parsed 30 configurations
+    2k_0p52.mtx (threads=16): Parsed 30 configurations
+    2k_0p52.mtx (threads=18): Parsed 30 configurations
+    2k_0p52.mtx (threads=20): Parsed 30 configurations
+    2k_0p52.mtx (threads=22): Parsed 30 configurations
+    2k_0p52.mtx (threads=24): Parsed 30 configurations
+=== Processing Matrix: matrices/5k_9p37.mtx ===
+    5k_9p37.mtx (threads=1): Parsed 30 configurations
+    5k_9p37.mtx (threads=2): Parsed 30 configurations
+    5k_9p37.mtx (threads=4): Parsed 30 configurations
+    5k_9p37.mtx (threads=8): Parsed 30 configurations
+    5k_9p37.mtx (threads=12): Parsed 30 configurations
+    5k_9p37.mtx (threads=16): Parsed 30 configurations
+    5k_9p37.mtx (threads=18): Parsed 30 configurations
+    5k_9p37.mtx (threads=20): Parsed 30 configurations
+    5k_9p37.mtx (threads=22): Parsed 30 configurations
+    5k_9p37.mtx (threads=24): Parsed 30 configurations
+=== Processing Matrix: matrices/6k_6p3.mtx ===
+    6k_6p3.mtx (threads=1): Parsed 30 configurations
+    6k_6p3.mtx (threads=2): Parsed 30 configurations
+    6k_6p3.mtx (threads=4): Parsed 30 configurations
+    6k_6p3.mtx (threads=8): Parsed 30 configurations
+    6k_6p3.mtx (threads=12): Parsed 30 configurations
+    6k_6p3.mtx (threads=16): Parsed 30 configurations
+    6k_6p3.mtx (threads=18): Parsed 30 configurations
+    6k_6p3.mtx (threads=20): Parsed 30 configurations
+    6k_6p3.mtx (threads=22): Parsed 30 configurations
+    6k_6p3.mtx (threads=24): Parsed 30 configurations
+=== Processing Matrix: matrices/9k_0p77.mtx ===
+    9k_0p77.mtx (threads=1): Parsed 30 configurations
+    9k_0p77.mtx (threads=2): Parsed 30 configurations
+    9k_0p77.mtx (threads=4): Parsed 30 configurations
+    9k_0p77.mtx (threads=8): Parsed 30 configurations
+    9k_0p77.mtx (threads=12): Parsed 30 configurations
+    9k_0p77.mtx (threads=16): Parsed 30 configurations
+    9k_0p77.mtx (threads=18): Parsed 30 configurations
+    9k_0p77.mtx (threads=20): Parsed 30 configurations
+    9k_0p77.mtx (threads=22): Parsed 30 configurations
+    9k_0p77.mtx (threads=24): Parsed 30 configurations
+
+========================================================================
+BENCHMARK COMPLETED
+========================================================================
+Completed at: Tue Nov 11 19:55:12 CET 2025
+CSV results: evaluation/configurations_results.csv
+Total data rows: 2700
+========================================================================
