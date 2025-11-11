@@ -1,0 +1,24 @@
+#!/bin/bash
+#PBS -N config_bench
+#PBS -o ./config_bench.out
+#PBS -e ./config_bench.err
+#PBS -q short_cpuQ
+#PBS -l walltime=6:00:00
+#PBS -l select=1:ncpus=24:mem=10gb
+
+# Load modules
+module load gcc91
+
+# Select the working directory
+cd "$PBS_O_WORKDIR"
+
+# Compile the test configurations executable
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c test_configurations.c -o test_configurations.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c generator.c -o generator.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c m_to_csr.c -o m_to_csr.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -o test_config test_configurations.o generator.o m_to_csr.o -lm
+
+echo "=== Starting Configurations Benchmark ==="
+bash bench_configurations.sh
+
+echo "=== Configurations benchmark completed ==="

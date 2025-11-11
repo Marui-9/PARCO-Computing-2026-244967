@@ -28,12 +28,17 @@ df = pd.read_csv(csv_path)
 # Clean up configuration names (remove trailing commas)
 df['configuration'] = df['configuration'].str.strip()
 
+# Remove rows with missing configuration values
+df = df.dropna(subset=['configuration'])
+
 # Create matrix size metric (total elements)
 df['matrix_size'] = df['rows'] * df['cols']
 df['matrix_size_M'] = df['matrix_size'] / 1e6  # in millions
 
 # Create configuration categories
 def categorize_config(config):
+    if not isinstance(config, str):
+        return 'Unknown'
     if 'SIMD+Affinity' in config:
         return 'SIMD+Affinity'
     elif 'SIMD' in config:
@@ -181,7 +186,7 @@ for matrix in df['matrix'].unique():
     matrix_data = df[(df['matrix'] == matrix) & (df['config_category'].isin(['SIMD', 'SIMD+Affinity']))]
     best_threads = matrix_data.groupby('threads')['speedup'].mean().idxmax()
     best_speedup = matrix_data.groupby('threads')['speedup'].mean().max()
-    print(f"   {matrix:20s}: {best_threads:2d} threads ({best_speedup:.1f}x speedup)")
+    print(f"   {matrix:20s}: {int(best_threads):2d} threads ({best_speedup:.1f}x speedup)")
 
 print("\n" + "="*80)
 print("END OF ANALYSIS")
