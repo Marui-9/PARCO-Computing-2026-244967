@@ -8,7 +8,7 @@ EXE="./test_config"
 OUT_CSV="evaluation/configurations_results.csv"
 OUT_LOG="evaluation/configurations_results.txt"
 TIMEOUT_SECS=300   # kill any run that exceeds this (5 minutes per matrix/thread combo)
-ITERATIONS=50      # number of iterations per configuration
+ITERATIONS=30      # number of iterations per configuration
 
 # Thread counts to test
 THREAD_COUNTS="1 2 4 8 12 16 18 20 22 24"
