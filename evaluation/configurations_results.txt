@@ -1,10 +1,10 @@
 ========================================================================
 CONFIGURATION BENCHMARK LOG
 ========================================================================
-Started at: Tue Nov 11 19:22:33 CET 2025
+Started at: Tue Nov 11 21:01:49 CET 2025
 Executable: ./test_config
 Timeout per run: 300s
-Iterations per config: 50
+Iterations per config: 30
 Thread counts: 1 2 4 8 12 16 18 20 22 24
 Matrices found: 9
 ========================================================================
@@ -112,7 +112,7 @@ Matrices found: 9
 ========================================================================
 BENCHMARK COMPLETED
 ========================================================================
-Completed at: Tue Nov 11 19:55:12 CET 2025
+Completed at: Tue Nov 11 21:22:35 CET 2025
 CSV results: evaluation/configurations_results.csv
 Total data rows: 2700
 ========================================================================
