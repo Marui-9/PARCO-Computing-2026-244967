@@ -37,7 +37,7 @@ echo "Found ${#MATRICES[@]} matrix files in '$MATRICES_DIR'"
 # Quick checks
 if [ ! -f "$EXE" ]; then
   echo "ERROR: executable not found at '$EXE'. Compile with:" >&2
-  echo "  gcc -O3 -Wall -Wextra -fopenmp -o test_config_numa test_configurations_numa.c generator.c m_to_csr.c -lm" >&2
+  echo "  gcc -O3 -Wall -Wextra -fopenmp -o test_config_numa src/test_configurations_numa.c src/generator.c src/m_to_csr.c -lm" >&2
   exit 2
 fi
 if [ ! -x "$EXE" ]; then

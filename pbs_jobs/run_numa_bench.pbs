@@ -38,9 +38,9 @@ fi
 
 # Compile the NUMA-aware executable
 echo "Compiling NUMA-aware test_config_numa..."
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c test_configurations_numa.c -o test_configurations_numa.o
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c generator.c -o generator.o
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c m_to_csr.c -o m_to_csr.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/test_configurations_numa.c -o test_configurations_numa.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/generator.c -o generator.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/m_to_csr.c -o m_to_csr.o
 gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -o test_config_numa test_configurations_numa.o generator.o m_to_csr.o -lm
 
 if [ $? -ne 0 ]; then
@@ -53,7 +53,7 @@ ls -lh test_config_numa
 echo ""
 
 # Make benchmark script executable
-chmod +x bench_configurations_numa.sh
+chmod +x scripts/bench_configurations_numa.sh
 
 # Run NUMA benchmark
 echo "========================================"
@@ -63,7 +63,7 @@ echo "Thread counts: 24-96"
 echo "Expected duration: Several hours"
 echo ""
 
-bash bench_configurations_numa.sh
+bash scripts/bench_configurations_numa.sh
 
 echo ""
 echo "========================================"

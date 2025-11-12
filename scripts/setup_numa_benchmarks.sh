@@ -28,7 +28,7 @@ echo ""
 
 # Check for required source files
 echo "Checking source files..."
-required_files=("test_configurations_numa.c" "generator.c" "m_to_csr.c" "generator.h" "m_to_csr.h")
+required_files=("src/test_configurations_numa.c" "src/generator.c" "src/m_to_csr.c" "src/generator.h" "src/m_to_csr.h")
 all_found=true
 
 for file in "${required_files[@]}"; do
@@ -65,7 +65,7 @@ echo ""
 # Try to compile (if gcc available)
 if command -v gcc &> /dev/null && [ "$all_found" = true ]; then
     echo "Attempting test compilation..."
-    if gcc -O3 -Wall -Wextra -fopenmp -c test_configurations_numa.c -o test_config_numa_test.o 2>/dev/null; then
+    if gcc -O3 -Wall -Wextra -fopenmp -c src/test_configurations_numa.c -o test_config_numa_test.o 2>/dev/null; then
         echo "✓ test_configurations_numa.c compiles successfully"
         rm -f test_config_numa_test.o
     else

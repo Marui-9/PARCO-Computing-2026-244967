@@ -69,13 +69,13 @@ Place `.mtx` files in `matrices_large/` directory
 
 ### 2. Test Locally (Optional)
 ```bash
-gcc -O3 -Wall -Wextra -fopenmp -o test_config_numa test_configurations_numa.c generator.c m_to_csr.c -lm
+gcc -O3 -Wall -Wextra -fopenmp -o test_config_numa src/test_configurations_numa.c src/generator.c src/m_to_csr.c -lm
 ./test_config_numa 48 your_matrix.mtx 10
 ```
 
 ### 3. Submit to Cluster
 ```bash
-qsub run_numa_bench.pbs
+qsub pbs_jobs/run_numa_bench.pbs
 ```
 
 ### 4. Monitor Progress
@@ -160,12 +160,17 @@ PARCO-Computing-2026-244967/
 │   ├── configurations_numa_results.txt (generated)
 │   ├── analyze_configurations_numa.py
 │   └── README.md
-├── test_configurations.c              # Single-node (1-24 threads)
-├── test_configurations_numa.c         # NUMA-aware (24-96 threads) (NEW)
-├── bench_configurations.sh            # Single-node benchmark
-├── bench_configurations_numa.sh       # NUMA benchmark (NEW)
-├── run_config_bench.pbs               # Single-node PBS
-└── run_numa_bench.pbs                 # NUMA PBS (NEW)
+├── src/
+│   ├── test_configurations.c          # Single-node (1-24 threads)
+│   ├── test_configurations_numa.c     # NUMA-aware (24-96 threads) (NEW)
+│   ├── main.c, generator.c, m_to_csr.c
+│   └── *.h header files
+├── scripts/
+│   ├── bench_configurations.sh        # Single-node benchmark
+│   └── bench_configurations_numa.sh   # NUMA benchmark (NEW)
+├── pbs_jobs/
+│   ├── run_config_bench.pbs           # Single-node PBS
+│   └── run_numa_bench.pbs             # NUMA PBS (NEW)
 ```
 
 ## PBS Job Parameters

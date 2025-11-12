@@ -26,10 +26,10 @@ python3 plot_speedup.py results.csv
 ### Run Benchmarks (from project root)
 ```bash
 # Speedup benchmarks
-./bench_matrices.sh
+./scripts/bench_matrices.sh
 
 # Cache performance benchmarks
-./bench_cache.sh
+./scripts/bench_cache.sh
 ```
 
 ## Notes

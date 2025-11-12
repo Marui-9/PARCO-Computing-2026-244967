@@ -4,9 +4,10 @@ CFLAGS ?= -O3 -Wall -Wextra -march=native -fopenmp
 LDLIBS ?= -lm
 OUT ?= executable
 TEST_OUT ?= test_config
-SRCS := main.c generator.c m_to_csr.c
+SRCDIR := src
+SRCS := $(SRCDIR)/main.c $(SRCDIR)/generator.c $(SRCDIR)/m_to_csr.c
 OBJS := $(SRCS:.c=.o)
-TEST_SRCS := test_configurations.c generator.c m_to_csr.c
+TEST_SRCS := $(SRCDIR)/test_configurations.c $(SRCDIR)/generator.c $(SRCDIR)/m_to_csr.c
 TEST_OBJS := $(TEST_SRCS:.c=.o)
 
 # # detect OpenMP usage and add flags (best-effort)
@@ -34,7 +35,7 @@ $(TEST_OUT): $(TEST_OBJS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(TEST_OBJS) $(OUT) $(TEST_OUT) test_configurations.o
+	rm -f $(OBJS) $(TEST_OBJS) $(OUT) $(TEST_OUT) $(SRCDIR)/test_configurations.o
 
 run: all
 	./$(OUT)

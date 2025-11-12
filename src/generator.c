@@ -143,3 +143,21 @@ float * generate_vector(int size) {
     }
     return vector;
 }
+
+// Cache-aligned version for better performance
+float * generate_vector_aligned(int size) {
+    float *vector;
+    // Align to 64-byte boundary (typical cache line size)
+    if (posix_memalign((void**)&vector, 64, (size_t)size * sizeof(float)) != 0) {
+        fprintf(stderr, "Aligned allocation failed. Needed ~%zu MB for vector.\n",
+                ((size_t)size * sizeof(float)) / (1024 * 1024));
+        return NULL;
+    }
+
+    srand(time(NULL));
+    #pragma omp simd
+    for (int i = 0; i < size; i++) {
+        vector[i] = (float)(rand() % 100);
+    }
+    return vector;
+}

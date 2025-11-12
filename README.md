@@ -15,15 +15,22 @@ PARCO-Computing-2026-244967/
 │   └── README.md                # Evaluation documentation
 ├── matrices/                    # Sparse matrix test files (.mtx format)
 │   └── *.mtx                   # Renamed as: {size}_{density}.mtx
-├── bench_matrices.sh            # Run speedup benchmarks
-├── bench_cache.sh               # Run cache performance benchmarks
-├── bench_configurations.sh      # Compare OpenMP configs (23 variants)
-├── plot_results.sh              # Generate visualization plots
+├── src/                         # C source code
+│   ├── main.c                  # Main program
+│   ├── test_configurations.c   # Configuration testing tool
+│   ├── generator.c, m_to_csr.c # Matrix utilities
+│   └── *.h                     # Header files
+├── scripts/                     # Shell scripts
+│   ├── bench_matrices.sh       # Run speedup benchmarks
+│   ├── bench_cache.sh          # Run cache performance benchmarks
+│   ├── bench_configurations.sh # Compare OpenMP configs (23 variants)
+│   └── plot_results.sh         # Generate visualization plots
+├── pbs_jobs/                    # PBS job scripts
+│   └── *.pbs                   # Cluster job files
 ├── analyze_configurations.py    # Analyze configuration benchmark results
-├── test_config                  # OpenMP configuration comparison tool
-├── executable                   # Compiled program
-├── Makefile                     # Build configuration
-└── *.c, *.h                    # Source files
+├── test_config                  # OpenMP configuration comparison tool (compiled)
+├── executable                   # Main program (compiled)
+└── Makefile                     # Build configuration
 ```
 
 ## Quick Start
@@ -60,16 +67,16 @@ Output shows speedup, efficiency, standard deviation, and improvement percentage
 ### Run Full Benchmarks
 ```bash
 # Speedup benchmarks (all matrices, multiple thread counts)
-./bench_matrices.sh
+./scripts/bench_matrices.sh
 
 # Cache performance analysis
-./bench_cache.sh
+./scripts/bench_cache.sh
 
 # Configuration comparison across all matrices and thread counts
-./bench_configurations.sh
+./scripts/bench_configurations.sh
 
 # Generate plots from results
-./plot_results.sh
+./scripts/plot_results.sh
 ```
 
 ### Analyze Configuration Results

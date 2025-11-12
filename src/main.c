@@ -130,7 +130,7 @@ int main(int argc, char* argv[]) {
    //Print_vector("Vector: ", x, n);
 
    // Run multiple iterations to get average performance
-   int num_iterations = 166;
+   int num_iterations = 30;
    double *serial_times = malloc(num_iterations * sizeof(double));
    double *parallel_times = malloc(num_iterations * sizeof(double));
    

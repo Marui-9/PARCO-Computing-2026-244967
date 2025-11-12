@@ -56,7 +56,7 @@ make test
 ### Production Phase (Full Benchmarks)
 ```bash
 make executable
-./bench_matrices.sh                 # Run full benchmark suite
+./scripts/bench_matrices.sh                 # Run full benchmark suite
 ```
 
 ## Tips

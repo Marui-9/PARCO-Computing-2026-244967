@@ -18,22 +18,22 @@ glibc --version
 cd "$PBS_O_WORKDIR"
 
 # Compile the project
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c main.c -o main.o
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c generator.c -o generator.o
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c m_to_csr.c -o m_to_csr.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/main.c -o main.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/generator.c -o generator.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/m_to_csr.c -o m_to_csr.o
 gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -o executable main.o generator.o m_to_csr.o -lm
 
 # Compile test configurations
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c test_configurations.c -o test_configurations.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/test_configurations.c -o test_configurations.o
 gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -o test_config test_configurations.o generator.o m_to_csr.o -lm
 
 echo "=== Starting Cache Benchmark ==="
-bash bench_cache.sh
+bash scripts/bench_cache.sh
 
 echo "=== Starting Configurations Benchmark ==="
-bash bench_configurations.sh
+bash scripts/bench_configurations.sh
 
 echo "=== Starting Matrices Benchmark ==="
-bash bench_matrices.sh
+bash scripts/bench_matrices.sh
 
 echo "=== All benchmarks completed ==="

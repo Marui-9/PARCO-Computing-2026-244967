@@ -56,7 +56,7 @@ evaluation_numa/
 ### 1. Compile NUMA-aware executable
 
 ```bash
-gcc -O3 -Wall -Wextra -fopenmp -o test_config_numa test_configurations_numa.c generator.c m_to_csr.c -lm
+gcc -O3 -Wall -Wextra -fopenmp -o test_config_numa src/test_configurations_numa.c src/generator.c src/m_to_csr.c -lm
 ```
 
 ### 2. Run single test
@@ -68,14 +68,14 @@ gcc -O3 -Wall -Wextra -fopenmp -o test_config_numa test_configurations_numa.c ge
 ### 3. Run full benchmark suite locally
 
 ```bash
-chmod +x bench_configurations_numa.sh
-./bench_configurations_numa.sh
+chmod +x scripts/bench_configurations_numa.sh
+./scripts/bench_configurations_numa.sh
 ```
 
 ### 4. Submit to cluster
 
 ```bash
-qsub run_numa_bench.pbs
+qsub pbs_jobs/run_numa_bench.pbs
 ```
 
 ### 5. Analyze results
