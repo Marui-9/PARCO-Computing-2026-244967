@@ -74,7 +74,13 @@ int main(int argc, char* argv[]) {
    thread_count = atoi(argv[1]);
    //matrix file path
    char matrix_file[256];
-   snprintf(matrix_file, sizeof(matrix_file), "matrices/%s", argv[2]);
+   // If the path already contains a directory separator or starts with '.', use as-is
+   // Otherwise, prepend "matrices/" for backwards compatibility
+   if (strchr(argv[2], '/') != NULL || argv[2][0] == '.') {
+      snprintf(matrix_file, sizeof(matrix_file), "%s", argv[2]);
+   } else {
+      snprintf(matrix_file, sizeof(matrix_file), "matrices/%s", argv[2]);
+   }
    
    printf("Using %d threads and matrix file: %s\n", thread_count, matrix_file);
   // thread_handles = malloc(thread_count*sizeof(pthread_t));

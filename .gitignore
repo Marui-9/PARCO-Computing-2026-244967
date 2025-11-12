@@ -1,5 +1,9 @@
 
+
 # Core dumps and debug files
 vgcore.*
 core
 core.*
+
+# Large matrices directory (too large for git)
+matrices_large/
