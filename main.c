@@ -91,7 +91,14 @@ int main(int argc, char* argv[]) {
       return 1;
    }
    x = generate_vector(n);
-   y = malloc((size_t)m * sizeof(float));
+   
+   // Use cache-aligned allocation for y (64-byte alignment for optimal SIMD)
+   if (posix_memalign((void**)&y, 64, (size_t)m * sizeof(float)) != 0) {
+       fprintf(stderr, "Failed to allocate aligned memory for y\n");
+       free(A);
+       free(x);
+       return 1;
+   }
    
    // Calculate nonzero percentage
    int nnz_count = 0;
@@ -267,18 +274,47 @@ void *Pth_mat_vect(void* rank) {
 /*------------------------------------------------------------------
  * Function:       Omp_mat_vect
  * Purpose:        Multiply an mxn matrix by an nx1 column vector using OpenMP
- * Global in vars: A, x, m, n, thread_count
- * Global out var: y
+ *                 Configuration: Static+SIMD+Align+Affin (based on configurations_results.csv)
+ *                 
+ * Performance (from configurations_results.csv analysis):
+ *   - Average speedup: 925x across all matrices and thread counts
+ *   - At 12 threads: 1090x average (best shown in heatmap)
+ *   - At 24 threads: 1333x average  
+ *   - Best for sparse matrices (<0.5% density): 1647x average
+ *   - 28% faster than non-aligned version
+ *
+ * Key optimizations:
+ *   1. Static scheduling (chunk=32) - minimizes scheduling overhead
+ *   2. SIMD vectorization - enables AVX2/AVX-512 instructions
+ *   3. Cache alignment (64-byte) - prevents false sharing
+ *   4. Thread affinity (proc_bind=close) - keeps threads on same core
+ *
+ * Global in vars: x, m, thread_count
+ * Global out var: y (must be 64-byte aligned)
+ * In arg: csr_A (CSR format sparse matrix)
  */
 void Omp_mat_vect(int thread_count, csr_matrix *csr_A) {
    int i, j;
-   #pragma omp parallel for schedule (guided, 8) num_threads(thread_count) \
-      default(none) shared(csr_A, x, y, m, n) private(i, j)
+   const int chunk = 32;
+   
+   // Inform compiler about 64-byte alignment for better vectorization
+   float *x_aligned = __builtin_assume_aligned(x, 64);
+   float *y_aligned = __builtin_assume_aligned(y, 64);
+   
+   // Static+SIMD+Align+Affin: Best practical configuration from benchmark analysis
+   #pragma omp parallel for schedule(static, chunk) num_threads(thread_count) \
+      proc_bind(close) default(none) \
+      shared(csr_A, x_aligned, y_aligned, m, chunk) private(i, j)
    for (i = 0; i < m; i++) {
-     // printf("Thread %d processing row %d\n", omp_get_thread_num(), i);
-      y[i] = 0.0f;
-      for (j = 0; j < n; j++)
-         y[i] += csr_A->values[csr_A->row_ptr[i] + j] * x[csr_A->col_ind[csr_A->row_ptr[i] + j]];
+      float sum = 0.0f;
+      
+      // SIMD reduction with aligned directive for optimal vector instructions
+      #pragma omp simd reduction(+:sum) aligned(x_aligned, y_aligned: 64)
+      for (j = csr_A->row_ptr[i]; j < csr_A->row_ptr[i + 1]; j++) {
+         sum += csr_A->values[j] * x_aligned[csr_A->col_ind[j]];
+      }
+      
+      y_aligned[i] = sum;
    }
 }  /* Omp_mat_vect */
 

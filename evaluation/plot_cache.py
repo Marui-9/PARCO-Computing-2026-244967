@@ -202,10 +202,12 @@ else:
 
 plt.tight_layout()
 
-# Save the plot
-output_file = csv_file.replace('.csv', '_analysis.png')
+# Save the plot to figures directory
+os.makedirs('figures', exist_ok=True)
+base_name = os.path.basename(csv_file).replace('.csv', '_analysis.png')
+output_file = os.path.join('figures', base_name)
 plt.savefig(output_file, dpi=300, bbox_inches='tight')
-print(f"Plot saved to: {output_file}")
+print(f"✓ Plot saved to: {output_file}")
 
 # Print summary statistics
 print("\n=== Cache Misses Summary (Average across all threads) ===")

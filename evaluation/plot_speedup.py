@@ -13,7 +13,7 @@ import re
 import numpy as np
 
 # Read CSV file
-csv_file = sys.argv[1] if len(sys.argv) > 1 else 'results.csv'
+csv_file = sys.argv[1] if len(sys.argv) > 1 else 'matrices_results.csv'
 
 if not os.path.exists(csv_file):
     print(f"Error: {csv_file} not found")
@@ -119,6 +119,41 @@ ax3.legend(loc='best', fontsize=8, ncol=2)
 ax3.set_xticks(thread_counts)
 ax3.set_ylim(bottom=0, top=110)
 
+# ==================== PLOT 4: Speedup vs Matrix Density ====================
+# Calculate average speedup for each matrix across all thread counts
+matrix_avg_speedup = df.groupby('matrix_name').agg({
+    'speedup_x': 'mean',
+    'density_clean': 'first',
+    'matrix_size': 'first'
+}).sort_values('density_clean')
+
+# Create scatter plot
+scatter = ax4.scatter(matrix_avg_speedup['density_clean'], 
+                      matrix_avg_speedup['speedup_x'],
+                      s=200, alpha=0.7, c=np.log10(matrix_avg_speedup['matrix_size']),
+                      cmap='viridis', edgecolors='black', linewidth=1.5)
+
+# Add matrix labels
+for idx, row in matrix_avg_speedup.iterrows():
+    ax4.annotate(idx, (row['density_clean'], row['speedup_x']),
+                fontsize=8, ha='left', va='bottom',
+                xytext=(3, 3), textcoords='offset points')
+
+ax4.set_xlabel('Matrix Density (%)', fontsize=12, fontweight='bold')
+ax4.set_ylabel('Average Speedup (all threads)', fontsize=12, fontweight='bold')
+ax4.set_title('Speedup vs Matrix Density', fontsize=14, fontweight='bold')
+ax4.grid(True, alpha=0.3, linestyle='--')
+ax4.set_xscale('log')
+
+# Add colorbar for matrix size
+cbar = plt.colorbar(scatter, ax=ax4)
+cbar.set_label('log₁₀(Matrix Size)', fontsize=10, fontweight='bold')
+
+# Create figures directory and save
+os.makedirs('figures', exist_ok=True)
+output_file = 'figures/speedup_analysis.png'
+plt.savefig(output_file, dpi=300, bbox_inches='tight')
+print(f"\n✓ Plot saved to: {output_file}")
 
 # Print summary statistics
 print("\n=== Speedup Summary ===")
