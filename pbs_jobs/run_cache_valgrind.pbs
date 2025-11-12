@@ -1,0 +1,71 @@
+#!/bin/bash
+#PBS -N cache_valgrind
+#PBS -o ./cache_valgrind.out
+#PBS -e ./cache_valgrind.err
+#PBS -q short_cpuQ
+#PBS -l walltime=6:00:00
+#PBS -l select=1:ncpus=24:mem=10gb
+
+# Cache benchmarking with Valgrind Cachegrind
+# Note: Valgrind adds significant overhead, so this takes longer than perf-based benchmarks
+
+# Load modules
+module load gcc91
+gcc() { gcc-9.1.0 "$@"; }
+gcc --version
+module load glibc-2.32
+glibc() { glibc-2.32 "$@"; }
+glibc --version
+
+# Check if valgrind module exists, otherwise assume system valgrind
+if module avail valgrind 2>&1 | grep -q valgrind; then
+    module load valgrind
+fi
+
+# Verify valgrind is available
+which valgrind
+valgrind --version
+
+# Select the working directory
+cd "$PBS_O_WORKDIR"
+
+# Compile the project (if not already compiled)
+if [ ! -f executable ]; then
+    echo "Compiling executable..."
+    gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/main.c -o main.o
+    gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/generator.c -o generator.o
+    gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/m_to_csr.c -o m_to_csr.o
+    gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -o executable main.o generator.o m_to_csr.o -lm
+    echo "Compilation complete"
+else
+    echo "Using existing executable"
+fi
+
+echo "========================================"
+echo "Starting Cache Benchmark with Valgrind"
+echo "========================================"
+echo "Started at: $(date)"
+echo "Working directory: $(pwd)"
+echo "Available matrices:"
+ls -lh matrices/*.mtx
+echo ""
+
+# Run the valgrind cache benchmark
+bash scripts/bench_cache_valgrind.sh
+
+echo ""
+echo "========================================"
+echo "Cache Valgrind Benchmark Completed"
+echo "========================================"
+echo "Completed at: $(date)"
+echo "Results saved to: evaluation/cache_valgrind_results.csv"
+echo ""
+
+# Display results summary if file exists
+if [ -f evaluation/cache_valgrind_results.csv ]; then
+    echo "Total test runs:"
+    wc -l < evaluation/cache_valgrind_results.csv | awk '{print $1-1}'
+    echo ""
+    echo "First few results:"
+    head -5 evaluation/cache_valgrind_results.csv
+fi
