@@ -8,6 +8,11 @@
 
 # Load modules
 module load gcc91
+gcc() { gcc-9.1.0 "$@"; }
+gcc --version
+module load  glibc-2.32
+glibc() { glibc-2.32 "$@"; }
+glibc --version
 
 # Select the working directory
 cd "$PBS_O_WORKDIR"
