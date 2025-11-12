@@ -43,14 +43,14 @@ echo ""
 
 # Check for matrices
 echo "Checking matrix directories..."
-if [ -d "matrices_large" ]; then
-    count=$(find matrices_large -name "*.mtx" -type f 2>/dev/null | wc -l)
-    echo "✓ matrices_large/ exists ($count .mtx files found)"
+if [ -d "matrices" ]; then
+    count=$(find matrices -name "*.mtx" -type f 2>/dev/null | wc -l)
+    echo "✓ matrices/ exists ($count .mtx files found)"
     if [ "$count" -eq 0 ]; then
-        echo "  ⚠️  No .mtx files found - add large matrices to matrices_large/"
+        echo "  ⚠️  No .mtx files found - add matrices to matrices/"
     fi
 else
-    echo "✗ matrices_large/ - MISSING"
+    echo "✗ matrices/ - MISSING"
     all_found=false
 fi
 
@@ -82,8 +82,8 @@ if [ "$all_found" = true ]; then
     echo "✓ All required files present"
     echo ""
     echo "Next steps:"
-    echo "1. Add .mtx files to matrices_large/ directory"
-    echo "2. Submit job: qsub run_numa_bench.pbs"
+    echo "1. Add .mtx files to matrices/ directory (if needed)"
+    echo "2. Submit job: qsub pbs_jobs/run_numa_bench.pbs"
     echo "3. Monitor: tail -f numa_bench.out"
     echo "4. Analyze: python3 evaluation_numa/analyze_configurations_numa.py"
 else

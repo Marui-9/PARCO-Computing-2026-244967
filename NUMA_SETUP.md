@@ -8,7 +8,6 @@ Created NUMA-aware benchmarking infrastructure for testing SpMV performance on h
 
 ### New Directories
 - `evaluation_numa/` - NUMA benchmark results and analysis
-- `matrices_large/` - Placeholder for large test matrices
 
 ### New Code Files
 - `test_configurations_numa.c` - NUMA-optimized SpMV with:
@@ -42,7 +41,7 @@ Created NUMA-aware benchmarking infrastructure for testing SpMV performance on h
 | Thread counts | 1-24 | 24-96 |
 | Iterations | 50 | 30 |
 | Timeout | 300s | 600s |
-| Matrix dir | `matrices/` | `matrices_large/` |
+| Matrix dir | `matrices/` | `matrices/` |
 | Binding policies | close only | close/spread/master |
 | First-touch | No | Yes |
 | CPUs requested | 24 | 96 |
@@ -64,8 +63,8 @@ Created NUMA-aware benchmarking infrastructure for testing SpMV performance on h
 
 ## Quick Start
 
-### 1. Add Large Matrices
-Place `.mtx` files in `matrices_large/` directory
+### 1. Matrices Available
+Matrix files in `matrices/` directory will be used
 
 ### 2. Test Locally (Optional)
 ```bash
@@ -150,8 +149,7 @@ evaluation_numa/configurations_numa_results.csv (threads=24)
 
 ```
 PARCO-Computing-2026-244967/
-├── matrices/                          # Small/medium matrices (existing)
-├── matrices_large/                    # Large matrices (NEW - add your files)
+├── matrices/                          # Test matrices (used by all benchmarks)
 ├── evaluation/                        # Single-node results (existing)
 │   ├── configurations_results.csv
 │   └── analyze_configurations.py
@@ -189,4 +187,5 @@ PARCO-Computing-2026-244967/
 
 ---
 
-**Status**: Setup complete, ready to run benchmarks once large matrices are added to `matrices_large/` directory.
+**Status**: Setup complete, ready to run NUMA benchmarks using matrices from `matrices/` directory.
+

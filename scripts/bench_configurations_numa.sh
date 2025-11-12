@@ -13,12 +13,11 @@ ITERATIONS=30      # Reduced iterations for large matrices
 # Thread counts: 24-48 (increment 4), 48-96 (increment 6)
 THREAD_COUNTS="24 28 32 36 40 44 48 54 60 66 72 78 84 90 96"
 
-# Automatically find all .mtx files in matrices_large/ directory
-MATRICES_DIR="matrices_large"
+# Automatically find all .mtx files in matrices/ directory
+MATRICES_DIR="matrices"
 if [ ! -d "$MATRICES_DIR" ]; then
-  echo "ERROR: matrices_large directory '$MATRICES_DIR' not found." >&2
-  echo "Trying matrices/ directory as fallback..." >&2
-  MATRICES_DIR="matrices"
+  echo "ERROR: matrices directory '$MATRICES_DIR' not found." >&2
+  exit 1
 fi
 
 # Build array of all .mtx files

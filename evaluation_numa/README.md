@@ -23,8 +23,8 @@ evaluation_numa/
 
 - **bench_configurations_numa.sh** - Benchmark script:
   - Thread counts: 24, 28, 32, 36, 40, 44, 48, 54, 60, 66, 72, 78, 84, 90, 96
-  - Uses `matrices_large/` directory
-  - 30 iterations per configuration (reduced from 50 for large matrices)
+  - Uses `matrices/` directory
+  - 30 iterations per configuration
   - 600-second timeout per run
 
 - **run_numa_bench.pbs** - PBS job submission script:
