@@ -13,9 +13,6 @@
 module load gcc91
 gcc() { gcc-9.1.0 "$@"; }
 gcc --version
-module load glibc-2.32
-glibc() { glibc-2.32 "$@"; }
-glibc --version
 
 # Check if valgrind module exists, otherwise assume system valgrind
 if module avail valgrind 2>&1 | grep -q valgrind; then
