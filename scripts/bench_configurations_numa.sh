@@ -13,10 +13,17 @@ ITERATIONS=30      # Reduced iterations for large matrices
 # Thread counts: 24-48 (increment 4), 48-96 (increment 6)
 THREAD_COUNTS="24 28 32 36 40 44 48 54 60 66 72 78 84 90 96"
 
-# Automatically find all .mtx files in matrices/ directory
-MATRICES_DIR="matrices"
+# Use matrices_large/ for NUMA benchmarks (direct CSR import, no dense allocation)
+MATRICES_DIR="matrices_large"
+
+# Fall back to matrices/ if matrices_large/ doesn't exist
 if [ ! -d "$MATRICES_DIR" ]; then
-  echo "ERROR: matrices directory '$MATRICES_DIR' not found." >&2
+  echo "INFO: matrices_large/ not found, falling back to matrices/" >&2
+  MATRICES_DIR="matrices"
+fi
+
+if [ ! -d "$MATRICES_DIR" ]; then
+  echo "ERROR: Neither matrices_large/ nor matrices/ directory found." >&2
   exit 1
 fi
 
@@ -36,7 +43,7 @@ echo "Found ${#MATRICES[@]} matrix files in '$MATRICES_DIR'"
 # Quick checks
 if [ ! -f "$EXE" ]; then
   echo "ERROR: executable not found at '$EXE'. Compile with:" >&2
-  echo "  gcc -O3 -Wall -Wextra -fopenmp -o test_config_numa src/test_configurations_numa.c src/generator.c src/m_to_csr.c -lm" >&2
+  echo "  gcc -O3 -Wall -Wextra -march=native -fopenmp -o test_config_numa src/test_configurations_numa.c src/generator.c src/m_to_csr.c -lm" >&2
   exit 2
 fi
 if [ ! -x "$EXE" ]; then

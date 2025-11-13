@@ -19,6 +19,13 @@ int matrix_to_csr(
     int cols,
     csr_matrix **out_csr
 );
+
+/* NEW: Direct CSR import from Matrix Market file */
+int import_matrix_to_csr(
+    const char *filename,
+    csr_matrix **out_csr
+);
+
 void print_csr(csr_matrix *csr);
 void csr_free(csr_matrix *A);
 #endif

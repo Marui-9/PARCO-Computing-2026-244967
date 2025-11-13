@@ -30,7 +30,6 @@
 
 /* Global variables */
 int m, n;
-float* A;
 float* x;
 float* y;
 
@@ -94,27 +93,41 @@ int main(int argc, char* argv[]) {
     printf("Using 90th percentile averaging\n");
     printf("NUMA nodes: 4 (assumed 24 cores each)\n\n");
 
-    // Load matrix
-    A = import_matrix(matrix_file, &m, &n);
-    if (!A) {
+    // Load matrix DIRECTLY to CSR (avoid huge dense allocation)
+    printf("Loading matrix directly to CSR format (skipping dense allocation)...\n");
+    csr_matrix *csr_A = NULL;
+    int result = import_matrix_to_csr(matrix_file, &csr_A);
+    
+    if (result != 0) {
         fprintf(stderr, "Failed to import matrix from %s\n", matrix_file);
         fprintf(stderr, "Trying matrices/ directory...\n");
         snprintf(matrix_file, sizeof(matrix_file), "matrices/%s", argv[2]);
-        A = import_matrix(matrix_file, &m, &n);
-        if (!A) {
-            fprintf(stderr, "Failed to import matrix\n");
+        result = import_matrix_to_csr(matrix_file, &csr_A);
+        if (result != 0) {
+            fprintf(stderr, "Failed to import matrix from both directories\n");
             return 1;
         }
     }
     
+    m = csr_A->rows;
+    n = csr_A->cols;
+    
+    printf("\nMatrix loaded: %d × %d, %d NNZ (%.4f%% density)\n\n", 
+           m, n, csr_A->nnz, (csr_A->nnz / (double)(m * n)) * 100.0);
+    
     // Use aligned vector allocation for better cache performance
     x = generate_vector_aligned(n);
+    if (!x) {
+        fprintf(stderr, "Failed to allocate vector x\n");
+        csr_free(csr_A);
+        return 1;
+    }
     
     // Allocate y with cache line alignment (64 bytes) for better performance
     if (posix_memalign((void**)&y, 64, (size_t)m * sizeof(float)) != 0) {
         fprintf(stderr, "Failed to allocate aligned memory for y\n");
-        free(A);
         free(x);
+        csr_free(csr_A);
         return 1;
     }
     
@@ -122,45 +135,10 @@ int main(int argc, char* argv[]) {
     printf("Performing first-touch initialization...\n");
     first_touch_init(thread_count);
     
-    // Calculate matrix statistics
-    int nnz_count = 0;
-    size_t total_size = (size_t)m * (size_t)n;
-    for (size_t i = 0; i < total_size; i++) {
-        if (A[i] != 0.0f) nnz_count++;
-    }
-    double nnz_percentage = (nnz_count / (double)total_size) * 100.0;
-    
-    printf("Matrix: %d × %d, %.4f%% non-zero, %d NNZ\n\n", 
-           m, n, nnz_percentage, nnz_count);
-
-    // Convert to CSR
-    csr_matrix *csr_A;
-    if (matrix_to_csr(A, m, n, &csr_A) != 0) {
-        fprintf(stderr, "CSR conversion failed\n");
-        free(A);
-        return 1;
-    }
-
-    // Measure serial baseline
-    printf("Measuring serial baseline...\n");
-    double *serial_times = malloc(num_iterations * sizeof(double));
-    for (int iter = 0; iter < num_iterations; iter++) {
-        double start = omp_get_wtime();
-        serial_mat_vect(A, x, y, m, n);
-        serial_times[iter] = omp_get_wtime() - start;
-    }
-    qsort(serial_times, num_iterations, sizeof(double), compare_doubles);
-    int percentile_count = (int)(num_iterations * 0.9);
-    if (percentile_count == 0) percentile_count = 1;
-    
-    double baseline_time = 0.0;
-    for (int i = 0; i < percentile_count; i++) {
-        baseline_time += serial_times[i];
-    }
-    baseline_time /= percentile_count;
-    free(serial_times);
-    
-    printf("Serial baseline: %.6f ms\n\n", baseline_time * 1000);
+    // Note: We skip serial baseline for large matrices since we don't have dense A
+    // We'll use the slowest parallel config as baseline instead
+    printf("Note: Serial baseline skipped for large matrices (no dense format)\n");
+    printf("      Using slowest configuration as baseline instead\n\n");
 
     // Define NUMA-aware configurations to test
     Configuration configs[20];
@@ -250,11 +228,18 @@ int main(int argc, char* argv[]) {
     run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_static_simd_affinity_spread, 32, num_iterations);
     num_configs++;
 
+    // Find slowest config to use as baseline (since we don't have serial baseline for large matrices)
+    double baseline_time = configs[0].avg_time;
+    for (int i = 1; i < num_configs; i++) {
+        if (configs[i].avg_time > baseline_time) {
+            baseline_time = configs[i].avg_time;
+        }
+    }
+
     // Print results
     print_comparison_table(configs, num_configs, baseline_time, thread_count);
 
     // Cleanup
-    free(A);
     free(x);
     free(y);
     csr_free(csr_A);
