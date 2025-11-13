@@ -116,10 +116,11 @@ for mtx in "${MATRICES[@]}"; do
     fi
 
     # Extract matrix info from output
-    ROWS=$(grep "Matrix:" "$tmpout" | awk '{print $2}' | head -1)
-    COLS=$(grep "Matrix:" "$tmpout" | awk '{print $4}' | tr -d ',' | head -1)
-    DENSITY=$(grep "Matrix:" "$tmpout" | awk '{print $5}' | tr -d '%' | head -1)
-    NNZ=$(grep "Matrix:" "$tmpout" | awk '{print $8}' | head -1)
+    # Format: "Matrix loaded: 10000 × 10000, 150000 NNZ (1.5000% density)"
+    ROWS=$(grep "Matrix loaded:" "$tmpout" | awk '{print $3}' | head -1)
+    COLS=$(grep "Matrix loaded:" "$tmpout" | awk '{print $5}' | tr -d ',' | head -1)
+    NNZ=$(grep "Matrix loaded:" "$tmpout" | awk '{print $6}' | head -1)
+    DENSITY=$(grep "Matrix loaded:" "$tmpout" | awk -F'[()]' '{print $2}' | awk '{print $1}' | tr -d '%' | head -1)
 
     if [ -z "$ROWS" ]; then ROWS="NA"; fi
     if [ -z "$COLS" ]; then COLS="NA"; fi
