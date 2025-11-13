@@ -291,7 +291,7 @@ void mat_vect_static_simd_close(int thread_count, csr_matrix *csr_A, int chunk) 
     float *y_aligned = __builtin_assume_aligned(y, 64);
     
     #pragma omp parallel for schedule(static, chunk) num_threads(thread_count) \
-        proc_bind(close) default(none) shared(csr_A, x_aligned, y_aligned, m)
+        proc_bind(close) default(none) shared(csr_A, x_aligned, y_aligned, m, chunk)
     for (int i = 0; i < m; i++) {
         float sum = 0.0f;
         #pragma omp simd reduction(+:sum) aligned(x_aligned, y_aligned: 64)
@@ -308,7 +308,7 @@ void mat_vect_static_simd_spread(int thread_count, csr_matrix *csr_A, int chunk)
     float *y_aligned = __builtin_assume_aligned(y, 64);
     
     #pragma omp parallel for schedule(static, chunk) num_threads(thread_count) \
-        proc_bind(spread) default(none) shared(csr_A, x_aligned, y_aligned, m)
+        proc_bind(spread) default(none) shared(csr_A, x_aligned, y_aligned, m, chunk)
     for (int i = 0; i < m; i++) {
         float sum = 0.0f;
         #pragma omp simd reduction(+:sum) aligned(x_aligned, y_aligned: 64)
@@ -325,7 +325,7 @@ void mat_vect_static_simd_master(int thread_count, csr_matrix *csr_A, int chunk)
     float *y_aligned = __builtin_assume_aligned(y, 64);
     
     #pragma omp parallel for schedule(static, chunk) num_threads(thread_count) \
-        proc_bind(master) default(none) shared(csr_A, x_aligned, y_aligned, m)
+        proc_bind(master) default(none) shared(csr_A, x_aligned, y_aligned, m, chunk)
     for (int i = 0; i < m; i++) {
         float sum = 0.0f;
         #pragma omp simd reduction(+:sum) aligned(x_aligned, y_aligned: 64)
@@ -342,7 +342,7 @@ void mat_vect_dynamic_simd_spread(int thread_count, csr_matrix *csr_A, int chunk
     float *y_aligned = __builtin_assume_aligned(y, 64);
     
     #pragma omp parallel for schedule(dynamic, chunk) num_threads(thread_count) \
-        proc_bind(spread) default(none) shared(csr_A, x_aligned, y_aligned, m)
+        proc_bind(spread) default(none) shared(csr_A, x_aligned, y_aligned, m, chunk)
     for (int i = 0; i < m; i++) {
         float sum = 0.0f;
         #pragma omp simd reduction(+:sum) aligned(x_aligned, y_aligned: 64)
@@ -359,7 +359,7 @@ void mat_vect_guided_simd_spread(int thread_count, csr_matrix *csr_A, int chunk)
     float *y_aligned = __builtin_assume_aligned(y, 64);
     
     #pragma omp parallel for schedule(guided, chunk) num_threads(thread_count) \
-        proc_bind(spread) default(none) shared(csr_A, x_aligned, y_aligned, m)
+        proc_bind(spread) default(none) shared(csr_A, x_aligned, y_aligned, m, chunk)
     for (int i = 0; i < m; i++) {
         float sum = 0.0f;
         #pragma omp simd reduction(+:sum) aligned(x_aligned, y_aligned: 64)
@@ -376,7 +376,7 @@ void mat_vect_static_simd_register_close(int thread_count, csr_matrix *csr_A, in
     float *y_aligned = __builtin_assume_aligned(y, 64);
     
     #pragma omp parallel for schedule(static, chunk) num_threads(thread_count) \
-        proc_bind(close) default(none) shared(csr_A, x_aligned, y_aligned, m)
+        proc_bind(close) default(none) shared(csr_A, x_aligned, y_aligned, m, chunk)
     for (int i = 0; i < m; i++) {
         register float sum = 0.0f;
         #pragma omp simd reduction(+:sum) aligned(x_aligned, y_aligned: 64)
@@ -393,7 +393,7 @@ void mat_vect_static_simd_register_spread(int thread_count, csr_matrix *csr_A, i
     float *y_aligned = __builtin_assume_aligned(y, 64);
     
     #pragma omp parallel for schedule(static, chunk) num_threads(thread_count) \
-        proc_bind(spread) default(none) shared(csr_A, x_aligned, y_aligned, m)
+        proc_bind(spread) default(none) shared(csr_A, x_aligned, y_aligned, m, chunk)
     for (int i = 0; i < m; i++) {
         register float sum = 0.0f;
         #pragma omp simd reduction(+:sum) aligned(x_aligned, y_aligned: 64)
@@ -411,7 +411,7 @@ void mat_vect_static_simd_affinity_close(int thread_count, csr_matrix *csr_A, in
     float *vals_aligned = __builtin_assume_aligned(csr_A->values, 64);
     
     #pragma omp parallel for schedule(static, chunk) num_threads(thread_count) \
-        proc_bind(close) default(none) shared(csr_A, x_aligned, y_aligned, vals_aligned, m)
+        proc_bind(close) default(none) shared(csr_A, x_aligned, y_aligned, vals_aligned, m, chunk)
     for (int i = 0; i < m; i++) {
         float sum = 0.0f;
         #pragma omp simd reduction(+:sum) aligned(x_aligned, y_aligned, vals_aligned: 64)
@@ -429,7 +429,7 @@ void mat_vect_static_simd_affinity_spread(int thread_count, csr_matrix *csr_A, i
     float *vals_aligned = __builtin_assume_aligned(csr_A->values, 64);
     
     #pragma omp parallel for schedule(static, chunk) num_threads(thread_count) \
-        proc_bind(spread) default(none) shared(csr_A, x_aligned, y_aligned, vals_aligned, m)
+        proc_bind(spread) default(none) shared(csr_A, x_aligned, y_aligned, vals_aligned, m, chunk)
     for (int i = 0; i < m; i++) {
         float sum = 0.0f;
         #pragma omp simd reduction(+:sum) aligned(x_aligned, y_aligned, vals_aligned: 64)
