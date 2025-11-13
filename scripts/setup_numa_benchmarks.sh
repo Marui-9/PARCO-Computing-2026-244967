@@ -10,8 +10,8 @@ echo ""
 
 # Make scripts executable
 echo "Making scripts executable..."
-chmod +x bench_configurations_numa.sh
-chmod +x evaluation_numa/analyze_configurations_numa.py
+chmod +x scripts/bench_configurations_numa.sh 2>/dev/null || true
+chmod +x evaluation_numa/analyze_configurations_numa.py 2>/dev/null || true
 
 echo "✓ Scripts are executable"
 echo ""
@@ -43,14 +43,21 @@ echo ""
 
 # Check for matrices
 echo "Checking matrix directories..."
-if [ -d "matrices" ]; then
+if [ -d "matrices_large" ]; then
+    count=$(find matrices_large -name "*.mtx" -type f 2>/dev/null | wc -l)
+    echo "✓ matrices_large/ exists ($count .mtx files found)"
+    if [ "$count" -eq 0 ]; then
+        echo "  ⚠️  No .mtx files found - add large matrices to matrices_large/"
+    fi
+elif [ -d "matrices" ]; then
     count=$(find matrices -name "*.mtx" -type f 2>/dev/null | wc -l)
     echo "✓ matrices/ exists ($count .mtx files found)"
+    echo "  ℹ️  Using matrices/ (matrices_large/ not found)"
     if [ "$count" -eq 0 ]; then
         echo "  ⚠️  No .mtx files found - add matrices to matrices/"
     fi
 else
-    echo "✗ matrices/ - MISSING"
+    echo "✗ Neither matrices_large/ nor matrices/ - MISSING"
     all_found=false
 fi
 
@@ -82,7 +89,9 @@ if [ "$all_found" = true ]; then
     echo "✓ All required files present"
     echo ""
     echo "Next steps:"
-    echo "1. Add .mtx files to matrices/ directory (if needed)"
+    echo "1. Add large .mtx files to matrices_large/ directory (or use matrices/)"
+    echo "   - For matrices > 10k rows, use matrices_large/ for direct CSR import"
+    echo "   - Smaller matrices can use regular matrices/ folder"
     echo "2. Submit job: qsub pbs_jobs/run_numa_bench.pbs"
     echo "3. Monitor: tail -f numa_bench.out"
     echo "4. Analyze: python3 evaluation_numa/analyze_configurations_numa.py"

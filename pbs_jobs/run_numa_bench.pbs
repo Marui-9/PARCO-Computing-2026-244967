@@ -38,10 +38,10 @@ fi
 
 # Compile the NUMA-aware executable
 echo "Compiling NUMA-aware test_config_numa..."
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/test_configurations_numa.c -o test_configurations_numa.o
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/generator.c -o generator.o
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/m_to_csr.c -o m_to_csr.o
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -o test_config_numa test_configurations_numa.o generator.o m_to_csr.o -lm
+gcc-9.1.0 -O3 -Wall -Wextra -march=native -fopenmp -c src/test_configurations_numa.c -o test_configurations_numa.o
+gcc-9.1.0 -O3 -Wall -Wextra -march=native -fopenmp -c src/generator.c -o generator.o
+gcc-9.1.0 -O3 -Wall -Wextra -march=native -fopenmp -c src/m_to_csr.c -o m_to_csr.o
+gcc-9.1.0 -O3 -Wall -Wextra -march=native -fopenmp -o test_config_numa test_configurations_numa.o generator.o m_to_csr.o -lm
 
 if [ $? -ne 0 ]; then
     echo "ERROR: Compilation failed"
