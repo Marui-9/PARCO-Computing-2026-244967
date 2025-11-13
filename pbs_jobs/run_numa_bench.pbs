@@ -3,8 +3,8 @@
 #PBS -o ./numa_bench.out
 #PBS -e ./numa_bench.err
 #PBS -q short_cpuQ
-#PBS -l walltime=12:00:00
-#PBS -l select=1:ncpus=96:mem=32gb
+#PBS -l walltime=6:00:00
+#PBS -l select=4:ncpus=24:mem=32gb
 
 # Load modules
 module load gcc91
@@ -34,9 +34,9 @@ fi
 
 # Compile the NUMA-aware executable
 echo "Compiling NUMA-aware test_config_numa..."
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c test_configurations_numa.c -o test_configurations_numa.o
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c generator.c -o generator.o
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c m_to_csr.c -o m_to_csr.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/test_configurations_numa.c -o test_configurations_numa.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/generator.c -o generator.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/m_to_csr.c -o m_to_csr.o
 gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -o test_config_numa test_configurations_numa.o generator.o m_to_csr.o -lm
 
 if [ $? -ne 0 ]; then
