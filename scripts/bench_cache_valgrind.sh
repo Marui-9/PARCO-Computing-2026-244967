@@ -36,13 +36,16 @@ echo "Output file: $OUTPUT_CSV"
 echo "WARNING: Valgrind adds significant overhead. This will take longer than perf."
 echo ""
 
-# Find all .mtx files in matrices/ directory
-MATRIX_FILES=$(find matrices/ -name "*.mtx" -type f | sort)
+# Find all .mtx files in matrices/ directory, excluding those with two-digit numbers before 'k'
+# This excludes patterns like 10k_, 11k_, 15k_, etc. to reduce runtime
+MATRIX_FILES=$(find matrices/ -name "*.mtx" -type f | grep -v '/[0-9][0-9]k_' | sort)
 
 if [ -z "$MATRIX_FILES" ]; then
-    echo "Error: No .mtx files found in matrices/ directory"
+    echo "Error: No .mtx files found in matrices/ directory (after filtering)"
     exit 1
 fi
+
+echo "Excluded matrices with two-digit prefixes (e.g., 10k_, 11k_, 15k_) to fit within walltime"
 
 TOTAL_COUNT=0
 for mtx in $MATRIX_FILES; do
