@@ -1,0 +1,131 @@
+gcc-9.1.0 (GCC) 9.1.0
+Copyright (C) 2019 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+Valgrind version:
+/apps/valgrind-3.15.0/bin/valgrind
+valgrind-3.15.0
+Starting directory: /home/jacopo.marchesin
+Changed to project directory: /home/jacopo.marchesin/PARCO-Computing-2026-244967
+Project root: /home/jacopo.marchesin/PARCO-Computing-2026-244967
+Cleaning old build artifacts...
+Compiling executable...
+Compilation complete
+-rwxr-xr-x 1 jacopo.marchesin ADA-9393 23K Nov 14 18:26 executable
+Executable verified and permissions set
+========================================
+Starting Cache Benchmark with Valgrind
+========================================
+Started at: Fri Nov 14 18:26:57 CET 2025
+Working directory: /home/jacopo.marchesin/PARCO-Computing-2026-244967
+Available matrices:
+-rw-r--r-- 1 jacopo.marchesin ADA-9393  21M Nov 11 14:58 matrices/10k_1p5.mtx
+-rw-r--r-- 1 jacopo.marchesin ADA-9393 5.4M Nov 11 14:58 matrices/11k_0p35.mtx
+-rw-r--r-- 1 jacopo.marchesin ADA-9393  12M Nov 11 14:58 matrices/11k_0p38.mtx
+-rw-r--r-- 1 jacopo.marchesin ADA-9393 9.9M Nov 11 14:58 matrices/15k_0p41.mtx
+-rw-r--r-- 1 jacopo.marchesin ADA-9393  33K Nov 11 14:58 matrices/2k_0p22.mtx
+-rw-r--r-- 1 jacopo.marchesin ADA-9393 284K Nov 11 14:58 matrices/2k_0p52.mtx
+-rw-r--r-- 1 jacopo.marchesin ADA-9393  37M Nov 11 14:58 matrices/5k_9p37.mtx
+-rw-r--r-- 1 jacopo.marchesin ADA-9393  23M Nov 11 14:58 matrices/6k_6p3.mtx
+-rw-r--r-- 1 jacopo.marchesin ADA-9393 2.9M Nov 11 14:58 matrices/9k_0p77.mtx
+
+=== Cache Performance Benchmarking with Valgrind Cachegrind ===
+Output file: results/cache_valgrind_results.csv
+WARNING: Valgrind adds significant overhead. This will take longer than perf.
+
+Excluded matrices with two-digit prefixes (e.g., 10k_, 11k_, 15k_) to fit within walltime
+Matrix: 2k_0p22.mtx
+  [1/30] Testing with 1 threads... OK (D1 miss: NA%, LL miss: NA%, Branch miss: NA%)
+  [2/30] Testing with 4 threads... OK (D1 miss: NA%, LL miss: NA%, Branch miss: NA%)
+  [3/30] Testing with 8 threads... OK (D1 miss: NA%, LL miss: NA%, Branch miss: NA%)
+  [4/30] Testing with 12 threads... OK (D1 miss: NA%, LL miss: NA%, Branch miss: NA%)
+  [5/30] Testing with 16 threads... OK (D1 miss: NA%, LL miss: NA%, Branch miss: NA%)
+  [6/30] Testing with 24 threads... OK (D1 miss: NA%, LL miss: NA%, Branch miss: NA%)
+
+Matrix: 2k_0p52.mtx
+  [7/30] Testing with 1 threads... OK (D1 miss: NA%, LL miss: NA%, Branch miss: NA%)
+  [8/30] Testing with 4 threads... OK (D1 miss: NA%, LL miss: NA%, Branch miss: NA%)
+  [9/30] Testing with 8 threads... OK (D1 miss: NA%, LL miss: NA%, Branch miss: NA%)
+  [10/30] Testing with 12 threads... OK (D1 miss: NA%, LL miss: NA%, Branch miss: NA%)
+  [11/30] Testing with 16 threads... OK (D1 miss: NA%, LL miss: NA%, Branch miss: NA%)
+  [12/30] Testing with 24 threads... OK (D1 miss: NA%, LL miss: NA%, Branch miss: NA%)
+
+Matrix: 5k_9p37.mtx
+  [13/30] Testing with 1 threads... OK (D1 miss: NA%, LL miss: NA%, Branch miss: NA%)
+  [14/30] Testing with 4 threads... OK (D1 miss: NA%, LL miss: NA%, Branch miss: NA%)
+  [15/30] Testing with 8 threads... OK (D1 miss: NA%, LL miss: NA%, Branch miss: NA%)
+  [16/30] Testing with 12 threads... ERROR (exit code: 127)
+    STDERR:
+      valgrind: ./executable: No such file or directory
+  [17/30] Testing with 16 threads... ERROR (exit code: 127)
+    STDERR:
+      valgrind: ./executable: No such file or directory
+  [18/30] Testing with 24 threads... ERROR (exit code: 127)
+    STDERR:
+      valgrind: ./executable: No such file or directory
+
+Matrix: 6k_6p3.mtx
+  [19/30] Testing with 1 threads... ERROR (exit code: 127)
+    STDERR:
+      valgrind: ./executable: No such file or directory
+  [20/30] Testing with 4 threads... ERROR (exit code: 127)
+    STDERR:
+      valgrind: ./executable: No such file or directory
+  [21/30] Testing with 8 threads... ERROR (exit code: 127)
+    STDERR:
+      valgrind: ./executable: No such file or directory
+  [22/30] Testing with 12 threads... ERROR (exit code: 127)
+    STDERR:
+      valgrind: ./executable: No such file or directory
+  [23/30] Testing with 16 threads... ERROR (exit code: 127)
+    STDERR:
+      valgrind: ./executable: No such file or directory
+  [24/30] Testing with 24 threads... ERROR (exit code: 127)
+    STDERR:
+      valgrind: ./executable: No such file or directory
+
+Matrix: 9k_0p77.mtx
+  [25/30] Testing with 1 threads... ERROR (exit code: 127)
+    STDERR:
+      valgrind: ./executable: No such file or directory
+  [26/30] Testing with 4 threads... ERROR (exit code: 127)
+    STDERR:
+      valgrind: ./executable: No such file or directory
+  [27/30] Testing with 8 threads... ERROR (exit code: 127)
+    STDERR:
+      valgrind: ./executable: No such file or directory
+  [28/30] Testing with 12 threads... ERROR (exit code: 127)
+    STDERR:
+      valgrind: ./executable: No such file or directory
+  [29/30] Testing with 16 threads... ERROR (exit code: 127)
+    STDERR:
+      valgrind: ./executable: No such file or directory
+  [30/30] Testing with 24 threads... ERROR (exit code: 127)
+    STDERR:
+      valgrind: ./executable: No such file or directory
+
+=== Benchmarking Complete ===
+Results saved to: results/cache_valgrind_results.csv
+
+Summary:
+30 test runs completed
+
+Note: Valgrind provides more detailed cache simulation than perf,
+including instruction cache, data cache, and last-level cache statistics.
+
+========================================
+Cache Valgrind Benchmark Completed
+========================================
+Completed at: Fri Nov 14 18:31:58 CET 2025
+Results saved to: results/cache_valgrind_results.csv
+
+Total test runs:
+30
+
+First few results:
+matrix,rows,cols,density_pct,threads,i_refs,i1_misses,i1_miss_rate,d_refs,d1_misses,d1_miss_rate,d1_writes,d1_write_misses,ll_refs,ll_misses,ll_miss_rate,branches,branch_misses,branch_miss_rate,exit_code,notes
+"2k_0p22.mtx",1624,×,"0.23%",1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,0,"success"
+"2k_0p22.mtx",1624,×,"0.23%",4,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,0,"success"
+"2k_0p22.mtx",1624,×,"0.23%",8,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,0,"success"
+"2k_0p22.mtx",1624,×,"0.23%",12,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,0,"success"

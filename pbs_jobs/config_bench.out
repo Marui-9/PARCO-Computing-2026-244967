@@ -1,0 +1,304 @@
+Starting directory: /home/jacopo.marchesin
+Changed to project directory: /home/jacopo.marchesin/PARCO-Computing-2026-244967
+Project root: /home/jacopo.marchesin/PARCO-Computing-2026-244967
+Cleaning old build artifacts...
+Compiling test configurations executable...
+=== Starting Configurations Benchmark ===
+Found 9 matrix files in 'matrices'
+Starting configuration benchmark. EXE=./test_config. Timeout per run=900s
+Iterations per config: 30
+Thread counts: 1 2 4 8 12 16 18 20 22 24
+
+=== Matrix: matrices/10k_1p5.mtx ===
+  threads=1
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=2
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=4
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=8
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=12
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=16
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=18
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=20
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=22
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=24
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+
+=== Matrix: matrices/11k_0p35.mtx ===
+  threads=1
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=2
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=4
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=8
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=12
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=16
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=18
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=20
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=22
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=24
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+
+=== Matrix: matrices/11k_0p38.mtx ===
+  threads=1
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=2
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=4
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=8
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=12
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=16
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=18
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=20
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=22
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=24
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+
+=== Matrix: matrices/15k_0p41.mtx ===
+  threads=1
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=2
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=4
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=8
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=12
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=16
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=18
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=20
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=22
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=24
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+
+=== Matrix: matrices/2k_0p22.mtx ===
+  threads=1
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=2
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=4
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=8
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=12
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=16
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=18
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=20
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=22
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=24
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+
+=== Matrix: matrices/2k_0p52.mtx ===
+  threads=1
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=2
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=4
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=8
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=12
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=16
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=18
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=20
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=22
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=24
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+
+=== Matrix: matrices/5k_9p37.mtx ===
+  threads=1
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=2
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=4
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=8
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=12
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=16
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=18
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=20
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=22
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=24
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+
+=== Matrix: matrices/6k_6p3.mtx ===
+  threads=1
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=2
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=4
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=8
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=12
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=16
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=18
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=20
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=22
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=24
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+
+=== Matrix: matrices/9k_0p77.mtx ===
+  threads=1
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=2
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=4
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=8
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=12
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=16
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=18
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=20
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=22
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+  threads=24
+    Output: 84 lines, exit code: 0
+    Parsed 30 configurations
+
+=== Benchmark Complete ===
+Results written to: results/configurations_results.csv
+Log written to: results/configurations_results.txt
+2701 results/configurations_results.csv
+=== Configurations benchmark completed ===

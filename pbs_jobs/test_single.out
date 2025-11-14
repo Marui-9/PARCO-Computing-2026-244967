@@ -1,0 +1,6 @@
+Working directory: /home/jacopo.marchesin/PARCO-Computing-2026-244967
+Testing single matrix with test_config_numa
+==========================================
+
+Running: ./test_config_numa 24 citationCiteseer.mtx 5
+==========================================
