@@ -7,7 +7,7 @@ set -euo pipefail
 EXE="./test_config"
 OUT_CSV="results/configurations_results.csv"
 OUT_LOG="results/configurations_results.txt"
-TIMEOUT_SECS=300   # kill any run that exceeds this (5 minutes per matrix/thread combo)
+TIMEOUT_SECS=900   # kill any run that exceeds this (15 minutes per matrix/thread combo)
 ITERATIONS=30      # number of iterations per configuration
 
 # Thread counts to test
