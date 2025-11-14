@@ -33,7 +33,11 @@ fi
 
 echo "Project root: $(pwd)"
 
-# Compile the project
+# Clean and recompile the project (to ensure correct GLIBC version)
+echo "Cleaning old build artifacts..."
+rm -f *.o executable test_config test_config_numa
+
+echo "Compiling main executable..."
 gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/main.c -o main.o
 gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/generator.c -o generator.o
 gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/m_to_csr.c -o m_to_csr.o

@@ -52,6 +52,10 @@ if command -v numactl &> /dev/null; then
     echo ""
 fi
 
+# Clean and recompile to ensure correct GLIBC version
+echo "Cleaning old build artifacts..."
+rm -f *.o executable test_config test_config_numa
+
 # Compile the NUMA-aware executable
 echo "Compiling NUMA-aware test_config_numa..."
 gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/test_configurations_numa.c -o test_configurations_numa.o
