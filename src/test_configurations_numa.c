@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
     }
 
     int thread_count = atoi(argv[1]);
-    int num_iterations = (argc == 4) ? atoi(argv[3]) : 10;  // Lower default for large matrices
+    int num_iterations = (argc == 4) ? atoi(argv[3]) : 10;  // Reduced to 5 for 6-hour walltime
     
     // Validate thread count for NUMA system
     if (thread_count < 24 || thread_count > 96) {
@@ -146,26 +146,12 @@ int main(int argc, char* argv[]) {
 
     printf("Testing NUMA-aware configurations...\n");
     
-    // Static + SIMD with different binding policies
-    strcpy(configs[num_configs].name, "Static+SIMD+close");
-    strcpy(configs[num_configs].schedule_type, "static");
-    strcpy(configs[num_configs].bind_policy, "close");
-    configs[num_configs].chunk_size = 32;
-    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_static_simd_close, 32, num_iterations);
-    num_configs++;
-
+    // Static + SIMD with spread binding (best for NUMA)
     strcpy(configs[num_configs].name, "Static+SIMD+spread");
     strcpy(configs[num_configs].schedule_type, "static");
     strcpy(configs[num_configs].bind_policy, "spread");
     configs[num_configs].chunk_size = 32;
     run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_static_simd_spread, 32, num_iterations);
-    num_configs++;
-
-    strcpy(configs[num_configs].name, "Static+SIMD+master");
-    strcpy(configs[num_configs].schedule_type, "static");
-    strcpy(configs[num_configs].bind_policy, "master");
-    configs[num_configs].chunk_size = 32;
-    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_static_simd_master, 32, num_iterations);
     num_configs++;
 
     // Dynamic + SIMD with spread (NUMA-friendly)
@@ -198,14 +184,7 @@ int main(int argc, char* argv[]) {
     run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_guided_simd_spread, 32, num_iterations);
     num_configs++;
 
-    // Register blocking with different binding policies
-    strcpy(configs[num_configs].name, "Static+SIMD+Register+close");
-    strcpy(configs[num_configs].schedule_type, "static");
-    strcpy(configs[num_configs].bind_policy, "close");
-    configs[num_configs].chunk_size = 32;
-    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_static_simd_register_close, 32, num_iterations);
-    num_configs++;
-
+    // Register blocking with spread (best for NUMA)
     strcpy(configs[num_configs].name, "Static+SIMD+Register+spread");
     strcpy(configs[num_configs].schedule_type, "static");
     strcpy(configs[num_configs].bind_policy, "spread");
@@ -213,14 +192,7 @@ int main(int argc, char* argv[]) {
     run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_static_simd_register_spread, 32, num_iterations);
     num_configs++;
 
-    // Affinity optimization with binding policies
-    strcpy(configs[num_configs].name, "Static+SIMD+Affinity+close");
-    strcpy(configs[num_configs].schedule_type, "static");
-    strcpy(configs[num_configs].bind_policy, "close");
-    configs[num_configs].chunk_size = 32;
-    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_static_simd_affinity_close, 32, num_iterations);
-    num_configs++;
-
+    // Affinity optimization with spread (best for NUMA)
     strcpy(configs[num_configs].name, "Static+SIMD+Affinity+spread");
     strcpy(configs[num_configs].schedule_type, "static");
     strcpy(configs[num_configs].bind_policy, "spread");
