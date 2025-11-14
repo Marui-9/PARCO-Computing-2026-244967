@@ -4,7 +4,7 @@
 #PBS -e ./config_bench.err
 #PBS -q short_cpuQ
 #PBS -l walltime=6:00:00
-#PBS -l select=1:ncpus=24:mem=10gb
+#PBS -l select=1:ncpus=24:mem=16gb
 
 # Load modules
 module load gcc91
