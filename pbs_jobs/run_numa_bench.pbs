@@ -9,9 +9,29 @@
 # Load modules
 module load gcc91
 
-# Select the working directory (go to parent directory where source files are)
-cd "$PBS_O_WORKDIR"
-cd ..
+# Navigate to project root directory
+echo "Starting directory: $(pwd)"
+
+# Find project root (handles submission from anywhere)
+if [ -d "src" ]; then
+    echo "Found src/ - already in project root"
+elif [ -d "../src" ]; then
+    cd ..
+    echo "Moved up one directory to: $(pwd)"
+elif [ -d "PARCO-Computing-2026-244967/src" ]; then
+    cd PARCO-Computing-2026-244967
+    echo "Changed to project directory: $(pwd)"
+elif [ -d "pbs_jobs" ]; then
+    echo "In pbs_jobs/ directory, moving up"
+    cd ..
+else
+    echo "ERROR: Cannot find project directory!"
+    echo "Current location: $(pwd)"
+    ls -la
+    exit 1
+fi
+
+echo "Project root: $(pwd)"
 
 # Print system information
 echo "========================================"
