@@ -91,12 +91,14 @@ for mtx in $MATRIX_FILES; do
             continue
         elif [ $EXIT_CODE -ne 0 ]; then
             echo "ERROR (exit code: $EXIT_CODE)"
-            # Show first line of error for debugging
+            # Show error details for debugging
             if [ -s "$PROG_STDERR" ]; then
-                echo "    Error: $(head -1 "$PROG_STDERR" | grep -v '^==' || echo 'see stderr')"
+                echo "    STDERR:"
+                head -10 "$PROG_STDERR" | sed 's/^/      /'
             fi
             if [ -s "$PROG_OUTPUT" ]; then
-                echo "    Output: $(head -1 "$PROG_OUTPUT")"
+                echo "    STDOUT:"
+                head -10 "$PROG_OUTPUT" | sed 's/^/      /'
             fi
             echo "\"$mtx_basename\",NA,NA,NA,$threads,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,$EXIT_CODE,\"execution error\"" >> "$OUTPUT_CSV"
             rm -f "$CACHEGRIND_OUT" "$PROG_OUTPUT" "$PROG_STDERR"
