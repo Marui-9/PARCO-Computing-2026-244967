@@ -8,14 +8,9 @@
 
 # Load modules
 module load gcc91
-gcc() { gcc-9.1.0 "$@"; }
-gcc --version
-module load  glibc-2.32
-glibc() { glibc-2.32 "$@"; }
-glibc --version
 
-# Select the working directory
-cd "$PBS_O_WORKDIR"
+# Navigate to project directory (PBS starts in pbs_jobs/)
+cd ..
 
 # Compile the project
 gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/main.c -o main.o
