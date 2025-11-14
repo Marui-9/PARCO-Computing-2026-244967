@@ -11,7 +11,7 @@ echo ""
 # Make scripts executable
 echo "Making scripts executable..."
 chmod +x scripts/bench_configurations_numa.sh 2>/dev/null || true
-chmod +x evaluation_numa/analyze_configurations_numa.py 2>/dev/null || true
+chmod +x scripts/analyze_configurations_numa.py 2>/dev/null || true
 
 echo "✓ Scripts are executable"
 echo ""
@@ -61,11 +61,11 @@ else
     all_found=false
 fi
 
-if [ -d "evaluation_numa" ]; then
-    echo "✓ evaluation_numa/ exists"
+if [ -d "results" ]; then
+    echo "✓ results/ exists"
 else
-    echo "✗ evaluation_numa/ - MISSING"
-    all_found=false
+    echo "✗ results/ - MISSING"
+    MISSING=1
 fi
 echo ""
 
@@ -94,7 +94,7 @@ if [ "$all_found" = true ]; then
     echo "   - Smaller matrices can use regular matrices/ folder"
     echo "2. Submit job: qsub pbs_jobs/run_numa_bench.pbs"
     echo "3. Monitor: tail -f numa_bench.out"
-    echo "4. Analyze: python3 evaluation_numa/analyze_configurations_numa.py"
+    echo "4. Analyze: python3 scripts/analyze_configurations_numa.py"
 else
     echo "✗ Some files are missing - check errors above"
 fi

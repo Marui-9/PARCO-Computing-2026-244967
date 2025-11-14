@@ -150,8 +150,8 @@ cbar = plt.colorbar(scatter, ax=ax4)
 cbar.set_label('log₁₀(Matrix Size)', fontsize=10, fontweight='bold')
 
 # Create figures directory and save
-os.makedirs('figures', exist_ok=True)
-output_file = 'figures/speedup_analysis.png'
+os.makedirs('plots', exist_ok=True)
+output_file = 'plots/speedup_analysis.png'
 plt.savefig(output_file, dpi=300, bbox_inches='tight')
 print(f"\n✓ Plot saved to: {output_file}")
 

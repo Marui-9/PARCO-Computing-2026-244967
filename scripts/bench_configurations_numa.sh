@@ -1,17 +1,17 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # bench_configurations_numa.sh
 # Benchmark NUMA-aware configurations across large matrices and high thread counts (24-96)
 # Usage: ./bench_configurations_numa.sh
-set -euo pipefail
+set -eu
 
 EXE="./test_config_numa"
-OUT_CSV="evaluation_numa/configurations_numa_results.csv"
-OUT_LOG="evaluation_numa/configurations_numa_results.txt"
-TIMEOUT_SECS=600   # 10 minutes per matrix/thread combo (large matrices take longer)
-ITERATIONS=30      # Reduced iterations for large matrices
+OUT_CSV="results/configurations_numa_results.csv"
+OUT_LOG="results/configurations_numa_results.txt"
+TIMEOUT_SECS=1800   # 30 minutes per matrix/thread combo (large matrices are very slow)
+ITERATIONS=5        # Reduced to 5 iterations for large matrices to fit within walltime
 
 # Thread counts: 24-48 (increment 4), 48-96 (increment 6)
-THREAD_COUNTS="24 28 32 36 40 44 48 54 60 66 72 78 84 90 96"
+THREAD_COUNTS="24 32 40 48 54 60 66 72 78 84 90 96"
 
 # Use matrices_large/ for NUMA benchmarks (direct CSR import, no dense allocation)
 MATRICES_DIR="matrices_large"
@@ -166,6 +166,11 @@ for mtx in "${MATRICES[@]}"; do
     if [ "$config_count" -eq 0 ]; then
       echo "    WARNING: No configuration results parsed"
       echo "    WARNING: No configuration results parsed for $mtx_basename, threads=$threads" >> "$OUT_LOG"
+      echo "    DEBUG: Exit code = $exitcode" >> "$OUT_LOG"
+      echo "    DEBUG: First 50 lines of output:" >> "$OUT_LOG"
+      head -50 "$tmpout" >> "$OUT_LOG" 2>&1 || true
+      echo "    DEBUG: Last 50 lines of output:" >> "$OUT_LOG"
+      tail -50 "$tmpout" >> "$OUT_LOG" 2>&1 || true
       notes="${notes}${notes:+; }NO_CONFIGS"
       printf '%s\n' "\"$mtx_basename\",$ROWS,$COLS,$DENSITY,$NNZ,$threads,\"NONE\",NA,NA,NA,NA,NA,NA,$exitcode,\"$notes\"" >> "$OUT_CSV"
     else

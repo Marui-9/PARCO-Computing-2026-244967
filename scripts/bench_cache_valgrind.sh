@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Benchmark script for cache performance analysis using valgrind cachegrind
-# Output: evaluation/cache_valgrind_results.csv with cache performance metrics
+# Output: results/cache_valgrind_results.csv with cache performance metrics
 # NOTE: Valgrind may not support all AVX-512 instructions on all systems
 
-OUTPUT_CSV="evaluation/cache_valgrind_results.csv"
+OUTPUT_CSV="results/cache_valgrind_results.csv"
 EXECUTABLE="./executable"
 TIMEOUT_SECONDS=300  # Valgrind is slower than perf
 
@@ -71,6 +71,7 @@ for mtx in $MATRIX_FILES; do
         # Create temporary files for cachegrind output
         CACHEGRIND_OUT=$(mktemp -u --suffix=.cachegrind)
         PROG_OUTPUT=$(mktemp)
+        PROG_STDERR=$(mktemp)
         
         # Run with valgrind cachegrind and timeout
         # Note: --tool=cachegrind profiles cache behavior
@@ -78,7 +79,7 @@ for mtx in $MATRIX_FILES; do
             --cachegrind-out-file="$CACHEGRIND_OUT" \
             --cache-sim=yes \
             --branch-sim=yes \
-            "$EXECUTABLE" "$threads" "$mtx_basename" > "$PROG_OUTPUT" 2>/dev/null
+            "$EXECUTABLE" "$threads" "$mtx_basename" > "$PROG_OUTPUT" 2>"$PROG_STDERR"
         
         EXIT_CODE=$?
         
@@ -86,12 +87,19 @@ for mtx in $MATRIX_FILES; do
             # Timeout occurred
             echo "TIMEOUT"
             echo "\"$mtx_basename\",NA,NA,NA,$threads,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,124,\"timeout after ${TIMEOUT_SECONDS}s\"" >> "$OUTPUT_CSV"
-            rm -f "$CACHEGRIND_OUT" "$PROG_OUTPUT"
+            rm -f "$CACHEGRIND_OUT" "$PROG_OUTPUT" "$PROG_STDERR"
             continue
         elif [ $EXIT_CODE -ne 0 ]; then
             echo "ERROR (exit code: $EXIT_CODE)"
+            # Show first line of error for debugging
+            if [ -s "$PROG_STDERR" ]; then
+                echo "    Error: $(head -1 "$PROG_STDERR" | grep -v '^==' || echo 'see stderr')"
+            fi
+            if [ -s "$PROG_OUTPUT" ]; then
+                echo "    Output: $(head -1 "$PROG_OUTPUT")"
+            fi
             echo "\"$mtx_basename\",NA,NA,NA,$threads,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,$EXIT_CODE,\"execution error\"" >> "$OUTPUT_CSV"
-            rm -f "$CACHEGRIND_OUT" "$PROG_OUTPUT"
+            rm -f "$CACHEGRIND_OUT" "$PROG_OUTPUT" "$PROG_STDERR"
             continue
         fi
         
@@ -99,7 +107,7 @@ for mtx in $MATRIX_FILES; do
         if [ ! -f "$CACHEGRIND_OUT" ]; then
             echo "ERROR (no cachegrind output)"
             echo "\"$mtx_basename\",NA,NA,NA,$threads,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,1,\"no cachegrind output\"" >> "$OUTPUT_CSV"
-            rm -f "$PROG_OUTPUT"
+            rm -f "$PROG_OUTPUT" "$PROG_STDERR"
             continue
         fi
         
@@ -178,7 +186,7 @@ for mtx in $MATRIX_FILES; do
         
         echo "OK (D1 miss: ${D1_MISS_RATE}%, LL miss: ${LL_MISS_RATE}%, Branch miss: ${BRANCH_MISS_RATE}%)"
         
-        rm -f "$CACHEGRIND_OUT" "$CG_SUMMARY" "$PROG_OUTPUT"
+        rm -f "$CACHEGRIND_OUT" "$CG_SUMMARY" "$PROG_OUTPUT" "$PROG_STDERR"
     done
     echo ""
 done

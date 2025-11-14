@@ -19,11 +19,11 @@ colors = plt.cm.Set2(np.linspace(0, 1, 8))
 # Determine the correct path to the CSV file
 if os.path.exists('configurations_numa_results.csv'):
     csv_path = 'configurations_numa_results.csv'
-elif os.path.exists('evaluation_numa/configurations_numa_results.csv'):
-    csv_path = 'evaluation_numa/configurations_numa_results.csv'
+elif os.path.exists('results/configurations_numa_results.csv'):
+    csv_path = 'results/configurations_numa_results.csv'
 else:
     print("Error: configurations_numa_results.csv not found!")
-    print("Run this script from either the project root or evaluation_numa/ directory")
+    print("Run this script from the project root directory")
     exit(1)
 
 # Read the CSV file
@@ -237,8 +237,8 @@ print("\n" + "="*80)
 print("GENERATING VISUALIZATIONS")
 print("="*80)
 
-# Create figures directory
-os.makedirs('figures_numa', exist_ok=True)
+# Create plots directory
+os.makedirs('plots', exist_ok=True)
 
 # ============================================================================
 # 1. Speedup vs Thread Count by Binding Policy
@@ -259,8 +259,8 @@ ax.legend(fontsize=11, loc='upper left')
 ax.grid(True, alpha=0.3)
 ax.set_xticks(sorted(df['threads'].unique()))
 plt.tight_layout()
-plt.savefig('figures_numa/speedup_vs_threads_binding.png', dpi=300, bbox_inches='tight')
-print("✓ Generated: figures_numa/speedup_vs_threads_binding.png")
+plt.savefig('plots/speedup_vs_threads_binding.png', dpi=300, bbox_inches='tight')
+print("✓ Generated: plots/speedup_vs_threads_binding.png")
 plt.close()
 
 # ============================================================================
@@ -286,8 +286,8 @@ ax.legend(fontsize=11, loc='upper right')
 ax.grid(True, alpha=0.3)
 ax.set_xticks(threads)
 plt.tight_layout()
-plt.savefig('figures_numa/efficiency_vs_threads_binding.png', dpi=300, bbox_inches='tight')
-print("✓ Generated: figures_numa/efficiency_vs_threads_binding.png")
+plt.savefig('plots/efficiency_vs_threads_binding.png', dpi=300, bbox_inches='tight')
+print("✓ Generated: plots/efficiency_vs_threads_binding.png")
 plt.close()
 
 # ============================================================================
@@ -327,8 +327,8 @@ if len(pivot_speedup) > 0:
     ax.set_title('NUMA: Speedup Heatmap by Binding Policy and Thread Count', 
                  fontsize=14, fontweight='bold', pad=20)
     plt.tight_layout()
-    plt.savefig('figures_numa/speedup_heatmap_binding_threads.png', dpi=300, bbox_inches='tight')
-    print("✓ Generated: figures_numa/speedup_heatmap_binding_threads.png")
+    plt.savefig('plots/speedup_heatmap_binding_threads.png', dpi=300, bbox_inches='tight')
+    print("✓ Generated: plots/speedup_heatmap_binding_threads.png")
 plt.close()
 
 # ============================================================================
@@ -391,8 +391,8 @@ ax.set_xticklabels(pair_labels)
 ax.legend(fontsize=11, loc='upper left')
 ax.grid(True, alpha=0.3, axis='y')
 plt.tight_layout()
-plt.savefig('figures_numa/scaling_efficiency_doubling.png', dpi=300, bbox_inches='tight')
-print("✓ Generated: figures_numa/scaling_efficiency_doubling.png")
+plt.savefig('plots/scaling_efficiency_doubling.png', dpi=300, bbox_inches='tight')
+print("✓ Generated: plots/scaling_efficiency_doubling.png")
 plt.close()
 
 # ============================================================================
@@ -419,8 +419,8 @@ if high_thread >= 48:
                 f'{value:.1f}x', va='center', fontsize=10, fontweight='bold')
 
     plt.tight_layout()
-    plt.savefig(f'figures_numa/top_configs_{high_thread}_threads.png', dpi=300, bbox_inches='tight')
-    print(f"✓ Generated: figures_numa/top_configs_{high_thread}_threads.png")
+    plt.savefig(f'plots/top_configs_{high_thread}_threads.png', dpi=300, bbox_inches='tight')
+    print(f"✓ Generated: plots/top_configs_{high_thread}_threads.png")
     plt.close()
 
 # ============================================================================
@@ -445,8 +445,8 @@ ax.set_title('NUMA: Speedup Distribution by Binding Policy', fontsize=15, fontwe
 ax.grid(True, alpha=0.3, axis='y')
 plt.xticks(rotation=15, ha='right')
 plt.tight_layout()
-plt.savefig('figures_numa/speedup_distribution_binding.png', dpi=300, bbox_inches='tight')
-print("✓ Generated: figures_numa/speedup_distribution_binding.png")
+plt.savefig('plots/speedup_distribution_binding.png', dpi=300, bbox_inches='tight')
+print("✓ Generated: plots/speedup_distribution_binding.png")
 plt.close()
 
 # ============================================================================
@@ -471,10 +471,10 @@ ax.legend(fontsize=10, loc='upper left')
 ax.grid(True, alpha=0.3)
 ax.set_xticks(sorted(df['threads'].unique()))
 plt.tight_layout()
-plt.savefig('figures_numa/speedup_vs_threads_matrices.png', dpi=300, bbox_inches='tight')
-print("✓ Generated: figures_numa/speedup_vs_threads_matrices.png")
+plt.savefig('plots/speedup_vs_threads_matrices.png', dpi=300, bbox_inches='tight')
+print("✓ Generated: plots/speedup_vs_threads_matrices.png")
 plt.close()
 
 print("\n" + "="*80)
-print("All NUMA visualizations saved to: figures_numa/")
+print("All NUMA visualizations saved to: plots/")
 print("="*80)

@@ -15,11 +15,11 @@ import os
 # Works whether run from parent directory or evaluation directory
 if os.path.exists('configurations_results.csv'):
     csv_path = 'configurations_results.csv'
-elif os.path.exists('evaluation/configurations_results.csv'):
-    csv_path = 'evaluation/configurations_results.csv'
+elif os.path.exists('results/configurations_results.csv'):
+    csv_path = 'results/configurations_results.csv'
 else:
     print("Error: configurations_results.csv not found!")
-    print("Run this script from either the project root or evaluation/ directory")
+    print("Run this script from the project root directory")
     exit(1)
 
 # Read the CSV file

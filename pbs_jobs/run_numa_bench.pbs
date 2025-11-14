@@ -2,8 +2,8 @@
 #PBS -N numa_bench
 #PBS -o ./numa_bench.out
 #PBS -e ./numa_bench.err
-#PBS -q short_cpuQ
-#PBS -l walltime=6:00:00
+#PBS -q common_cpuQ
+#PBS -l walltime=12:00:00
 #PBS -l select=4:ncpus=24:mem=32gb
 
 # Load modules
@@ -66,6 +66,6 @@ echo "========================================"
 echo "NUMA Benchmark Completed"
 echo "========================================"
 echo "Completed at: $(date)"
-echo "Results: evaluation_numa/configurations_numa_results.csv"
-echo "Log: evaluation_numa/configurations_numa_results.txt"
+echo "Results: results/configurations_numa_results.csv"
+echo "Log: results/configurations_numa_results.txt"
 echo "========================================"

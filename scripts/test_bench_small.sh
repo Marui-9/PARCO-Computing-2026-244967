@@ -4,7 +4,7 @@ set -euo pipefail
 
 # Temporarily modify to use only one small matrix
 EXE="./test_config"
-OUT_CSV="evaluation/test_config_small.csv"
+OUT_CSV="results/test_config_small.csv"
 TIMEOUT_SECS=60
 ITERATIONS=20
 THREAD_COUNTS="4 8"

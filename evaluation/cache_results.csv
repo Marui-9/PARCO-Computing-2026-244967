@@ -1,2 +1,0 @@
-matrix,rows,cols,density_pct,threads,l1_dcache_loads,l1_dcache_misses,l1_miss_rate,llc_loads,llc_misses,llc_miss_rate,cache_refs,cache_misses,cache_miss_rate,time_ms,exit_code,notes
-"10k_1p5.mtx",9506,×,"NA",1,106041307444,2151587098,2.0290,<not,<not,,3532800218,8147957,0.2306,18165.88,0,"success"

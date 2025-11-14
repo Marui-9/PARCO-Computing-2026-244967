@@ -16,8 +16,8 @@ colors = plt.cm.Set2(np.linspace(0, 1, 8))
 # Determine the correct path to the CSV file
 if os.path.exists('configurations_results.csv'):
     csv_path = 'configurations_results.csv'
-elif os.path.exists('evaluation/configurations_results.csv'):
-    csv_path = 'evaluation/configurations_results.csv'
+elif os.path.exists('results/configurations_results.csv'):
+    csv_path = 'results/configurations_results.csv'
 else:
     print("Error: configurations_results.csv not found!")
     exit(1)
@@ -50,7 +50,7 @@ print(f"Generating plots from {csv_path}...")
 print(f"Data points: {len(df)}")
 
 # Create figure directory
-os.makedirs('figures', exist_ok=True)
+os.makedirs('plots', exist_ok=True)
 
 # ============================================================================
 # 1. Speedup vs Thread Count (by category)
@@ -72,8 +72,8 @@ ax.legend(fontsize=11, loc='upper left')
 ax.grid(True, alpha=0.3)
 ax.set_xticks(sorted(df['threads'].unique()))
 plt.tight_layout()
-plt.savefig('figures/speedup_vs_threads.png', dpi=300, bbox_inches='tight')
-print("✓ Generated: figures/speedup_vs_threads.png")
+plt.savefig('plots/speedup_vs_threads.png', dpi=300, bbox_inches='tight')
+print("✓ Generated: plots/speedup_vs_threads.png")
 plt.close()
 
 # ============================================================================
@@ -112,8 +112,8 @@ for i in range(len(pivot_table.index)):
 ax.set_title('Speedup Heatmap: Top 15 Configurations vs Matrices (12 threads)', 
              fontsize=14, fontweight='bold', pad=20)
 plt.tight_layout()
-plt.savefig('figures/speedup_heatmap.png', dpi=300, bbox_inches='tight')
-print("✓ Generated: figures/speedup_heatmap.png")
+plt.savefig('plots/speedup_heatmap.png', dpi=300, bbox_inches='tight')
+print("✓ Generated: plots/speedup_heatmap.png")
 plt.close()
 
 # ============================================================================
@@ -140,8 +140,8 @@ ax.grid(True, alpha=0.3)
 ax.set_xscale('log')
 ax.set_yscale('log')
 plt.tight_layout()
-plt.savefig('figures/speedup_vs_density.png', dpi=300, bbox_inches='tight')
-print("✓ Generated: figures/speedup_vs_density.png")
+plt.savefig('plots/speedup_vs_density.png', dpi=300, bbox_inches='tight')
+print("✓ Generated: plots/speedup_vs_density.png")
 plt.close()
 
 # ============================================================================
@@ -168,8 +168,8 @@ ax.legend(fontsize=11, loc='lower left')
 ax.grid(True, alpha=0.3)
 ax.set_xticks(threads)
 plt.tight_layout()
-plt.savefig('figures/parallel_efficiency.png', dpi=300, bbox_inches='tight')
-print("✓ Generated: figures/parallel_efficiency.png")
+plt.savefig('plots/parallel_efficiency.png', dpi=300, bbox_inches='tight')
+print("✓ Generated: plots/parallel_efficiency.png")
 plt.close()
 
 # ============================================================================
@@ -195,8 +195,8 @@ ax.set_yscale('log')
 ax.grid(True, alpha=0.3, axis='y')
 plt.xticks(rotation=15, ha='right')
 plt.tight_layout()
-plt.savefig('figures/speedup_distribution.png', dpi=300, bbox_inches='tight')
-print("✓ Generated: figures/speedup_distribution.png")
+plt.savefig('plots/speedup_distribution.png', dpi=300, bbox_inches='tight')
+print("✓ Generated: plots/speedup_distribution.png")
 plt.close()
 
 # ============================================================================
@@ -234,8 +234,8 @@ ax.set_title('Scaling Efficiency: Speedup Gain When Doubling Threads\n(SIMD conf
 ax.legend(fontsize=11)
 ax.grid(True, alpha=0.3, axis='y')
 plt.tight_layout()
-plt.savefig('figures/scaling_efficiency.png', dpi=300, bbox_inches='tight')
-print("✓ Generated: figures/scaling_efficiency.png")
+plt.savefig('plots/scaling_efficiency.png', dpi=300, bbox_inches='tight')
+print("✓ Generated: plots/scaling_efficiency.png")
 plt.close()
 
 # ============================================================================
@@ -259,8 +259,8 @@ for i, (bar, value) in enumerate(zip(bars, top_10_configs.values)):
             f'{value:.1f}x', va='center', fontsize=10, fontweight='bold')
 
 plt.tight_layout()
-plt.savefig('figures/top_configurations.png', dpi=300, bbox_inches='tight')
-print("✓ Generated: figures/top_configurations.png")
+plt.savefig('plots/top_configurations.png', dpi=300, bbox_inches='tight')
+print("✓ Generated: plots/top_configurations.png")
 plt.close()
 
 # ============================================================================
@@ -301,8 +301,8 @@ cbar = plt.colorbar(scatter, ax=ax)
 cbar.set_label('Density (%)', fontsize=12, fontweight='bold')
 
 plt.tight_layout()
-plt.savefig('figures/matrix_size_impact.png', dpi=300, bbox_inches='tight')
-print("✓ Generated: figures/matrix_size_impact.png")
+plt.savefig('plots/matrix_size_impact.png', dpi=300, bbox_inches='tight')
+print("✓ Generated: plots/matrix_size_impact.png")
 plt.close()
 
 # ============================================================================
@@ -326,5 +326,5 @@ for cat in ['Default', 'Scheduling', 'SIMD', 'SIMD+Affinity', 'SIMD+Register', '
         print(f"  {cat:25s}: {avg_speedup:8.1f}x")
 
 print("\n" + "="*60)
-print("All plots saved to: figures/")
+print("All plots saved to: plots/")
 print("="*60)

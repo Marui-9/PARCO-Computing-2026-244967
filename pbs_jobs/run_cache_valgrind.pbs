@@ -14,17 +14,14 @@ module load gcc91
 gcc() { gcc-9.1.0 "$@"; }
 gcc --version
 
-# Check if valgrind module exists, otherwise assume system valgrind
-if module avail valgrind 2>&1 | grep -q valgrind; then
-    module load valgrind
-fi
-
-# Verify valgrind is available
+# Verify valgrind is available (using system valgrind, no module needed)
+echo "Valgrind version:"
 which valgrind
 valgrind --version
 
-# Select the working directory
+# Select the working directory (go to parent directory where source files are)
 cd "$PBS_O_WORKDIR"
+cd ..
 
 # Compile the project (if not already compiled)
 if [ ! -f executable ]; then
@@ -55,14 +52,14 @@ echo "========================================"
 echo "Cache Valgrind Benchmark Completed"
 echo "========================================"
 echo "Completed at: $(date)"
-echo "Results saved to: evaluation/cache_valgrind_results.csv"
+echo "Results saved to: results/cache_valgrind_results.csv"
 echo ""
 
 # Display results summary if file exists
-if [ -f evaluation/cache_valgrind_results.csv ]; then
+if [ -f results/cache_valgrind_results.csv ]; then
     echo "Total test runs:"
-    wc -l < evaluation/cache_valgrind_results.csv | awk '{print $1-1}'
+    wc -l < results/cache_valgrind_results.csv | awk '{print $1-1}'
     echo ""
     echo "First few results:"
-    head -5 evaluation/cache_valgrind_results.csv
+    head -5 results/cache_valgrind_results.csv
 fi

@@ -202,10 +202,10 @@ else:
 
 plt.tight_layout()
 
-# Save the plot to figures directory
-os.makedirs('figures', exist_ok=True)
+# Save the plot to plots directory
+os.makedirs('plots', exist_ok=True)
 base_name = os.path.basename(csv_file).replace('.csv', '_analysis.png')
-output_file = os.path.join('figures', base_name)
+output_file = os.path.join('plots', base_name)
 plt.savefig(output_file, dpi=300, bbox_inches='tight')
 print(f"✓ Plot saved to: {output_file}")
 

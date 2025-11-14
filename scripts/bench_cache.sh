@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Benchmark script for cache performance analysis using perf stat
-# Output: evaluation/cache_results.csv with cache performance metrics
+# Output: results/cache_results.csv with cache performance metrics
 
-OUTPUT_CSV="evaluation/cache_results.csv"
+OUTPUT_CSV="results/cache_results.csv"
 EXECUTABLE="./executable"
 TIMEOUT_SECONDS=120
 

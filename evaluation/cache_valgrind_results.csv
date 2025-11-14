@@ -1,2 +1,0 @@
-matrix,rows,cols,density_pct,threads,i_refs,i1_misses,i1_miss_rate,d_refs,d1_misses,d1_miss_rate,d1_writes,d1_write_misses,ll_refs,ll_misses,ll_miss_rate,branches,branch_misses,branch_miss_rate,exit_code,notes
-"10k_1p5.mtx",9506,×,"1.50%",1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,0,"success"

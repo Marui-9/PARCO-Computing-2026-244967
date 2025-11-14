@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
     }
 
     int thread_count = atoi(argv[1]);
-    int num_iterations = (argc == 4) ? atoi(argv[3]) : 30;  // Lower default for large matrices
+    int num_iterations = (argc == 4) ? atoi(argv[3]) : 10;  // Lower default for large matrices
     
     // Validate thread count for NUMA system
     if (thread_count < 24 || thread_count > 96) {

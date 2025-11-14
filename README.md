@@ -6,30 +6,39 @@ Parallel sparse matrix-vector multiplication benchmark using OpenMP.
 
 ```
 PARCO-Computing-2026-244967/
-├── evaluation/                   # Benchmark results and analysis
-│   ├── results.csv              # Speedup benchmark data
-│   ├── cache_results.csv        # Cache performance data
-│   ├── configurations_results.csv # OpenMP config comparison data
-│   ├── results_analysis.png     # Visualization plots
-│   ├── plot_speedup.py          # Python analysis script
-│   └── README.md                # Evaluation documentation
-├── matrices/                    # Sparse matrix test files (.mtx format)
-│   └── *.mtx                   # Renamed as: {size}_{density}.mtx
 ├── src/                         # C source code
 │   ├── main.c                  # Main program
 │   ├── test_configurations.c   # Configuration testing tool
+│   ├── test_configurations_numa.c # NUMA-optimized configurations
 │   ├── generator.c, m_to_csr.c # Matrix utilities
 │   └── *.h                     # Header files
-├── scripts/                     # Shell scripts
+├── matrices/                    # Sparse matrix test files (.mtx format)
+│   └── *.mtx                   # Named as: {size}_{density}.mtx
+├── scripts/                     # Benchmark and analysis scripts
 │   ├── bench_matrices.sh       # Run speedup benchmarks
 │   ├── bench_cache.sh          # Run cache performance benchmarks
+│   ├── bench_cache_valgrind.sh # Cache analysis with valgrind
 │   ├── bench_configurations.sh # Compare OpenMP configs (23 variants)
-│   └── plot_results.sh         # Generate visualization plots
-├── pbs_jobs/                    # PBS job scripts
-│   └── *.pbs                   # Cluster job files
-├── analyze_configurations.py    # Analyze configuration benchmark results
-├── test_config                  # OpenMP configuration comparison tool (compiled)
+│   ├── bench_configurations_numa.sh # NUMA benchmarks (24-96 threads)
+│   ├── analyze_configurations.py # Analyze configuration results
+│   ├── analyze_configurations_numa.py # Analyze NUMA results
+│   ├── plot_configurations.py  # Generate configuration plots
+│   ├── plot_speedup.py         # Generate speedup plots
+│   └── plot_cache.py           # Generate cache performance plots
+├── pbs_jobs/                    # PBS cluster job scripts
+│   ├── run_numa_bench.pbs      # NUMA benchmark job
+│   ├── run_cache_valgrind.pbs  # Cache valgrind job
+│   └── *.pbs                   # Additional job files
+├── results/                     # Benchmark output data (CSV/TXT)
+│   ├── configurations_results.csv
+│   ├── configurations_numa_results.csv
+│   ├── cache_results.csv
+│   └── *.txt                   # Benchmark logs
+├── plots/                       # Generated figures (PNG)
+│   └── *.png                   # Visualization plots
 ├── executable                   # Main program (compiled)
+├── test_config                  # Configuration testing tool (compiled)
+├── test_config_numa             # NUMA testing tool (compiled)
 └── Makefile                     # Build configuration
 ```
 
@@ -82,7 +91,10 @@ Output shows speedup, efficiency, standard deviation, and improvement percentage
 ### Analyze Configuration Results
 ```bash
 # After running bench_configurations.sh
-python3 analyze_configurations.py
+python3 scripts/analyze_configurations.py
+
+# For NUMA benchmarks
+python3 scripts/analyze_configurations_numa.py
 ```
 
 This analyzes:
@@ -91,11 +103,21 @@ This analyzes:
 - Scaling efficiency across thread counts
 - Optimal configurations per matrix density/size
 - Best performance: **Guided+SIMD+chunk=32** (up to **3,300x speedup**)
-### Generate Speedup Plots
+
+### Generate Plots
 ```bash
-cd evaluation
-python3 plot_speedup.py results.csv
+# Speedup analysis
+python3 scripts/plot_speedup.py
+
+# Configuration comparison
+python3 scripts/plot_configurations.py
+
+# Cache performance
+python3 scripts/plot_cache.py
 ```
+
+All results are saved to `results/` and plots to `plots/`.
+
 
 
 
@@ -112,7 +134,7 @@ Examples:
 
 ## Results
 
-All benchmark results, visualizations, and analysis scripts are in the `evaluation/` directory.
+All benchmark results are in `results/` (CSV files) and visualizations in `plots/` (PNG files).
 
 ### Key Performance Findings
 
@@ -131,4 +153,12 @@ From comprehensive configuration benchmarking (`test_config`):
    - Medium/Large sparse (10-15k, <0.5% density): Scale well to 18 threads
    - Dense matrices: Limited scaling benefit
 
-See `evaluation/README.md` for detailed analysis.
+### NUMA Optimization (24-96 threads)
+
+NUMA-aware benchmarks test 9 configurations optimized for multi-socket systems:
+- Thread affinity policies: close, spread, master
+- SIMD + register blocking optimizations
+- Scaling from 24 to 96 threads across 4 NUMA nodes
+
+Run with: `qsub pbs_jobs/run_numa_bench.pbs`
+
