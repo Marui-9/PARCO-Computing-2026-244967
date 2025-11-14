@@ -9,8 +9,13 @@
 # Load modules
 module load gcc91
 
-# Navigate to project directory (PBS starts in pbs_jobs/)
-cd ..
+# Navigate to project root directory
+if [ -d "src" ]; then
+    echo "Already in project root"
+else
+    cd ..
+    echo "Changed to project root: $(pwd)"
+fi
 
 # Compile the project
 gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/main.c -o main.o

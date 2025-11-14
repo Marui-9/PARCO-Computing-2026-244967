@@ -9,8 +9,13 @@
 # Load modules
 module load gcc91
 
-# Select the working directory
-cd "$PBS_O_WORKDIR"
+# Navigate to project root directory
+if [ -d "src" ]; then
+    echo "Already in project root"
+else
+    cd ..
+    echo "Changed to project root: $(pwd)"
+fi
 
 # Compile the test configurations executable
 gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/test_configurations.c -o test_configurations.o
