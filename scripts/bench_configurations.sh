@@ -120,6 +120,16 @@ for mtx in "${MATRICES[@]}"; do
       # Still try to parse what we can
     fi
 
+    # Show output size for debugging
+    if [ -f "$tmpout" ]; then
+      output_size=$(wc -l < "$tmpout")
+      echo "    Output: $output_size lines, exit code: $exitcode"
+      if [ "$output_size" -lt 5 ]; then
+        echo "    Output content:"
+        cat "$tmpout" | sed 's/^/      /'
+      fi
+    fi
+
     # Parse matrix metadata
     ROWS=$(grep -oP 'Matrix: \K[0-9]+(?= ×)' "$tmpout" 2>/dev/null || echo "NA")
     COLS=$(grep -oP '× \K[0-9]+(?=,)' "$tmpout" 2>/dev/null || echo "NA")
