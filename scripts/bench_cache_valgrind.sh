@@ -5,7 +5,7 @@
 # NOTE: Valgrind may not support all AVX-512 instructions on all systems
 
 OUTPUT_CSV="results/cache_valgrind_results.csv"
-EXECUTABLE="./executable"
+EXECUTABLE="${EXECUTABLE:-./executable}"  # Use environment variable if set, otherwise default
 TIMEOUT_SECONDS=300  # Valgrind is slower than perf
 
 # Thread counts to test (valgrind can be slow, so fewer thread counts)
