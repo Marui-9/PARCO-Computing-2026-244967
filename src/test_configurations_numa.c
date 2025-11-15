@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
     }
 
     int thread_count = atoi(argv[1]);
-    int num_iterations = (argc == 4) ? atoi(argv[3]) : 10;  // Reduced to 5 for 6-hour walltime
+    int num_iterations = (argc == 4) ? atoi(argv[3]) : 10;  // 10 iterations default
     
     // Validate thread count for NUMA system
     if (thread_count < 24 || thread_count > 96) {

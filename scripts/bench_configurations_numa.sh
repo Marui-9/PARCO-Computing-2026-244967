@@ -7,11 +7,11 @@ set -eu
 EXE="./test_config_numa"
 OUT_CSV="results/configurations_numa_results.csv"
 OUT_LOG="results/configurations_numa_results.txt"
-TIMEOUT_SECS=1800   # 30 minutes per matrix/thread combo (large matrices are very slow)
-ITERATIONS=5        # Reduced to 5 iterations for large matrices to fit within walltime
+TIMEOUT_SECS=900    # 15 minutes per matrix/thread combo
+ITERATIONS=10       # 10 iterations for better statistical accuracy
 
-# Thread counts: 24-48 (increment 4), 48-96 (increment 6)
-THREAD_COUNTS="24 32 40 48 54 60 66 72 78 84 90 96"
+# Thread counts: reduced to 4 key points for 6-hour walltime
+THREAD_COUNTS="24 48 72 96"
 
 # Use matrices_large/ for NUMA benchmarks (direct CSR import, no dense allocation)
 MATRICES_DIR="matrices_large"
