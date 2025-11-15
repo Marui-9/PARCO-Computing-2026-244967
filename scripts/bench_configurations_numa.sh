@@ -93,16 +93,26 @@ for mtx in "${MATRICES[@]}"; do
     continue
   fi
 
-  # Extract just the filename
+  # Extract just the filename for display/CSV
   mtx_basename=$(basename "$mtx")
+  
+  # For test_config_numa, pass just the basename since it adds matrices_large/ prefix
+  # But verify the file exists first
+  if [ ! -f "$MATRICES_DIR/$mtx_basename" ] && [ ! -f "matrices/$mtx_basename" ]; then
+    echo "  ERROR: Matrix file not accessible: $mtx" | tee -a "$OUT_LOG"
+    printf '%s\n' "\"$mtx_basename\",NA,NA,NA,NA,$threads,\"FILE_NOT_FOUND\",NA,NA,NA,NA,NA,NA,1,\"matrix file not accessible\"" >> "$OUT_CSV"
+    continue
+  fi
 
   for threads in $THREAD_COUNTS; do
     echo "  threads=$threads"
     tmpout=$(mktemp)
+    tmperr=$(mktemp)
     notes=""
 
     # Run test_config_numa with timeout
-    timeout "$TIMEOUT_SECS" "$EXE" "$threads" "$mtx_basename" "$ITERATIONS" > "$tmpout" 2>&1 || true
+    # Note: test_config_numa expects basename and adds matrices_large/ prefix internally
+    timeout "$TIMEOUT_SECS" "$EXE" "$threads" "$mtx_basename" "$ITERATIONS" > "$tmpout" 2> "$tmperr"
     exitcode=$?
 
     # timeout returns 124 when timed out
@@ -111,7 +121,30 @@ for mtx in "${MATRICES[@]}"; do
       echo "    TIMEOUT: $mtx_basename, threads=$threads" >> "$OUT_LOG"
       notes="TIMEOUT"
       printf '%s\n' "\"$mtx_basename\",NA,NA,NA,NA,$threads,\"TIMEOUT\",NA,NA,NA,NA,NA,NA,$exitcode,\"$notes\"" >> "$OUT_CSV"
-      rm -f "$tmpout"
+      rm -f "$tmpout" "$tmperr"
+      continue
+    fi
+
+    # Check for errors
+    if [ "$exitcode" -ne 0 ]; then
+      echo "    ERROR: Exit code $exitcode" | tee -a "$OUT_LOG"
+      echo "    STDERR:" | tee -a "$OUT_LOG"
+      cat "$tmperr" | tee -a "$OUT_LOG"
+      echo "    STDOUT sample:" | tee -a "$OUT_LOG"
+      head -20 "$tmpout" | tee -a "$OUT_LOG"
+      notes="EXIT_${exitcode}"
+    fi
+
+    # check for output presence
+    if [ ! -s "$tmpout" ]; then
+      notes="${notes}${notes:+;}NO_OUTPUT"
+      echo "    WARNING: no stdout output captured from run." | tee -a "$OUT_LOG"
+      if [ -s "$tmperr" ]; then
+        echo "    STDERR was:" | tee -a "$OUT_LOG"
+        cat "$tmperr" | tee -a "$OUT_LOG"
+      fi
+      printf '%s\n' "\"$mtx_basename\",NA,NA,NA,NA,$threads,\"NO_OUTPUT\",NA,NA,NA,NA,NA,NA,$exitcode,\"$notes\"" >> "$OUT_CSV"
+      rm -f "$tmpout" "$tmperr"
       continue
     fi
 
@@ -167,10 +200,16 @@ for mtx in "${MATRICES[@]}"; do
       echo "    WARNING: No configuration results parsed"
       echo "    WARNING: No configuration results parsed for $mtx_basename, threads=$threads" >> "$OUT_LOG"
       echo "    DEBUG: Exit code = $exitcode" >> "$OUT_LOG"
-      echo "    DEBUG: First 50 lines of output:" >> "$OUT_LOG"
+      echo "    DEBUG: First 50 lines of stdout:" >> "$OUT_LOG"
       head -50 "$tmpout" >> "$OUT_LOG" 2>&1 || true
-      echo "    DEBUG: Last 50 lines of output:" >> "$OUT_LOG"
+      echo "    DEBUG: Last 50 lines of stdout:" >> "$OUT_LOG"
       tail -50 "$tmpout" >> "$OUT_LOG" 2>&1 || true
+      if [ -s "$tmperr" ]; then
+        echo "    DEBUG: STDERR content:" >> "$OUT_LOG"
+        cat "$tmperr" >> "$OUT_LOG"
+      else
+        echo "    DEBUG: STDERR was empty" >> "$OUT_LOG"
+      fi
       notes="${notes}${notes:+; }NO_CONFIGS"
       printf '%s\n' "\"$mtx_basename\",$ROWS,$COLS,$DENSITY,$NNZ,$threads,\"NONE\",NA,NA,NA,NA,NA,NA,$exitcode,\"$notes\"" >> "$OUT_CSV"
     else
@@ -178,7 +217,7 @@ for mtx in "${MATRICES[@]}"; do
       echo "    $mtx_basename (threads=$threads): Parsed $config_count configurations" >> "$OUT_LOG"
     fi
 
-    rm -f "$tmpout"
+    rm -f "$tmpout" "$tmperr"
   done
   echo ""
 done
