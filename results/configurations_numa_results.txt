@@ -54,3 +54,53 @@ NUMA nodes: 4 (assumed 24 cores each)
     DEBUG: Exit code = 0
     DEBUG: First 50 lines of output:
     DEBUG: Last 50 lines of output:
+    WARNING: No configuration results parsed for F1.mtx, threads=72
+    DEBUG: Exit code = 0
+    DEBUG: First 50 lines of output:
+    DEBUG: Last 50 lines of output:
+    WARNING: No configuration results parsed for F1.mtx, threads=96
+    DEBUG: Exit code = 0
+    DEBUG: First 50 lines of output:
+    DEBUG: Last 50 lines of output:
+=== Processing Matrix: matrices_large/n4c6-b9.mtx ===
+    WARNING: No configuration results parsed for n4c6-b9.mtx, threads=24
+    DEBUG: Exit code = 0
+    DEBUG: First 50 lines of output:
+    DEBUG: Last 50 lines of output:
+    WARNING: No configuration results parsed for n4c6-b9.mtx, threads=48
+    DEBUG: Exit code = 0
+    DEBUG: First 50 lines of output:
+    DEBUG: Last 50 lines of output:
+    WARNING: No configuration results parsed for n4c6-b9.mtx, threads=72
+    DEBUG: Exit code = 0
+    DEBUG: First 50 lines of output:
+    DEBUG: Last 50 lines of output:
+    WARNING: No configuration results parsed for n4c6-b9.mtx, threads=96
+    DEBUG: Exit code = 0
+    DEBUG: First 50 lines of output:
+    DEBUG: Last 50 lines of output:
+=== Processing Matrix: matrices_large/RM07R.mtx ===
+    WARNING: No configuration results parsed for RM07R.mtx, threads=24
+    DEBUG: Exit code = 0
+    DEBUG: First 50 lines of output:
+    DEBUG: Last 50 lines of output:
+    WARNING: No configuration results parsed for RM07R.mtx, threads=48
+    DEBUG: Exit code = 0
+    DEBUG: First 50 lines of output:
+    DEBUG: Last 50 lines of output:
+    WARNING: No configuration results parsed for RM07R.mtx, threads=72
+    DEBUG: Exit code = 0
+    DEBUG: First 50 lines of output:
+    DEBUG: Last 50 lines of output:
+    WARNING: No configuration results parsed for RM07R.mtx, threads=96
+    DEBUG: Exit code = 0
+    DEBUG: First 50 lines of output:
+    DEBUG: Last 50 lines of output:
+
+========================================================================
+BENCHMARK COMPLETED
+========================================================================
+Completed at: Sat Nov 15 13:29:45 CET 2025
+CSV results: results/configurations_numa_results.csv
+Total data rows: 20
+========================================================================
