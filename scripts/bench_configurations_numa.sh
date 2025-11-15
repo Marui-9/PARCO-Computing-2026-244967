@@ -13,17 +13,11 @@ ITERATIONS=10       # 10 iterations for better statistical accuracy
 # Thread counts: reduced to 4 key points for 6-hour walltime
 THREAD_COUNTS="24 48 72 96"
 
-# Use matrices_large/ for NUMA benchmarks (direct CSR import, no dense allocation)
-MATRICES_DIR="matrices_large"
-
-# Fall back to matrices/ if matrices_large/ doesn't exist
-if [ ! -d "$MATRICES_DIR" ]; then
-  echo "INFO: matrices_large/ not found, falling back to matrices/" >&2
-  MATRICES_DIR="matrices"
-fi
+# Use matrices/ for NUMA benchmarks (direct CSR import, no dense allocation)
+MATRICES_DIR="matrices"
 
 if [ ! -d "$MATRICES_DIR" ]; then
-  echo "ERROR: Neither matrices_large/ nor matrices/ directory found." >&2
+  echo "ERROR: matrices/ directory not found." >&2
   exit 1
 fi
 

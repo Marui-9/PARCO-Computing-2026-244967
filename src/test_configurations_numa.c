@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
     }
     
     char matrix_file[256];
-    snprintf(matrix_file, sizeof(matrix_file), "matrices_large/%s", argv[2]);
+    snprintf(matrix_file, sizeof(matrix_file), "matrices/%s", argv[2]);
     
     printf("=== NUMA-Aware OpenMP Configuration Comparison ===\n");
     printf("Threads: %d\n", thread_count);
@@ -100,13 +100,7 @@ int main(int argc, char* argv[]) {
     
     if (result != 0) {
         fprintf(stderr, "Failed to import matrix from %s\n", matrix_file);
-        fprintf(stderr, "Trying matrices/ directory...\n");
-        snprintf(matrix_file, sizeof(matrix_file), "matrices/%s", argv[2]);
-        result = import_matrix_to_csr(matrix_file, &csr_A);
-        if (result != 0) {
-            fprintf(stderr, "Failed to import matrix from both directories\n");
-            return 1;
-        }
+        return 1;
     }
     
     m = csr_A->rows;
