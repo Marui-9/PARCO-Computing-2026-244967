@@ -8,9 +8,11 @@
 
 # Load modules
 module load gcc91
-
+module load valgrind-3.15.0
 # Navigate to project root directory
 echo "Starting directory: $(pwd)"
+echo "Directory contents:"
+ls -la
 
 # Find project root (handles submission from anywhere)
 if [ -d "src" ]; then
@@ -21,9 +23,18 @@ elif [ -d "../src" ]; then
 elif [ -d "PARCO-Computing-2026-244967/src" ]; then
     cd PARCO-Computing-2026-244967
     echo "Changed to project directory: $(pwd)"
+elif [ -d "$HOME/PARCO-Computing-2026-244967/src" ]; then
+    cd "$HOME/PARCO-Computing-2026-244967"
+    echo "Changed to home project directory: $(pwd)"
 elif [ -d "pbs_jobs" ]; then
     echo "In pbs_jobs/ directory, moving up"
     cd ..
+    if [ ! -d "src" ]; then
+        echo "ERROR: Moved up but still no src/ found!"
+        echo "Current location: $(pwd)"
+        ls -la
+        exit 1
+    fi
 else
     echo "ERROR: Cannot find project directory!"
     echo "Current location: $(pwd)"
@@ -32,6 +43,8 @@ else
 fi
 
 echo "Project root: $(pwd)"
+echo "Verifying src/ directory exists:"
+ls -la src/
 
 # Clean and recompile the project (to ensure correct GLIBC version)
 echo "Cleaning old build artifacts..."
