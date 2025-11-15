@@ -1,0 +1,13 @@
+matrix,rows,cols,density_pct,nnz,threads,configuration,bind_policy,time_ms,speedup,efficiency_pct,std_dev_ms,improvement_pct,exit_code,notes
+"citationCiteseer.mtx",NA,NA,NA,NA,24,"NONE",NA,NA,NA,NA,NA,NA,0,"NO_CONFIGS"
+"citationCiteseer.mtx",NA,NA,NA,NA,32,"NONE",NA,NA,NA,NA,NA,NA,0,"NO_CONFIGS"
+"citationCiteseer.mtx",NA,NA,NA,NA,40,"NONE",NA,NA,NA,NA,NA,NA,0,"NO_CONFIGS"
+"citationCiteseer.mtx",NA,NA,NA,NA,48,"NONE",NA,NA,NA,NA,NA,NA,0,"NO_CONFIGS"
+"citationCiteseer.mtx",NA,NA,NA,NA,54,"NONE",NA,NA,NA,NA,NA,NA,0,"NO_CONFIGS"
+"citationCiteseer.mtx",NA,NA,NA,NA,60,"NONE",NA,NA,NA,NA,NA,NA,0,"NO_CONFIGS"
+"citationCiteseer.mtx",NA,NA,NA,NA,66,"NONE",NA,NA,NA,NA,NA,NA,0,"NO_CONFIGS"
+"citationCiteseer.mtx",NA,NA,NA,NA,72,"NONE",NA,NA,NA,NA,NA,NA,0,"NO_CONFIGS"
+"citationCiteseer.mtx",NA,NA,NA,NA,78,"NONE",NA,NA,NA,NA,NA,NA,0,"NO_CONFIGS"
+"citationCiteseer.mtx",NA,NA,NA,NA,84,"NONE",NA,NA,NA,NA,NA,NA,0,"NO_CONFIGS"
+"citationCiteseer.mtx",NA,NA,NA,NA,90,"NONE",NA,NA,NA,NA,NA,NA,0,"NO_CONFIGS"
+"citationCiteseer.mtx",NA,NA,NA,NA,96,"NONE",NA,NA,NA,NA,NA,NA,0,"NO_CONFIGS"
