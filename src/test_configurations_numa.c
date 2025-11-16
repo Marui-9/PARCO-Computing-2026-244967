@@ -17,7 +17,7 @@
  *     - Optimized for 4 NUMA nodes (24 cores each)
  *     - Tests proc_bind policies: close, spread, master
  *     - Includes first-touch initialization
- *     - Reduced default iterations (30) for large matrices
+ *     - Default iterations: 10
  */
 
 #include <stdio.h>
@@ -135,12 +135,14 @@ int main(int argc, char* argv[]) {
     printf("      Using slowest configuration as baseline instead\n\n");
 
     // Define NUMA-aware configurations to test
-    Configuration configs[20];
+    // Reduced to 4 configs for faster runtime (target: <6 hours for 15 matrices × 4 threads)
+    Configuration configs[4];
     int num_configs = 0;
 
-    printf("Testing NUMA-aware configurations...\n");
+    printf("Testing 4 NUMA-aware configurations (reduced set for time efficiency)...\n");
+    printf("Note: Serial baseline available from configurations_results.csv\n\n");
     
-    // Static + SIMD with spread binding (best for NUMA)
+    // 1. Static + SIMD + spread (baseline multi-NUMA)
     strcpy(configs[num_configs].name, "Static+SIMD+spread");
     strcpy(configs[num_configs].schedule_type, "static");
     strcpy(configs[num_configs].bind_policy, "spread");
@@ -148,50 +150,28 @@ int main(int argc, char* argv[]) {
     run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_static_simd_spread, 32, num_iterations);
     num_configs++;
 
-    // Dynamic + SIMD with spread (NUMA-friendly)
-    strcpy(configs[num_configs].name, "Dynamic+SIMD+spread, chunk=16");
-    strcpy(configs[num_configs].schedule_type, "dynamic");
-    strcpy(configs[num_configs].bind_policy, "spread");
-    configs[num_configs].chunk_size = 16;
-    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_dynamic_simd_spread, 16, num_iterations);
-    num_configs++;
-
-    strcpy(configs[num_configs].name, "Dynamic+SIMD+spread, chunk=32");
+    // 2. Dynamic + SIMD + spread (load balancing across NUMA)
+    strcpy(configs[num_configs].name, "Dynamic+SIMD+spread");
     strcpy(configs[num_configs].schedule_type, "dynamic");
     strcpy(configs[num_configs].bind_policy, "spread");
     configs[num_configs].chunk_size = 32;
     run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_dynamic_simd_spread, 32, num_iterations);
     num_configs++;
 
-    // Guided + SIMD with spread
-    strcpy(configs[num_configs].name, "Guided+SIMD+spread, chunk=16");
-    strcpy(configs[num_configs].schedule_type, "guided");
-    strcpy(configs[num_configs].bind_policy, "spread");
-    configs[num_configs].chunk_size = 16;
-    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_guided_simd_spread, 16, num_iterations);
-    num_configs++;
-
-    strcpy(configs[num_configs].name, "Guided+SIMD+spread, chunk=32");
+    // 3. Guided + SIMD + spread (adaptive load balancing)
+    strcpy(configs[num_configs].name, "Guided+SIMD+spread");
     strcpy(configs[num_configs].schedule_type, "guided");
     strcpy(configs[num_configs].bind_policy, "spread");
     configs[num_configs].chunk_size = 32;
     run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_guided_simd_spread, 32, num_iterations);
     num_configs++;
 
-    // Register blocking with spread (best for NUMA)
-    strcpy(configs[num_configs].name, "Static+SIMD+Register+spread");
+    // 4. Static + SIMD + close (single-node affinity comparison)
+    strcpy(configs[num_configs].name, "Static+SIMD+close");
     strcpy(configs[num_configs].schedule_type, "static");
-    strcpy(configs[num_configs].bind_policy, "spread");
+    strcpy(configs[num_configs].bind_policy, "close");
     configs[num_configs].chunk_size = 32;
-    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_static_simd_register_spread, 32, num_iterations);
-    num_configs++;
-
-    // Affinity optimization with spread (best for NUMA)
-    strcpy(configs[num_configs].name, "Static+SIMD+Affinity+spread");
-    strcpy(configs[num_configs].schedule_type, "static");
-    strcpy(configs[num_configs].bind_policy, "spread");
-    configs[num_configs].chunk_size = 32;
-    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_static_simd_affinity_spread, 32, num_iterations);
+    run_benchmark(&configs[num_configs], thread_count, csr_A, mat_vect_static_simd_close, 32, num_iterations);
     num_configs++;
 
     // Find slowest config to use as baseline (since we don't have serial baseline for large matrices)
