@@ -1,106 +1,29 @@
 ========================================================================
 NUMA-AWARE CONFIGURATION BENCHMARK LOG
 ========================================================================
-Started at: Sat Nov 15 08:29:43 CET 2025
+Started at: Sat Nov 15 16:13:18 CET 2025
 Executable: ./test_config_numa
 Timeout per run: 900s
 Iterations per config: 10
 Thread counts: 24 48 72 96
-Matrices found: 5
-Matrix directory: matrices_large
+Matrices found: 15
+Matrix directory: matrices
 NUMA nodes: 4 (assumed 24 cores each)
 ========================================================================
 
-=== Processing Matrix: matrices_large/citationCiteseer.mtx ===
-    WARNING: No configuration results parsed for citationCiteseer.mtx, threads=24
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-    WARNING: No configuration results parsed for citationCiteseer.mtx, threads=48
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-    WARNING: No configuration results parsed for citationCiteseer.mtx, threads=72
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-    WARNING: No configuration results parsed for citationCiteseer.mtx, threads=96
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-=== Processing Matrix: matrices_large/cnr-2000.mtx ===
-    WARNING: No configuration results parsed for cnr-2000.mtx, threads=24
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-    WARNING: No configuration results parsed for cnr-2000.mtx, threads=48
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-    WARNING: No configuration results parsed for cnr-2000.mtx, threads=72
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-    WARNING: No configuration results parsed for cnr-2000.mtx, threads=96
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-=== Processing Matrix: matrices_large/F1.mtx ===
-    WARNING: No configuration results parsed for F1.mtx, threads=24
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-    WARNING: No configuration results parsed for F1.mtx, threads=48
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-    WARNING: No configuration results parsed for F1.mtx, threads=72
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-    WARNING: No configuration results parsed for F1.mtx, threads=96
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-=== Processing Matrix: matrices_large/n4c6-b9.mtx ===
-    WARNING: No configuration results parsed for n4c6-b9.mtx, threads=24
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-    WARNING: No configuration results parsed for n4c6-b9.mtx, threads=48
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-    WARNING: No configuration results parsed for n4c6-b9.mtx, threads=72
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-    WARNING: No configuration results parsed for n4c6-b9.mtx, threads=96
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-=== Processing Matrix: matrices_large/RM07R.mtx ===
-    WARNING: No configuration results parsed for RM07R.mtx, threads=24
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-    WARNING: No configuration results parsed for RM07R.mtx, threads=48
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-    WARNING: No configuration results parsed for RM07R.mtx, threads=72
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-    WARNING: No configuration results parsed for RM07R.mtx, threads=96
-    DEBUG: Exit code = 0
-    DEBUG: First 50 lines of output:
-    DEBUG: Last 50 lines of output:
-
-========================================================================
-BENCHMARK COMPLETED
-========================================================================
-Completed at: Sat Nov 15 13:29:45 CET 2025
-CSV results: results/configurations_numa_results.csv
-Total data rows: 20
-========================================================================
+=== Processing Matrix: matrices/10k_1p5.mtx ===
+    10k_1p5.mtx (threads=24): Parsed 7 configurations
+    10k_1p5.mtx (threads=48): Parsed 7 configurations
+    10k_1p5.mtx (threads=72): Parsed 7 configurations
+    10k_1p5.mtx (threads=96): Parsed 7 configurations
+=== Processing Matrix: matrices/11k_0p35.mtx ===
+    11k_0p35.mtx (threads=24): Parsed 7 configurations
+    11k_0p35.mtx (threads=48): Parsed 7 configurations
+    11k_0p35.mtx (threads=72): Parsed 7 configurations
+    11k_0p35.mtx (threads=96): Parsed 7 configurations
+=== Processing Matrix: matrices/11k_0p38.mtx ===
+    11k_0p38.mtx (threads=24): Parsed 7 configurations
+    11k_0p38.mtx (threads=48): Parsed 7 configurations
+    11k_0p38.mtx (threads=72): Parsed 7 configurations
+    11k_0p38.mtx (threads=96): Parsed 7 configurations
+=== Processing Matrix: matrices/15k_0p41.mtx ===
