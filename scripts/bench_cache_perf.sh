@@ -27,7 +27,8 @@ fi
 mkdir -p results
 
 # Create CSV header
-echo "matrix,rows,cols,density_pct,threads,cycles,instructions,l1d_loads,l1d_misses,l1d_miss_rate,llc_loads,llc_misses,llc_miss_rate,branches,branch_misses,branch_miss_rate,time_ms,exit_code,notes" > "$OUTPUT_CSV"
+# CSV header
+echo "matrix,rows,cols,density_pct,threads,L1_dcache_loads,L1_dcache_load_misses,L1_cache_miss_rate,branch_loads,branch_load_misses,branch_miss_rate,time_ms,exit_code,notes" > "$CSV_FILE"
 
 echo "=== Cache Performance Benchmarking with perf stat ==="
 echo "Output file: $OUTPUT_CSV"
@@ -74,12 +75,13 @@ for mtx in $MATRIX_FILES; do
         PROG_STDERR=$(mktemp)
         
         # Run with perf stat
-        # -e: specify events to measure
-        # L1-dcache-loads, L1-dcache-load-misses: L1 data cache
-        # LLC-loads, LLC-load-misses: Last level cache
-        # branches, branch-misses: Branch prediction
+        # Using hardware cache events available on this system
+        # L1-dcache-loads/load-misses: L1 data cache performance
+        # branch-loads/load-misses: Branch prediction
+        # --inherit: Track child threads (critical for OpenMP)
+        # --no-inherit: Would only track main thread (shows 0 for threaded work)
         # Using timeout to prevent hanging
-        timeout $TIMEOUT_SECONDS perf stat -e cycles,instructions,L1-dcache-loads,L1-dcache-load-misses,LLC-loads,LLC-load-misses,branches,branch-misses \
+        timeout $TIMEOUT_SECONDS perf stat --inherit -e L1-dcache-loads,L1-dcache-load-misses,branch-loads,branch-load-misses \
             "$EXECUTABLE" "$threads" "$mtx" > "$PROG_OUTPUT" 2>"$PERF_OUTPUT"
         
         EXIT_CODE=$?
@@ -101,7 +103,7 @@ for mtx in $MATRIX_FILES; do
                 echo "    STDOUT:"
                 head -10 "$PROG_OUTPUT" | sed 's/^/      /'
             fi
-            echo "\"$mtx_basename\",NA,NA,NA,$threads,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,$EXIT_CODE,\"execution error\"" >> "$OUTPUT_CSV"
+            echo "\"$mtx_basename\",NA,NA,NA,$threads,NA,NA,NA,NA,NA,NA,NA,$EXIT_CODE,\"execution error\"" >> "$OUTPUT_CSV"
             rm -f "$PERF_OUTPUT" "$PROG_OUTPUT" "$PROG_STDERR"
             continue
         fi
@@ -109,39 +111,27 @@ for mtx in $MATRIX_FILES; do
         # Parse perf stat output
         # Format examples:
         #     1,234,567      cycles
-        #       123,456      L1-dcache-loads
+        #       123,456      instructions
         #    <not supported> some-event
         
-        CYCLES=$(grep -E '^\s*[0-9,]+\s+cycles' "$PERF_OUTPUT" | awk '{gsub(/,/,""); print $1}')
-        INSTRUCTIONS=$(grep -E '^\s*[0-9,]+\s+instructions' "$PERF_OUTPUT" | awk '{gsub(/,/,""); print $1}')
-        
-        L1D_LOADS=$(grep -E '^\s*[0-9,]+\s+L1-dcache-loads' "$PERF_OUTPUT" | awk '{gsub(/,/,""); print $1}')
-        L1D_MISSES=$(grep -E '^\s*[0-9,]+\s+L1-dcache-load-misses' "$PERF_OUTPUT" | awk '{gsub(/,/,""); print $1}')
-        
-        LLC_LOADS=$(grep -E '^\s*[0-9,]+\s+LLC-loads' "$PERF_OUTPUT" | awk '{gsub(/,/,""); print $1}')
-        LLC_MISSES=$(grep -E '^\s*[0-9,]+\s+LLC-load-misses' "$PERF_OUTPUT" | awk '{gsub(/,/,""); print $1}')
-        
-        BRANCHES=$(grep -E '^\s*[0-9,]+\s+branches' "$PERF_OUTPUT" | awk '{gsub(/,/,""); print $1}')
-        BRANCH_MISSES=$(grep -E '^\s*[0-9,]+\s+branch-misses' "$PERF_OUTPUT" | awk '{gsub(/,/,""); print $1}')
+        L1_DCACHE_LOADS=$(grep -E '^\s*[0-9,]+\s+L1-dcache-loads' "$PERF_OUTPUT" | awk '{gsub(/,/,""); print $1}')
+        L1_DCACHE_LOAD_MISSES=$(grep -E '^\s*[0-9,]+\s+L1-dcache-load-misses' "$PERF_OUTPUT" | awk '{gsub(/,/,""); print $1}')
+        BRANCH_LOADS=$(grep -E '^\s*[0-9,]+\s+branch-loads' "$PERF_OUTPUT" | awk '{gsub(/,/,""); print $1}')
+        BRANCH_LOAD_MISSES=$(grep -E '^\s*[0-9,]+\s+branch-load-misses' "$PERF_OUTPUT" | awk '{gsub(/,/,""); print $1}')
         
         # Extract execution time from perf output (e.g., "0.123456789 seconds time elapsed")
         TIME_SEC=$(grep -E 'seconds time elapsed' "$PERF_OUTPUT" | awk '{print $1}')
         
-        # Calculate miss rates if we have the data
-        if [[ -n "$L1D_LOADS" && -n "$L1D_MISSES" && "$L1D_LOADS" != "0" ]]; then
-            L1D_MISS_RATE=$(echo "scale=4; ($L1D_MISSES / $L1D_LOADS) * 100" | bc)
+        # Calculate L1 data cache miss rate
+        if [[ -n "$L1_DCACHE_LOADS" && -n "$L1_DCACHE_LOAD_MISSES" && "$L1_DCACHE_LOADS" != "0" ]]; then
+            L1_CACHE_MISS_RATE=$(echo "scale=4; ($L1_DCACHE_LOAD_MISSES / $L1_DCACHE_LOADS) * 100" | bc)
         else
-            L1D_MISS_RATE="NA"
+            L1_CACHE_MISS_RATE="NA"
         fi
         
-        if [[ -n "$LLC_LOADS" && -n "$LLC_MISSES" && "$LLC_LOADS" != "0" ]]; then
-            LLC_MISS_RATE=$(echo "scale=4; ($LLC_MISSES / $LLC_LOADS) * 100" | bc)
-        else
-            LLC_MISS_RATE="NA"
-        fi
-        
-        if [[ -n "$BRANCHES" && -n "$BRANCH_MISSES" && "$BRANCHES" != "0" ]]; then
-            BRANCH_MISS_RATE=$(echo "scale=4; ($BRANCH_MISSES / $BRANCHES) * 100" | bc)
+        # Calculate branch miss rate
+        if [[ -n "$BRANCH_LOADS" && -n "$BRANCH_LOAD_MISSES" && "$BRANCH_LOADS" != "0" ]]; then
+            BRANCH_MISS_RATE=$(echo "scale=4; ($BRANCH_LOAD_MISSES / $BRANCH_LOADS) * 100" | bc)
         else
             BRANCH_MISS_RATE="NA"
         fi
@@ -159,22 +149,18 @@ for mtx in $MATRIX_FILES; do
         DENSITY=$(grep -E "non-zero entries" "$PROG_OUTPUT" | grep -oE "[0-9]+\.[0-9]+%" | head -1)
         
         # Set defaults for missing values
-        CYCLES=${CYCLES:-NA}
-        INSTRUCTIONS=${INSTRUCTIONS:-NA}
-        L1D_LOADS=${L1D_LOADS:-NA}
-        L1D_MISSES=${L1D_MISSES:-NA}
-        LLC_LOADS=${LLC_LOADS:-NA}
-        LLC_MISSES=${LLC_MISSES:-NA}
-        BRANCHES=${BRANCHES:-NA}
-        BRANCH_MISSES=${BRANCH_MISSES:-NA}
+        L1_DCACHE_LOADS=${L1_DCACHE_LOADS:-NA}
+        L1_DCACHE_LOAD_MISSES=${L1_DCACHE_LOAD_MISSES:-NA}
+        BRANCH_LOADS=${BRANCH_LOADS:-NA}
+        BRANCH_LOAD_MISSES=${BRANCH_LOAD_MISSES:-NA}
         ROWS=${ROWS:-NA}
         COLS=${COLS:-NA}
         DENSITY=${DENSITY:-NA}
         
         # Write to CSV
-        echo "\"$mtx_basename\",$ROWS,$COLS,\"$DENSITY\",$threads,$CYCLES,$INSTRUCTIONS,$L1D_LOADS,$L1D_MISSES,$L1D_MISS_RATE,$LLC_LOADS,$LLC_MISSES,$LLC_MISS_RATE,$BRANCHES,$BRANCH_MISSES,$BRANCH_MISS_RATE,$TIME_MS,$EXIT_CODE,\"success\"" >> "$OUTPUT_CSV"
+        echo "\"$mtx_basename\",$ROWS,$COLS,\"$DENSITY\",$threads,$L1_DCACHE_LOADS,$L1_DCACHE_LOAD_MISSES,$L1_CACHE_MISS_RATE,$BRANCH_LOADS,$BRANCH_LOAD_MISSES,$BRANCH_MISS_RATE,$TIME_MS,$EXIT_CODE,\"success\"" >> "$OUTPUT_CSV"
         
-        echo "OK (L1D miss: ${L1D_MISS_RATE}%, LLC miss: ${LLC_MISS_RATE}%, time: ${TIME_MS}ms)"
+        echo "OK (L1 miss: ${L1_CACHE_MISS_RATE}%, Branch miss: ${BRANCH_MISS_RATE}%, time: ${TIME_MS}ms)"
         
         rm -f "$PERF_OUTPUT" "$PROG_OUTPUT" "$PROG_STDERR"
     done
@@ -187,5 +173,7 @@ echo ""
 echo "Summary:"
 wc -l < "$OUTPUT_CSV" | awk '{print $1-1 " test runs completed"}'
 echo ""
-echo "Note: perf captures all threads' cache events, providing accurate"
-echo "multi-threaded cache performance data."
+echo "Performance metrics collected (with --inherit for all OpenMP threads):"
+echo "  - L1 data cache loads, load-misses, miss rate"
+echo "  - branch-loads, branch-load-misses, branch miss rate"
+echo ""

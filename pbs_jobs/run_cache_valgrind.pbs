@@ -3,8 +3,8 @@
 #PBS -o ./cache_perf.out
 #PBS -e ./cache_perf.err
 #PBS -q short_cpuQ
-#PBS -l walltime=2:00:00
-#PBS -l select=1:ncpus=24:mem=16gb
+#PBS -l walltime=6:00:00
+#PBS -l select=1:ncpus=24:mem=24gb
 
 # Cache benchmarking with perf stat
 # Note: perf is much faster than valgrind and captures multi-threaded cache behavior

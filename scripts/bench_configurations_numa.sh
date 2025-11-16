@@ -155,25 +155,28 @@ for mtx in "${MATRICES[@]}"; do
     if [ -z "$NNZ" ]; then NNZ="NA"; fi
 
     # Parse configuration results
-    # Expected format: "ConfigName   Time   Speedup   Efficiency  Improvement"
+    # Expected format: "ConfigName                             5.00       2.16x      9.00%     +0.00%"
+    # Pattern: Configuration name (may have spaces), then multiple space-separated numeric fields
     config_count=0
     while IFS= read -r line; do
-      # Extract fields from the output line
-      TIME_MS=$(echo "$line" | awk '{for(i=1;i<=NF;i++) if($i~/^[0-9]+\.[0-9]+$/) {print $i; exit}}')
-      SPEEDUP=$(echo "$line" | awk '{for(i=1;i<=NF;i++) if($i~/^[0-9]+\.[0-9]+x$/) {print $i; exit}}' | tr -d 'x')
-      EFFICIENCY=$(echo "$line" | awk '{for(i=1;i<=NF;i++) if($i~/^[0-9]+\.[0-9]+%$/) {print $i; exit}}' | tr -d '%')
-      STDDEV="0.0"  # Not extracted from simple output, could be added
-      IMPROVEMENT=$(echo "$line" | awk '{n=0; for(i=1;i<=NF;i++) if($i~/^[+-]?[0-9]+\.[0-9]+%$/) {n++; if(n==2) {print $i; exit}}}' | tr -d '%')
+      # Skip header and separator lines
+      if [[ "$line" == *"Configuration"* ]] || [[ "$line" == *"---"* ]] || [[ "$line" == *"==="* ]]; then
+        continue
+      fi
       
-      # Extract configuration name and binding policy
-      CONFIG=$(echo "$line" | awk '{
-        for(i=1; i<=NF; i++) {
-          if($i ~ /^[0-9]/) {
-            for(j=1; j<i; j++) printf "%s ", $j
-            exit
-          }
-        }
-      }' | sed 's/[[:space:]]*$//')
+      # Use awk to parse the fixed-width-ish format
+      # Fields: ConfigName (up to position ~40), Time(ms), Speedup, Efficiency, Improvement
+      CONFIG=$(echo "$line" | awk '{print $1}')  # First word is config name (e.g., "Guided+SIMD+spread")
+      TIME_MS=$(echo "$line" | awk '{print $2}')  # Second field is time
+      SPEEDUP=$(echo "$line" | awk '{print $3}' | tr -d 'x')  # Third field is speedup (remove 'x')
+      EFFICIENCY=$(echo "$line" | awk '{print $4}' | tr -d '%')  # Fourth field is efficiency (remove '%')
+      IMPROVEMENT=$(echo "$line" | awk '{print $5}' | tr -d '%')  # Fifth field is improvement (remove '%')
+      STDDEV="0.0"  # Not provided in output
+      
+      # Validate we got actual numeric values (not empty or text)
+      if [[ ! "$TIME_MS" =~ ^[0-9]+\.?[0-9]*$ ]]; then
+        continue  # Skip lines that don't have valid numeric data
+      fi
       
       # Extract binding policy from config name
       BIND_POLICY="unknown"
@@ -188,7 +191,7 @@ for mtx in "${MATRICES[@]}"; do
       # Write to CSV
       printf '%s\n' "\"$mtx_basename\",$ROWS,$COLS,$DENSITY,$NNZ,$threads,\"$CONFIG\",\"$BIND_POLICY\",$TIME_MS,$SPEEDUP,$EFFICIENCY,$STDDEV,$IMPROVEMENT,$exitcode,\"$notes\"" >> "$OUT_CSV"
       config_count=$((config_count + 1))
-    done < <(grep -E "^[A-Za-z].*[0-9]+\.[0-9]+.*[0-9]+\.[0-9]+x" "$tmpout" 2>/dev/null || true)
+    done < <(grep -E "^[A-Za-z][A-Za-z+]+.*[0-9]+\.[0-9]+.*[0-9]+\.[0-9]+x" "$tmpout" 2>/dev/null || true)
 
     if [ "$config_count" -eq 0 ]; then
       echo "    WARNING: No configuration results parsed"
