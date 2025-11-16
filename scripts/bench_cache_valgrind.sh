@@ -20,8 +20,6 @@ fi
 # Check if valgrind is available
 if ! command -v valgrind &> /dev/null; then
     echo "Error: valgrind command not found. Please install valgrind."
-    echo "On Fedora/RHEL: sudo dnf install valgrind"
-    echo "On Ubuntu/Debian: sudo apt install valgrind"
     exit 1
 fi
 
@@ -75,11 +73,12 @@ for mtx in $MATRIX_FILES; do
         
         # Run with valgrind cachegrind and timeout
         # Note: --tool=cachegrind profiles cache behavior
+        # Pass full path to executable (not just basename)
         timeout $TIMEOUT_SECONDS valgrind --tool=cachegrind \
             --cachegrind-out-file="$CACHEGRIND_OUT" \
             --cache-sim=yes \
             --branch-sim=yes \
-            "$EXECUTABLE" "$threads" "$mtx_basename" > "$PROG_OUTPUT" 2>"$PROG_STDERR"
+            "$EXECUTABLE" "$threads" "$mtx" > "$PROG_OUTPUT" 2>"$PROG_STDERR"
         
         EXIT_CODE=$?
         
@@ -113,51 +112,34 @@ for mtx in $MATRIX_FILES; do
             continue
         fi
         
-        # Parse cachegrind output using cg_annotate
-        CG_SUMMARY=$(mktemp)
-        cg_annotate "$CACHEGRIND_OUT" > "$CG_SUMMARY" 2>/dev/null
+        # Cachegrind outputs summary to stderr with ==PID== prefix
+        # We can parse it directly from stderr instead of using cg_annotate
+        # Format: ==PID== I   refs:      532,044
         
-        # Extract cache statistics from cachegrind summary
-        # The summary section looks like:
-        # I   refs:      123,456,789
-        # I1  misses:        234,567
-        # LLi misses:         12,345
-        # I1  miss rate:       0.19%
-        # LLi miss rate:       0.01%
+        # Extract cache statistics from stderr (cachegrind summary)
+        I_REFS=$(grep -E "^==[0-9]+== I\s+refs:" "$PROG_STDERR" | awk '{gsub(/,/,""); print $4}')
+        I1_MISSES=$(grep -E "^==[0-9]+== I1\s+misses:" "$PROG_STDERR" | awk '{gsub(/,/,""); print $4}')
+        I1_MISS_RATE=$(grep -E "^==[0-9]+== I1\s+miss rate:" "$PROG_STDERR" | awk '{gsub(/%/,""); print $5}')
         
-        # D   refs:      456,789,012
-        # D1  misses:      1,234,567
-        # LLd misses:         23,456
-        # D1  miss rate:       0.27%
-        # LLd miss rate:       0.01%
+        D_REFS=$(grep -E "^==[0-9]+== D\s+refs:" "$PROG_STDERR" | awk '{gsub(/,/,""); print $4}')
+        D1_MISSES=$(grep -E "^==[0-9]+== D1\s+misses:" "$PROG_STDERR" | awk '{gsub(/,/,""); print $4}')
+        D1_MISS_RATE=$(grep -E "^==[0-9]+== D1\s+miss rate:" "$PROG_STDERR" | awk '{gsub(/%/,""); print $5}')
         
-        # LL refs:         1,469,134
-        # LL misses:          35,801
-        # LL miss rate:        2.4%
+        # Extract D1 writes from the D refs line: "D   refs:      202,696  (144,528 rd   + 58,168 wr)"
+        D1_WRITES=$(grep -E "^==[0-9]+== D\s+refs:" "$PROG_STDERR" | grep -oE '\+ *[0-9,]+ wr' | awk '{gsub(/,/,""); print $2}')
+        # D1 write misses are in the D1 misses line: "D1  misses:      5,635  (  4,733 rd   +    902 wr)"
+        D1_WRITE_MISSES=$(grep -E "^==[0-9]+== D1\s+misses:" "$PROG_STDERR" | grep -oE '\+ *[0-9,]+ wr' | awk '{gsub(/,/,""); print $2}')
         
-        # Branches:       89,012,345
-        # Mispredicts:       123,456
-        # Mispred rate:        0.1%
+        LL_REFS=$(grep -E "^==[0-9]+== LL\s+refs:" "$PROG_STDERR" | awk '{gsub(/,/,""); print $4}')
+        LL_MISSES=$(grep -E "^==[0-9]+== LL\s+misses:" "$PROG_STDERR" | awk '{gsub(/,/,""); print $4}')
+        LL_MISS_RATE=$(grep -E "^==[0-9]+== LL\s+miss rate:" "$PROG_STDERR" | awk '{gsub(/%/,""); print $5}')
         
-        I_REFS=$(grep -E "^I\s+refs:" "$CG_SUMMARY" | awk '{gsub(/,/,""); print $3}')
-        I1_MISSES=$(grep -E "^I1\s+misses:" "$CG_SUMMARY" | awk '{gsub(/,/,""); print $3}')
-        I1_MISS_RATE=$(grep -E "^I1\s+miss rate:" "$CG_SUMMARY" | awk '{gsub(/%/,""); print $4}')
-        
-        D_REFS=$(grep -E "^D\s+refs:" "$CG_SUMMARY" | awk '{gsub(/,/,""); print $3}')
-        D1_MISSES=$(grep -E "^D1\s+misses:" "$CG_SUMMARY" | awk '{gsub(/,/,""); print $3}')
-        D1_MISS_RATE=$(grep -E "^D1\s+miss rate:" "$CG_SUMMARY" | awk '{gsub(/%/,""); print $4}')
-        
-        # D writes are part of D refs - estimate from D1 write misses if available
-        D1_WRITES=$(grep -E "^D1\s+wr misses:" "$CG_SUMMARY" 2>/dev/null | awk '{gsub(/,/,""); print $4}')
-        D1_WRITE_MISSES=$(grep -E "^D1\s+wr misses:" "$CG_SUMMARY" 2>/dev/null | awk '{gsub(/,/,""); print $4}')
-        
-        LL_REFS=$(grep -E "^LL\s+refs:" "$CG_SUMMARY" | awk '{gsub(/,/,""); print $3}')
-        LL_MISSES=$(grep -E "^LL\s+misses:" "$CG_SUMMARY" | awk '{gsub(/,/,""); print $3}')
-        LL_MISS_RATE=$(grep -E "^LL\s+miss rate:" "$CG_SUMMARY" | awk '{gsub(/%/,""); print $4}')
-        
-        BRANCHES=$(grep -E "^Branches:" "$CG_SUMMARY" | awk '{gsub(/,/,""); print $2}')
-        BRANCH_MISSES=$(grep -E "^Mispredicts:" "$CG_SUMMARY" | awk '{gsub(/,/,""); print $2}')
-        BRANCH_MISS_RATE=$(grep -E "^Mispred rate:" "$CG_SUMMARY" | awk '{gsub(/%/,""); print $3}')
+        # Branches don't have the ==PID== prefix in summary, but are indented
+        # They appear as just "Branches:" without ==PID==
+        # Actually, looking at the output, there are no branch stats in the summary shown
+        BRANCHES="NA"
+        BRANCH_MISSES="NA"
+        BRANCH_MISS_RATE="NA"
         
         # Extract matrix info from program output
         ROWS=$(grep -E "Matrix dimensions:" "$PROG_OUTPUT" | awk '{print $3}' | tr -d ',')
@@ -188,7 +170,7 @@ for mtx in $MATRIX_FILES; do
         
         echo "OK (D1 miss: ${D1_MISS_RATE}%, LL miss: ${LL_MISS_RATE}%, Branch miss: ${BRANCH_MISS_RATE}%)"
         
-        rm -f "$CACHEGRIND_OUT" "$CG_SUMMARY" "$PROG_OUTPUT" "$PROG_STDERR"
+        rm -f "$CACHEGRIND_OUT" "$PROG_OUTPUT" "$PROG_STDERR"
     done
     echo ""
 done

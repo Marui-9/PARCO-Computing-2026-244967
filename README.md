@@ -77,9 +77,6 @@ PARCO-Computing-2026-244967/
 └── *.err, *.out                 # Build/run logs
 ```
 
-**Note:** `matrices_large/` directory is expected on the cluster for Phase 2 NUMA benchmarks but not included in the repository due to file size.
-
-
 ## Quick Start
 
 ### Prerequisites
@@ -90,6 +87,7 @@ PARCO-Computing-2026-244967/
 
 ### Build All Executables
 
+**Using Makefile:**
 ```bash
 make
 ```
@@ -98,6 +96,28 @@ This compiles three executables:
 - `executable` - Main SpMV program for single matrix runs
 - `test_config` - Phase 1: Single-node configuration testing (1-24 threads)
 - `test_config_numa` - Phase 2: NUMA-aware configuration testing (24-96 threads)
+
+**Manual Compilation (without make):**
+
+```bash
+# Compile main executable
+gcc -O3 -Wall -Wextra -march=native -fopenmp -o executable \
+    src/main.c src/generator.c src/m_to_csr.c -lm
+
+# Compile Phase 1 configuration tester
+gcc -O3 -Wall -Wextra -march=native -fopenmp -o test_config \
+    src/test_configurations.c src/generator.c src/m_to_csr.c -lm
+
+# Compile Phase 2 NUMA configuration tester
+gcc -O3 -Wall -Wextra -march=native -fopenmp -o test_config_numa \
+    src/test_configurations_numa.c src/generator.c src/m_to_csr.c -lm
+```
+
+**Notes:**
+- `-O3`: Aggressive optimization
+- `-march=native`: Optimize for current CPU (enables AVX2/AVX-512)
+- `-fopenmp`: Enable OpenMP support
+- `-lm`: Link math library
 
 ### Clean Build
 
