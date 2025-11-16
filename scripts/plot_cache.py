@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Plot cache performance metrics from benchmark results.
+Plot cache performance metrics from perf benchmark results.
 Creates comprehensive visualizations of L1 D-cache and LLC performance.
-Usage: python3 plot_cache.py [cache_results.csv]
+Usage: python3 plot_cache.py [cache_perf_results.csv]
 """
 
 import pandas as pd
@@ -13,192 +13,202 @@ import re
 import numpy as np
 
 # Read CSV file
-csv_file = sys.argv[1] if len(sys.argv) > 1 else 'cache_results.csv'
+csv_file = sys.argv[1] if len(sys.argv) > 1 else 'results/cache_perf_results.csv'
 
 if not os.path.exists(csv_file):
     print(f"Error: {csv_file} not found")
     sys.exit(1)
 
-# Read the data with special handling for encoding issues
-df = pd.read_csv(csv_file, encoding='utf-8', encoding_errors='ignore')
+# Read the data
+df = pd.read_csv(csv_file)
 
-# Clean up the data - convert to numeric, coercing errors to NaN
-df['l1_miss_rate'] = pd.to_numeric(df['l1_miss_rate'], errors='coerce')
-df['llc_miss_rate'] = pd.to_numeric(df['llc_miss_rate'], errors='coerce')
-df['cache_miss_rate'] = pd.to_numeric(df['cache_miss_rate'], errors='coerce')
-df['l1_dcache_loads'] = pd.to_numeric(df['l1_dcache_loads'], errors='coerce')
-df['l1_dcache_misses'] = pd.to_numeric(df['l1_dcache_misses'], errors='coerce')
-df['llc_loads'] = pd.to_numeric(df['llc_loads'], errors='coerce')
-df['llc_misses'] = pd.to_numeric(df['llc_misses'], errors='coerce')
-df['time_ms'] = pd.to_numeric(df['time_ms'], errors='coerce')
-df['threads'] = pd.to_numeric(df['threads'], errors='coerce')
+# Clean column names (strip quotes and whitespace)
+df.columns = df.columns.str.strip().str.replace('"', '')
+df['matrix'] = df['matrix'].str.strip().str.replace('"', '')
 
-# Try to parse rows - handle the special character
-df['rows'] = pd.to_numeric(df['rows'], errors='coerce')
+# Convert numeric columns for perf data
+numeric_cols = ['rows', 'cols', 'threads', 'cycles', 'instructions',
+                'l1d_loads', 'l1d_misses', 'l1d_miss_rate',
+                'llc_loads', 'llc_misses', 'llc_miss_rate',
+                'branches', 'branch_misses', 'branch_miss_rate', 'time_ms']
+
+for col in numeric_cols:
+    if col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
 
 # Remove rows with NA values in critical fields
-df = df.dropna(subset=['l1_miss_rate', 'cache_miss_rate', 'time_ms', 'threads'])
+df = df.dropna(subset=['l1d_miss_rate', 'llc_miss_rate', 'threads', 'time_ms'])
 
 if len(df) == 0:
     print("Error: No valid data found in CSV file after cleaning.")
-    print("The cache_results.csv may be malformed.")
-    print("\nPlease re-run the benchmark with: ./bench_cache.sh")
+    print("The cache_perf_results.csv may be malformed or empty.")
+    print("\nPlease re-run the benchmark with: bash scripts/bench_cache_perf.sh")
     sys.exit(1)
 
 # Extract matrix basename for cleaner labels
-df['matrix_name'] = df['matrix'].apply(lambda x: os.path.basename(x.strip('"')).replace('.mtx', ''))
+df['matrix_name'] = df['matrix'].apply(lambda x: os.path.basename(x).replace('.mtx', ''))
 
-# Try to get matrix info from the results.csv if available
-results_csv = 'results.csv'
-if os.path.exists(results_csv):
-    results_df = pd.read_csv(results_csv)
-    results_df['matrix_name'] = results_df['matrix'].apply(lambda x: os.path.basename(x.strip('"')).replace('.mtx', ''))
-    
-    # Merge to get proper matrix dimensions and density
-    matrix_info = results_df[['matrix_name', 'rows', 'cols', 'density_pct']].drop_duplicates()
-    df = df.drop(columns=['rows', 'cols', 'density_pct'], errors='ignore')
-    df = df.merge(matrix_info, on='matrix_name', how='left')
+# Calculate matrix size and clean density
+df['matrix_size'] = df['rows'] * df['cols']
 
-# Calculate matrix size
-if 'rows' in df.columns and 'cols' in df.columns:
-    df['rows'] = pd.to_numeric(df['rows'], errors='coerce')
-    df['cols'] = pd.to_numeric(df['cols'], errors='coerce')
-    df['matrix_size'] = df['rows'] * df['cols']
-    # Extract density percentage
-    df['density_clean'] = df['density_pct'].apply(lambda x: float(re.findall(r'\d+\.\d+', str(x))[0]) if re.findall(r'\d+\.\d+', str(x)) else 0.0)
+# Extract density percentage from density_pct column (e.g., "0.23%" -> 0.23)
+if 'density_pct' in df.columns:
+    df['density_clean'] = df['density_pct'].apply(
+        lambda x: float(re.findall(r'\d+\.\d+', str(x))[0]) if pd.notna(x) and re.findall(r'\d+\.\d+', str(x)) else 0.0
+    )
 else:
-    # If still no rows/cols, use placeholder
-    df['matrix_size'] = 1
     df['density_clean'] = 0.0
-    print("Warning: Could not determine matrix dimensions. Some plots may be limited.")
 
 # Get unique matrices and threads
 matrices = sorted(df['matrix_name'].unique())
 thread_counts = sorted(df['threads'].unique())
 
-# Create figure with 4 subplots (2x2)
-fig = plt.figure(figsize=(18, 12))
-gs = fig.add_gridspec(2, 2, hspace=0.35, wspace=0.3)
+# Create figure with 6 subplots (3x2)
+fig = plt.figure(figsize=(20, 16))
+gs = fig.add_gridspec(3, 2, hspace=0.35, wspace=0.3)
 ax1 = fig.add_subplot(gs[0, 0])
 ax2 = fig.add_subplot(gs[0, 1])
 ax3 = fig.add_subplot(gs[1, 0])
 ax4 = fig.add_subplot(gs[1, 1])
+ax5 = fig.add_subplot(gs[2, 0])
+ax6 = fig.add_subplot(gs[2, 1])
 
-# ==================== PLOT 1: L1 Cache Misses vs Threads ====================
+# ==================== PLOT 1: D1 Cache Miss Rate vs Threads ====================
 for matrix in matrices:
     matrix_data = df[df['matrix_name'] == matrix].sort_values('threads')
-    ax1.plot(matrix_data['threads'], matrix_data['l1_dcache_misses'], 
+    ax1.plot(matrix_data['threads'], matrix_data['l1d_miss_rate'], 
              marker='o', linewidth=2, markersize=6, label=matrix, alpha=0.8)
 
 ax1.set_xlabel('Number of Threads', fontsize=12, fontweight='bold')
-ax1.set_ylabel('L1 D-Cache Misses (count)', fontsize=12, fontweight='bold')
-ax1.set_title('L1 D-Cache Misses vs Number of Threads', fontsize=14, fontweight='bold')
+ax1.set_ylabel('L1 D-Cache Miss Rate (%)', fontsize=12, fontweight='bold')
+ax1.set_title('L1 D-Cache Miss Rate vs Number of Threads', fontsize=14, fontweight='bold')
 ax1.grid(True, alpha=0.3, linestyle='--')
 ax1.legend(loc='best', fontsize=8, ncol=2)
 ax1.set_xticks(thread_counts)
-ax1.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
 
-# ==================== PLOT 2: Cache Misses vs Threads ====================
+# ==================== PLOT 2: LL Cache Miss Rate vs Threads ====================
 for matrix in matrices:
     matrix_data = df[df['matrix_name'] == matrix].sort_values('threads')
-    ax2.plot(matrix_data['threads'], matrix_data['cache_misses'], 
+    ax2.plot(matrix_data['threads'], matrix_data['llc_miss_rate'], 
              marker='s', linewidth=2, markersize=6, label=matrix, alpha=0.8)
 
 ax2.set_xlabel('Number of Threads', fontsize=12, fontweight='bold')
-ax2.set_ylabel('Overall Cache Misses (count)', fontsize=12, fontweight='bold')
-ax2.set_title('Overall Cache Misses vs Number of Threads', fontsize=14, fontweight='bold')
+ax2.set_ylabel('Last Level Cache Miss Rate (%)', fontsize=12, fontweight='bold')
+ax2.set_title('LLC Miss Rate vs Number of Threads', fontsize=14, fontweight='bold')
 ax2.grid(True, alpha=0.3, linestyle='--')
 ax2.legend(loc='best', fontsize=8, ncol=2)
 ax2.set_xticks(thread_counts)
-ax2.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
 
-# ==================== PLOT 3: L1 Cache Misses vs Matrix Size ====================
-if 'matrix_size' in df.columns and df['matrix_size'].max() > 1:
-    # Get average cache misses for each matrix across all thread counts
-    avg_cache_perf = df.groupby('matrix_name').agg({
-        'l1_dcache_misses': 'mean',
-        'cache_misses': 'mean',
-        'l1_miss_rate': 'mean',
-        'cache_miss_rate': 'mean',
-        'matrix_size': 'first',
-        'density_clean': 'first'
-    }).reset_index().sort_values('matrix_size')
+# ==================== PLOT 3: L1D Misses vs Threads (Absolute Count) ====================
+for matrix in matrices:
+    matrix_data = df[df['matrix_name'] == matrix].sort_values('threads')
+    ax3.plot(matrix_data['threads'], matrix_data['l1d_misses'], 
+             marker='o', linewidth=2, markersize=6, label=matrix, alpha=0.8)
 
-    # Scatter plot
-    scatter1 = ax3.scatter(avg_cache_perf['matrix_size'], avg_cache_perf['l1_dcache_misses'],
-               s=200, alpha=0.7, c=avg_cache_perf['density_clean'], 
-               cmap='viridis', edgecolors='black', linewidth=1.5, zorder=3)
+ax3.set_xlabel('Number of Threads', fontsize=12, fontweight='bold')
+ax3.set_ylabel('L1 D-Cache Misses (count)', fontsize=12, fontweight='bold')
+ax3.set_title('L1 D-Cache Misses vs Number of Threads', fontsize=14, fontweight='bold')
+ax3.grid(True, alpha=0.3, linestyle='--')
+ax3.legend(loc='best', fontsize=8, ncol=2)
+ax3.set_xticks(thread_counts)
+ax3.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
 
-    # Add trend line
-    if len(avg_cache_perf) > 2:
-        z = np.polyfit(np.log10(avg_cache_perf['matrix_size']), 
-                       avg_cache_perf['l1_dcache_misses'], 1)
+# ==================== PLOT 4: LLC Misses vs Threads (Absolute Count) ====================
+for matrix in matrices:
+    matrix_data = df[df['matrix_name'] == matrix].sort_values('threads')
+    ax4.plot(matrix_data['threads'], matrix_data['llc_misses'], 
+             marker='s', linewidth=2, markersize=6, label=matrix, alpha=0.8)
+
+ax4.set_xlabel('Number of Threads', fontsize=12, fontweight='bold')
+ax4.set_ylabel('Last Level Cache Misses (count)', fontsize=12, fontweight='bold')
+ax4.set_title('LLC Misses vs Number of Threads', fontsize=14, fontweight='bold')
+ax4.grid(True, alpha=0.3, linestyle='--')
+ax4.legend(loc='best', fontsize=8, ncol=2)
+ax4.set_xticks(thread_counts)
+ax4.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
+
+# ==================== PLOT 5: L1D Miss Rate vs Matrix Size ====================
+# Get average cache performance for each matrix across all thread counts
+avg_cache_perf = df.groupby('matrix_name').agg({
+    'l1d_misses': 'mean',
+    'l1d_miss_rate': 'mean',
+    'llc_misses': 'mean',
+    'llc_miss_rate': 'mean',
+    'branch_misses': 'mean',
+    'branch_miss_rate': 'mean',
+    'time_ms': 'mean',
+    'matrix_size': 'first',
+    'density_clean': 'first'
+}).reset_index().sort_values('matrix_size')
+
+# Scatter plot
+scatter1 = ax5.scatter(avg_cache_perf['matrix_size'], avg_cache_perf['l1d_miss_rate'],
+           s=200, alpha=0.7, c=avg_cache_perf['density_clean'], 
+           cmap='viridis', edgecolors='black', linewidth=1.5, zorder=3)
+
+# Add trend line
+if len(avg_cache_perf) > 2:
+    valid_data = avg_cache_perf[avg_cache_perf['matrix_size'] > 0]
+    if len(valid_data) > 2:
+        z = np.polyfit(np.log10(valid_data['matrix_size']), 
+                       valid_data['l1d_miss_rate'], 1)
         p = np.poly1d(z)
-        x_line = np.logspace(np.log10(avg_cache_perf['matrix_size'].min()),
-                             np.log10(avg_cache_perf['matrix_size'].max()), 100)
-        ax3.plot(x_line, p(np.log10(x_line)), 'r--', linewidth=2.5, 
+        x_line = np.logspace(np.log10(valid_data['matrix_size'].min()),
+                             np.log10(valid_data['matrix_size'].max()), 100)
+        ax5.plot(x_line, p(np.log10(x_line)), 'r--', linewidth=2.5, 
                  alpha=0.7, label='Trend', zorder=2)
 
-    # Add labels for each point
-    for idx, row in avg_cache_perf.iterrows():
-        ax3.annotate(row['matrix_name'], 
-                    (row['matrix_size'], row['l1_dcache_misses']),
-                    fontsize=7, alpha=0.8, 
-                    xytext=(5, 5), textcoords='offset points')
+# Add labels for each point
+for idx, row in avg_cache_perf.iterrows():
+    ax5.annotate(row['matrix_name'], 
+                (row['matrix_size'], row['l1d_miss_rate']),
+                fontsize=7, alpha=0.8, 
+                xytext=(5, 5), textcoords='offset points')
 
-    ax3.set_xlabel('Matrix Size (rows × cols)', fontsize=12, fontweight='bold')
-    ax3.set_ylabel('L1 D-Cache Misses (average)', fontsize=12, fontweight='bold')
-    ax3.set_title('L1 D-Cache Misses vs Matrix Size', fontsize=14, fontweight='bold')
-    ax3.grid(True, alpha=0.3, linestyle='--', zorder=1)
-    ax3.set_xscale('log')
-    ax3.set_yscale('log')
-    ax3.ticklabel_format(style='plain', axis='y')
-    if len(avg_cache_perf) > 2:
-        ax3.legend(loc='best', fontsize=9)
-    cbar3 = plt.colorbar(scatter1, ax=ax3)
-    cbar3.set_label('Density (%)', fontsize=10)
-else:
-    ax3.text(0.5, 0.5, 'Matrix size data not available', 
-             ha='center', va='center', transform=ax3.transAxes, fontsize=14)
+ax5.set_xlabel('Matrix Size (rows × cols)', fontsize=12, fontweight='bold')
+ax5.set_ylabel('L1 D-Cache Miss Rate (% average)', fontsize=12, fontweight='bold')
+ax5.set_title('L1 D-Cache Miss Rate vs Matrix Size', fontsize=14, fontweight='bold')
+ax5.grid(True, alpha=0.3, linestyle='--', zorder=1)
+ax5.set_xscale('log')
+if len(avg_cache_perf) > 2:
+    ax5.legend(loc='best', fontsize=9)
+cbar5 = plt.colorbar(scatter1, ax=ax5)
+cbar5.set_label('Density (%)', fontsize=10)
 
-# ==================== PLOT 4: Overall Cache Misses vs Matrix Size ====================
-if 'matrix_size' in df.columns and df['matrix_size'].max() > 1:
-    # Scatter plot
-    scatter2 = ax4.scatter(avg_cache_perf['matrix_size'], avg_cache_perf['cache_misses'],
-               s=200, alpha=0.7, c=avg_cache_perf['density_clean'], 
-               cmap='plasma', edgecolors='black', linewidth=1.5, zorder=3)
+# ==================== PLOT 6: LLC Miss Rate vs Matrix Size ====================
+# Scatter plot
+scatter2 = ax6.scatter(avg_cache_perf['matrix_size'], avg_cache_perf['llc_miss_rate'],
+           s=200, alpha=0.7, c=avg_cache_perf['density_clean'], 
+           cmap='plasma', edgecolors='black', linewidth=1.5, zorder=3)
 
-    # Add trend line
-    if len(avg_cache_perf) > 2:
-        z = np.polyfit(np.log10(avg_cache_perf['matrix_size']), 
-                       avg_cache_perf['cache_misses'], 1)
+# Add trend line
+if len(avg_cache_perf) > 2:
+    valid_data = avg_cache_perf[avg_cache_perf['matrix_size'] > 0]
+    if len(valid_data) > 2:
+        z = np.polyfit(np.log10(valid_data['matrix_size']), 
+                       valid_data['llc_miss_rate'], 1)
         p = np.poly1d(z)
-        x_line = np.logspace(np.log10(avg_cache_perf['matrix_size'].min()),
-                             np.log10(avg_cache_perf['matrix_size'].max()), 100)
-        ax4.plot(x_line, p(np.log10(x_line)), 'r--', linewidth=2.5, 
+        x_line = np.logspace(np.log10(valid_data['matrix_size'].min()),
+                             np.log10(valid_data['matrix_size'].max()), 100)
+        ax6.plot(x_line, p(np.log10(x_line)), 'r--', linewidth=2.5, 
                  alpha=0.7, label='Trend', zorder=2)
 
-    # Add labels
-    for idx, row in avg_cache_perf.iterrows():
-        ax4.annotate(row['matrix_name'], 
-                    (row['matrix_size'], row['cache_misses']),
-                    fontsize=7, alpha=0.8,
-                    xytext=(5, 5), textcoords='offset points')
+# Add labels
+for idx, row in avg_cache_perf.iterrows():
+    ax6.annotate(row['matrix_name'], 
+                (row['matrix_size'], row['llc_miss_rate']),
+                fontsize=7, alpha=0.8,
+                xytext=(5, 5), textcoords='offset points')
 
-    ax4.set_xlabel('Matrix Size (rows × cols)', fontsize=12, fontweight='bold')
-    ax4.set_ylabel('Overall Cache Misses (average)', fontsize=12, fontweight='bold')
-    ax4.set_title('Overall Cache Misses vs Matrix Size', fontsize=14, fontweight='bold')
-    ax4.grid(True, alpha=0.3, linestyle='--', zorder=1)
-    ax4.set_xscale('log')
-    ax4.set_yscale('log')
-    ax4.ticklabel_format(style='plain', axis='y')
-    if len(avg_cache_perf) > 2:
-        ax4.legend(loc='best', fontsize=9)
-    cbar4 = plt.colorbar(scatter2, ax=ax4)
-    cbar4.set_label('Density (%)', fontsize=10)
-else:
-    ax4.text(0.5, 0.5, 'Matrix size data not available', 
-             ha='center', va='center', transform=ax4.transAxes, fontsize=14)
+ax6.set_xlabel('Matrix Size (rows × cols)', fontsize=12, fontweight='bold')
+ax6.set_ylabel('Last Level Cache Miss Rate (% average)', fontsize=12, fontweight='bold')
+ax6.set_title('LLC Miss Rate vs Matrix Size', fontsize=14, fontweight='bold')
+ax6.grid(True, alpha=0.3, linestyle='--', zorder=1)
+ax6.set_xscale('log')
+if len(avg_cache_perf) > 2:
+    ax6.legend(loc='best', fontsize=9)
+cbar6 = plt.colorbar(scatter2, ax=ax6)
+cbar6.set_label('Density (%)', fontsize=10)
 
 plt.tight_layout()
 
@@ -210,34 +220,61 @@ plt.savefig(output_file, dpi=300, bbox_inches='tight')
 print(f"✓ Plot saved to: {output_file}")
 
 # Print summary statistics
-print("\n=== Cache Misses Summary (Average across all threads) ===")
-if 'matrix_size' in df.columns and df['matrix_size'].max() > 1:
-    print(f"{'Matrix':<25s} {'L1 Misses':>15s} {'Cache Misses':>15s} {'L1 Miss %':>10s} {'Size':>12s}")
-    print("=" * 80)
-    for idx, row in avg_cache_perf.sort_values('l1_dcache_misses', ascending=False).iterrows():
-        print(f"{row['matrix_name']:<25s} {row['l1_dcache_misses']:>15,.0f} {row['cache_misses']:>15,.0f} "
-              f"{row['l1_miss_rate']:>9.2f}% {row['matrix_size']:>12,}")
-else:
-    # Simple summary without matrix info
-    summary = df.groupby('matrix_name').agg({
-        'l1_dcache_misses': 'mean',
-        'cache_misses': 'mean',
-        'l1_miss_rate': 'mean',
-        'cache_miss_rate': 'mean'
-    }).sort_values('l1_dcache_misses', ascending=False)
-    
-    print(f"{'Matrix':<25s} {'L1 Misses':>15s} {'Cache Misses':>15s} {'L1 Miss %':>10s}")
-    print("=" * 70)
-    for matrix_name, row in summary.iterrows():
-        print(f"{matrix_name:<25s} {row['l1_dcache_misses']:>15,.0f} {row['cache_misses']:>15,.0f} "
-              f"{row['l1_miss_rate']:>9.2f}%")
+print("\n=== Cache Performance Summary (Average across all threads) ===")
+print(f"{'Matrix':<25s} {'L1D Miss %':>12s} {'LLC Miss %':>12s} {'Branch Miss %':>14s} {'Time (ms)':>12s} {'Size':>12s} {'Density':>10s}")
+print("=" * 110)
+for idx, row in avg_cache_perf.sort_values('l1d_miss_rate', ascending=False).iterrows():
+    print(f"{row['matrix_name']:<25s} {row['l1d_miss_rate']:>11.2f}% {row['llc_miss_rate']:>11.2f}% "
+          f"{row['branch_miss_rate']:>13.2f}% {row['time_ms']:>11.2f} {row['matrix_size']:>12,} {row['density_clean']:>9.2f}%")
 
-print("\n=== Cache Misses vs Threading ===")
-# Show how cache misses change with threading for a sample matrix
+print("\n=== Cache Misses by Thread Count ===")
+# Group by threads and show average miss rates
+thread_summary = df.groupby('threads').agg({
+    'l1d_miss_rate': 'mean',
+    'llc_miss_rate': 'mean',
+    'branch_miss_rate': 'mean',
+    'l1d_misses': 'mean',
+    'llc_misses': 'mean',
+    'time_ms': 'mean'
+}).reset_index().sort_values('threads')
+
+print(f"{'Threads':<10s} {'L1D Miss %':>12s} {'LLC Miss %':>12s} {'Branch Miss %':>14s} {'Avg L1D Misses':>16s} {'Avg LLC Misses':>16s} {'Time (ms)':>12s}")
+print("-" * 110)
+for _, row in thread_summary.iterrows():
+    print(f"{int(row['threads']):<10d} {row['l1d_miss_rate']:>11.2f}% {row['llc_miss_rate']:>11.2f}% "
+          f"{row['branch_miss_rate']:>13.2f}% {row['l1d_misses']:>16,.0f} {row['llc_misses']:>16,.0f} {row['time_ms']:>11.2f}")
+
+print("\n=== Sample Matrix Detail (Thread Scaling) ===")
+# Show how cache misses change with threading for first matrix
 sample_matrix = matrices[0]
 sample_data = df[df['matrix_name'] == sample_matrix].sort_values('threads')
 print(f"\nMatrix: {sample_matrix}")
-print(f"{'Threads':<10s} {'L1 Misses':>15s} {'Cache Misses':>15s} {'Time (ms)':>12s}")
-print("-" * 55)
+print(f"{'Threads':<10s} {'L1D Misses':>16s} {'LLC Misses':>16s} {'L1D Miss %':>12s} {'LLC Miss %':>12s} {'Time (ms)':>12s}")
+print("-" * 90)
 for _, row in sample_data.iterrows():
-    print(f"{row['threads']:<10d} {row['l1_dcache_misses']:>15,.0f} {row['cache_misses']:>15,.0f} {row['time_ms']:>11.2f}")
+    print(f"{int(row['threads']):<10d} {row['l1d_misses']:>16,.0f} {row['llc_misses']:>16,.0f} "
+          f"{row['l1d_miss_rate']:>11.2f}% {row['llc_miss_rate']:>11.2f}% {row['time_ms']:>11.2f}")
+
+print("\n=== Key Insights ===")
+# Calculate and show key insights
+best_l1d = avg_cache_perf.loc[avg_cache_perf['l1d_miss_rate'].idxmin()]
+worst_l1d = avg_cache_perf.loc[avg_cache_perf['l1d_miss_rate'].idxmax()]
+best_llc = avg_cache_perf.loc[avg_cache_perf['llc_miss_rate'].idxmin()]
+worst_llc = avg_cache_perf.loc[avg_cache_perf['llc_miss_rate'].idxmax()]
+
+print(f"Best L1D cache performance:  {best_l1d['matrix_name']} ({best_l1d['l1d_miss_rate']:.2f}% miss rate)")
+print(f"Worst L1D cache performance: {worst_l1d['matrix_name']} ({worst_l1d['l1d_miss_rate']:.2f}% miss rate)")
+print(f"Best LLC performance:        {best_llc['matrix_name']} ({best_llc['llc_miss_rate']:.2f}% miss rate)")
+print(f"Worst LLC performance:       {worst_llc['matrix_name']} ({worst_llc['llc_miss_rate']:.2f}% miss rate)")
+
+# Thread scaling insights
+if len(thread_summary) > 1:
+    thread_increase = thread_summary.iloc[-1]['threads'] / thread_summary.iloc[0]['threads']
+    l1d_change = thread_summary.iloc[-1]['l1d_miss_rate'] - thread_summary.iloc[0]['l1d_miss_rate']
+    llc_change = thread_summary.iloc[-1]['llc_miss_rate'] - thread_summary.iloc[0]['llc_miss_rate']
+    time_speedup = thread_summary.iloc[0]['time_ms'] / thread_summary.iloc[-1]['time_ms']
+    
+    print(f"\nThread scaling ({int(thread_summary.iloc[0]['threads'])}→{int(thread_summary.iloc[-1]['threads'])} threads, {thread_increase:.1f}× increase):")
+    print(f"  L1D miss rate change: {l1d_change:+.2f} percentage points")
+    print(f"  LLC miss rate change: {llc_change:+.2f} percentage points")
+    print(f"  Speedup: {time_speedup:.2f}×")

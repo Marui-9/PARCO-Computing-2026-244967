@@ -450,29 +450,216 @@ print("✓ Generated: plots/speedup_distribution_binding.png")
 plt.close()
 
 # ============================================================================
-# 7. Speedup vs Thread Count for Different Matrices
+# 7. Speedup vs Thread Count for ALL Matrices (Enhanced)
 # ============================================================================
-fig, ax = plt.subplots(figsize=(12, 7))
+fig, ax = plt.subplots(figsize=(14, 9))
 
-matrices = df['matrix'].unique()[:5]  # Plot up to 5 matrices
-for i, matrix in enumerate(matrices):
+# Get all unique matrices
+all_matrices = sorted(df['matrix'].unique())
+num_matrices = len(all_matrices)
+
+# Use a colormap with enough distinct colors
+if num_matrices <= 10:
+    matrix_colors = plt.cm.tab10(np.linspace(0, 1, num_matrices))
+else:
+    matrix_colors = plt.cm.tab20(np.linspace(0, 1, num_matrices))
+
+# Plot each matrix with best configuration at each thread count
+for i, matrix in enumerate(all_matrices):
     matrix_data = df[df['matrix'] == matrix]
-    speedup_by_threads = matrix_data.groupby('threads')['speedup'].mean()
+    
+    # For each thread count, take the maximum speedup across all configurations
+    speedup_by_threads = matrix_data.groupby('threads')['speedup'].max()
+    
     if len(speedup_by_threads) > 0:
+        density = matrix_data['density_pct'].iloc[0] if 'density_pct' in matrix_data.columns else 0
+        nnz = matrix_data['nnz'].iloc[0] if 'nnz' in matrix_data.columns else 0
+        
+        # Format label with matrix name and characteristics
+        if nnz != 'NA' and nnz > 0:
+            label = f'{matrix} ({density:.2f}%, {int(nnz):,} NNZ)'
+        else:
+            label = f'{matrix}'
+        
         ax.plot(speedup_by_threads.index, speedup_by_threads.values, 
                 marker='o', linewidth=2.5, markersize=8, 
-                label=f'{matrix} ({matrix_data["density_pct"].iloc[0]:.2f}%)', 
-                color=colors[i])
+                label=label, color=matrix_colors[i], alpha=0.85)
 
-ax.set_xlabel('Number of Threads', fontsize=13, fontweight='bold')
-ax.set_ylabel('Average Speedup', fontsize=13, fontweight='bold')
-ax.set_title('NUMA: Speedup vs Thread Count by Matrix', fontsize=15, fontweight='bold')
-ax.legend(fontsize=10, loc='upper left')
-ax.grid(True, alpha=0.3)
-ax.set_xticks(sorted(df['threads'].unique()))
+# Add ideal linear scaling reference (from 24 threads)
+threads = sorted(df['threads'].unique())
+if 24 in threads:
+    # Calculate ideal scaling from 24-thread baseline
+    baseline_24 = df[df['threads'] == 24]['speedup'].mean()
+    ideal_scaling = [baseline_24 * (t / 24) for t in threads]
+    ax.plot(threads, ideal_scaling, 'k--', linewidth=2, alpha=0.4, 
+            label='Ideal Linear Scaling (from 24t)')
+
+ax.set_xlabel('Number of Threads', fontsize=14, fontweight='bold')
+ax.set_ylabel('Speedup (Best Configuration)', fontsize=14, fontweight='bold')
+ax.set_title('NUMA: Speedup Scaling Across All Matrices (24-96 Threads)', 
+             fontsize=16, fontweight='bold', pad=15)
+ax.legend(fontsize=9, loc='upper left', ncol=2, framealpha=0.9)
+ax.grid(True, alpha=0.3, linestyle='--')
+ax.set_xticks(threads)
+ax.set_xticklabels([str(t) for t in threads], fontsize=12)
+
+# Add NUMA node boundaries as vertical lines
+for numa_boundary in [24, 48, 72]:
+    if numa_boundary in threads:
+        ax.axvline(x=numa_boundary, color='gray', linestyle=':', alpha=0.3, linewidth=1.5)
+
 plt.tight_layout()
-plt.savefig('plots/speedup_vs_threads_matrices.png', dpi=300, bbox_inches='tight')
-print("✓ Generated: plots/speedup_vs_threads_matrices.png")
+plt.savefig('plots/speedup_vs_threads_all_matrices.png', dpi=300, bbox_inches='tight')
+print("✓ Generated: plots/speedup_vs_threads_all_matrices.png")
+plt.close()
+
+# ============================================================================
+# 8. Individual Matrix Scaling (Subplots for Each Matrix)
+# ============================================================================
+num_matrices = len(all_matrices)
+cols = 3
+rows = (num_matrices + cols - 1) // cols
+
+fig, axes = plt.subplots(rows, cols, figsize=(18, 5 * rows))
+if rows == 1:
+    axes = axes.reshape(1, -1)
+
+for idx, matrix in enumerate(all_matrices):
+    row = idx // cols
+    col = idx % cols
+    ax = axes[row, col]
+    
+    matrix_data = df[df['matrix'] == matrix]
+    
+    # Plot all configurations for this matrix
+    configs = matrix_data['configuration'].unique()
+    
+    # Limit to top 5 configurations by average speedup
+    config_speedups = matrix_data.groupby('configuration')['speedup'].mean().nlargest(5)
+    top_configs = config_speedups.index
+    
+    for i, config in enumerate(top_configs):
+        config_data = matrix_data[matrix_data['configuration'] == config]
+        speedup_by_threads = config_data.groupby('threads')['speedup'].mean()
+        
+        if len(speedup_by_threads) > 0:
+            # Shorten config name for legend
+            short_config = config.replace('Static+SIMD+', 'S+').replace('Guided+SIMD+', 'G+').replace('Dynamic+SIMD+', 'D+')
+            ax.plot(speedup_by_threads.index, speedup_by_threads.values,
+                   marker='o', linewidth=2, markersize=6,
+                   label=short_config, alpha=0.8)
+    
+    density = matrix_data['density_pct'].iloc[0] if 'density_pct' in matrix_data.columns else 0
+    ax.set_title(f'{matrix}\n(Density: {density:.2f}%)', fontsize=11, fontweight='bold')
+    ax.set_xlabel('Threads', fontsize=10)
+    ax.set_ylabel('Speedup', fontsize=10)
+    ax.grid(True, alpha=0.3)
+    ax.legend(fontsize=7, loc='upper left')
+    ax.set_xticks(threads)
+
+# Hide empty subplots
+for idx in range(num_matrices, rows * cols):
+    row = idx // cols
+    col = idx % cols
+    axes[row, col].axis('off')
+
+plt.suptitle('NUMA: Individual Matrix Scaling (Top 5 Configurations)', 
+             fontsize=16, fontweight='bold', y=0.995)
+plt.tight_layout()
+plt.savefig('plots/speedup_per_matrix_subplots.png', dpi=300, bbox_inches='tight')
+print("✓ Generated: plots/speedup_per_matrix_subplots.png")
+plt.close()
+
+# ============================================================================
+# 9. Speedup Improvement from 24 to 96 Threads
+# ============================================================================
+if 24 in threads and 96 in threads:
+    fig, ax = plt.subplots(figsize=(12, 8))
+    
+    scaling_factors = []
+    matrix_labels = []
+    
+    for matrix in all_matrices:
+        data_24 = df[(df['matrix'] == matrix) & (df['threads'] == 24)]
+        data_96 = df[(df['matrix'] == matrix) & (df['threads'] == 96)]
+        
+        if not data_24.empty and not data_96.empty:
+            speedup_24 = data_24['speedup'].max()
+            speedup_96 = data_96['speedup'].max()
+            
+            if speedup_24 > 0:
+                scaling_factor = speedup_96 / speedup_24
+                scaling_factors.append(scaling_factor)
+                matrix_labels.append(matrix)
+    
+    if scaling_factors:
+        # Sort by scaling factor
+        sorted_indices = np.argsort(scaling_factors)[::-1]
+        scaling_factors = [scaling_factors[i] for i in sorted_indices]
+        matrix_labels = [matrix_labels[i] for i in sorted_indices]
+        
+        # Color based on how close to ideal (4x)
+        colors_bar = ['green' if s >= 3.5 else 'orange' if s >= 2.5 else 'red' for s in scaling_factors]
+        
+        bars = ax.barh(range(len(matrix_labels)), scaling_factors, color=colors_bar, alpha=0.7)
+        ax.axvline(x=4.0, color='blue', linestyle='--', linewidth=2, label='Ideal 4× Scaling', alpha=0.7)
+        
+        ax.set_yticks(range(len(matrix_labels)))
+        ax.set_yticklabels(matrix_labels, fontsize=11)
+        ax.set_xlabel('Scaling Factor (96 threads / 24 threads)', fontsize=13, fontweight='bold')
+        ax.set_title('NUMA: Speedup Scaling from 24 to 96 Threads by Matrix', 
+                     fontsize=14, fontweight='bold')
+        ax.legend(fontsize=11)
+        ax.grid(True, alpha=0.3, axis='x')
+        
+        # Add value labels
+        for i, (bar, value) in enumerate(zip(bars, scaling_factors)):
+            ax.text(value + 0.05, bar.get_y() + bar.get_height()/2, 
+                    f'{value:.2f}×', va='center', fontsize=10, fontweight='bold')
+        
+        plt.tight_layout()
+        plt.savefig('plots/scaling_24_to_96_threads.png', dpi=300, bbox_inches='tight')
+        print("✓ Generated: plots/scaling_24_to_96_threads.png")
+    plt.close()
+
+# ============================================================================
+# 10. Efficiency Heatmap: Matrix × Thread Count
+# ============================================================================
+fig, ax = plt.subplots(figsize=(12, max(8, len(all_matrices) * 0.6)))
+
+pivot_efficiency = df.pivot_table(values='efficiency_pct', 
+                                   index='matrix', 
+                                   columns='threads', 
+                                   aggfunc='max')
+
+if len(pivot_efficiency) > 0:
+    im = ax.imshow(pivot_efficiency.values, aspect='auto', cmap='RdYlGn', 
+                   interpolation='nearest', vmin=0, vmax=100)
+
+    ax.set_xticks(np.arange(len(pivot_efficiency.columns)))
+    ax.set_yticks(np.arange(len(pivot_efficiency.index)))
+    ax.set_xticklabels(pivot_efficiency.columns, fontsize=11)
+    ax.set_yticklabels(pivot_efficiency.index, fontsize=10)
+
+    cbar = plt.colorbar(im, ax=ax)
+    cbar.set_label('Parallel Efficiency (%)', fontsize=12, fontweight='bold')
+
+    # Add text annotations
+    for i in range(len(pivot_efficiency.index)):
+        for j in range(len(pivot_efficiency.columns)):
+            value = pivot_efficiency.values[i, j]
+            if not np.isnan(value):
+                text_color = 'white' if value < 50 else 'black'
+                ax.text(j, i, f'{value:.0f}', ha='center', va='center', 
+                       color=text_color, fontsize=9, fontweight='bold')
+
+    ax.set_xlabel('Number of Threads', fontsize=13, fontweight='bold')
+    ax.set_ylabel('Matrix', fontsize=13, fontweight='bold')
+    ax.set_title('NUMA: Parallel Efficiency by Matrix and Thread Count', 
+                 fontsize=14, fontweight='bold', pad=20)
+    plt.tight_layout()
+    plt.savefig('plots/efficiency_heatmap_matrix_threads.png', dpi=300, bbox_inches='tight')
+    print("✓ Generated: plots/efficiency_heatmap_matrix_threads.png")
 plt.close()
 
 print("\n" + "="*80)

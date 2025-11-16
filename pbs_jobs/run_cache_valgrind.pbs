@@ -1,23 +1,24 @@
 #!/bin/bash
-#PBS -N cache_valgrind
-#PBS -o ./cache_valgrind.out
-#PBS -e ./cache_valgrind.err
+#PBS -N cache_perf
+#PBS -o ./cache_perf.out
+#PBS -e ./cache_perf.err
 #PBS -q short_cpuQ
-#PBS -l walltime=6:00:00
+#PBS -l walltime=2:00:00
 #PBS -l select=1:ncpus=24:mem=16gb
 
-# Cache benchmarking with Valgrind Cachegrind
-# Note: Valgrind adds significant overhead, so this takes longer than perf-based benchmarks
+# Cache benchmarking with perf stat
+# Note: perf is much faster than valgrind and captures multi-threaded cache behavior
 
 # Load modules
 module load gcc91
 gcc() { gcc-9.1.0 "$@"; }
 gcc --version
 
-# Verify valgrind is available (using system valgrind, no module needed)
-echo "Valgrind version:"
-which valgrind
-valgrind --version
+# Verify perf is available
+module load perf
+echo "perf version:"
+which perf
+perf --version
 
 # Navigate to project root directory
 echo "Starting directory: $(pwd)"
@@ -46,29 +47,29 @@ echo "Project root: $(pwd)"
 # Clean and recompile the project (to ensure correct GLIBC version)
 echo "Cleaning old build artifacts..."
 # Only remove our specific executable, not others that might be in use
-rm -f cache_valgrind_*.o executable_cache_valgrind
+rm -f cache_perf_*.o executable_cache_perf
 
 echo "Compiling executable..."
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/main.c -o cache_valgrind_main.o
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/generator.c -o cache_valgrind_generator.o
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/m_to_csr.c -o cache_valgrind_m_to_csr.o
-gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -o executable_cache_valgrind cache_valgrind_main.o cache_valgrind_generator.o cache_valgrind_m_to_csr.o -lm
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/main.c -o cache_perf_main.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/generator.c -o cache_perf_generator.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/m_to_csr.c -o cache_perf_m_to_csr.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -o executable_cache_perf cache_perf_main.o cache_perf_generator.o cache_perf_m_to_csr.o -lm
 echo "Compilation complete"
 
 # Verify executable was created and is accessible
-if [ ! -f executable_cache_valgrind ]; then
+if [ ! -f executable_cache_perf ]; then
     echo "ERROR: executable not created!"
     exit 1
 fi
-ls -lh executable_cache_valgrind
-chmod +x executable_cache_valgrind
+ls -lh executable_cache_perf
+chmod +x executable_cache_perf
 echo "Executable verified and permissions set"
 
 # Override EXECUTABLE variable for the benchmark script
-export EXECUTABLE="./executable_cache_valgrind"
+export EXECUTABLE="./executable_cache_perf"
 
 echo "========================================"
-echo "Starting Cache Benchmark with Valgrind"
+echo "Starting Cache Benchmark with perf stat"
 echo "========================================"
 echo "Started at: $(date)"
 echo "Working directory: $(pwd)"
@@ -76,22 +77,22 @@ echo "Available matrices:"
 ls -lh matrices/*.mtx
 echo ""
 
-# Run the valgrind cache benchmark
-bash scripts/bench_cache_valgrind.sh
+# Run the perf cache benchmark
+bash scripts/bench_cache_perf.sh
 
 echo ""
 echo "========================================"
-echo "Cache Valgrind Benchmark Completed"
+echo "Cache perf Benchmark Completed"
 echo "========================================"
 echo "Completed at: $(date)"
-echo "Results saved to: results/cache_valgrind_results.csv"
+echo "Results saved to: results/cache_perf_results.csv"
 echo ""
 
 # Display results summary if file exists
-if [ -f results/cache_valgrind_results.csv ]; then
+if [ -f results/cache_perf_results.csv ]; then
     echo "Total test runs:"
-    wc -l < results/cache_valgrind_results.csv | awk '{print $1-1}'
+    wc -l < results/cache_perf_results.csv | awk '{print $1-1}'
     echo ""
     echo "First few results:"
-    head -5 results/cache_valgrind_results.csv
+    head -5 results/cache_perf_results.csv
 fi
