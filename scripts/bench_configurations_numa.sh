@@ -75,11 +75,18 @@ echo "Starting NUMA-aware configuration benchmark. EXE=$EXE. Timeout per run=${T
 echo "Iterations per config: $ITERATIONS"
 echo "Thread counts: $THREAD_COUNTS"
 echo "Output: $OUT_CSV"
+echo "Log: $OUT_LOG"
 echo ""
+
+# Flush output
+sync
 
 for mtx in "${MATRICES[@]}"; do
   echo "=== Matrix: $mtx ==="
   echo "=== Processing Matrix: $mtx ===" >> "$OUT_LOG"
+  
+  # Flush log after each matrix header
+  sync
   if [ ! -f "$mtx" ]; then
     echo "  SKIP: file not found: $mtx"
     echo "  SKIP: file not found: $mtx" >> "$OUT_LOG"
@@ -105,18 +112,71 @@ for mtx in "${MATRICES[@]}"; do
     tmperr=$(mktemp)
     notes=""
     
+    # Verify executable exists and is executable
+    if [ ! -x "$EXE" ]; then
+      echo "    ERROR: Executable not found or not executable: $EXE" | tee -a "$OUT_LOG"
+      printf '%s\n' "\"$mtx_basename\",NA,NA,NA,NA,$threads,\"EXE_NOT_FOUND\",NA,NA,NA,NA,NA,NA,127,\"executable not found\"" >> "$OUT_CSV"
+      rm -f "$tmpout" "$tmperr"
+      continue
+    fi
+    
+    # Verify matrix file exists (C code will look for matrices/<basename>)
+    expected_matrix_path="matrices/$mtx_basename"
+    if [ ! -f "$expected_matrix_path" ]; then
+      echo "    ERROR: Matrix file not found: $expected_matrix_path" | tee -a "$OUT_LOG"
+      printf '%s\n' "\"$mtx_basename\",NA,NA,NA,NA,$threads,\"MATRIX_NOT_FOUND\",NA,NA,NA,NA,NA,NA,2,\"matrix file not found at $expected_matrix_path\"" >> "$OUT_CSV"
+      rm -f "$tmpout" "$tmperr"
+      continue
+    fi
+    
     echo "    Running: $EXE $threads $mtx_basename $ITERATIONS" >> "$OUT_LOG"
     echo "    tmpout: $tmpout" >> "$OUT_LOG"
     echo "    tmperr: $tmperr" >> "$OUT_LOG"
+    echo "    Start time: $(date)" >> "$OUT_LOG"
+    
+    # Flush log before potentially long-running command
+    sync
+
+    # Test if executable can be invoked at all (quick sanity check)
+    echo "    Testing if executable responds..." >> "$OUT_LOG"
+    sync
+    if ! "$EXE" 2>&1 | head -1 >> "$OUT_LOG"; then
+      echo "    Warning: Executable test invocation failed" >> "$OUT_LOG"
+    fi
+    sync
 
     # Run test_config_numa with timeout
     # Note: test_config_numa expects basename and adds matrices/ prefix internally
+    echo "    Executing timeout command..." >> "$OUT_LOG"
+    sync
+    
     timeout "$TIMEOUT_SECS" "$EXE" "$threads" "$mtx_basename" "$ITERATIONS" > "$tmpout" 2> "$tmperr"
     exitcode=$?
     
+    echo "    Command completed" >> "$OUT_LOG"
+    echo "    End time: $(date)" >> "$OUT_LOG"
+    sync
+    
+    # Force sync to ensure files are written
+    sync
+    sleep 0.5
+    
     echo "    Exit code: $exitcode" >> "$OUT_LOG"
-    echo "    tmpout size: $(wc -c < "$tmpout" 2>/dev/null || echo 0) bytes" >> "$OUT_LOG"
-    echo "    tmperr size: $(wc -c < "$tmperr" 2>/dev/null || echo 0) bytes" >> "$OUT_LOG"
+    
+    # Use stat or ls to check file sizes more reliably
+    if [ -f "$tmpout" ]; then
+      tmpout_size=$(stat -f%z "$tmpout" 2>/dev/null || stat -c%s "$tmpout" 2>/dev/null || wc -c < "$tmpout" 2>/dev/null || echo "unknown")
+      echo "    tmpout size: $tmpout_size bytes" >> "$OUT_LOG"
+    else
+      echo "    tmpout: FILE NOT FOUND" >> "$OUT_LOG"
+    fi
+    
+    if [ -f "$tmperr" ]; then
+      tmperr_size=$(stat -f%z "$tmperr" 2>/dev/null || stat -c%s "$tmperr" 2>/dev/null || wc -c < "$tmperr" 2>/dev/null || echo "unknown")
+      echo "    tmperr size: $tmperr_size bytes" >> "$OUT_LOG"
+    else
+      echo "    tmperr: FILE NOT FOUND" >> "$OUT_LOG"
+    fi
 
     # timeout returns 124 when timed out
     if [ "$exitcode" -eq 124 ]; then
