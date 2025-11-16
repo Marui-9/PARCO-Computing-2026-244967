@@ -1,7 +1,7 @@
 ========================================================================
 NUMA-AWARE CONFIGURATION BENCHMARK LOG
 ========================================================================
-Started at: Sat Nov 15 16:13:18 CET 2025
+Started at: Sun Nov 16 10:36:38 CET 2025
 Executable: ./test_config_numa
 Timeout per run: 900s
 Iterations per config: 10
@@ -12,18 +12,3 @@ NUMA nodes: 4 (assumed 24 cores each)
 ========================================================================
 
 === Processing Matrix: matrices/10k_1p5.mtx ===
-    10k_1p5.mtx (threads=24): Parsed 7 configurations
-    10k_1p5.mtx (threads=48): Parsed 7 configurations
-    10k_1p5.mtx (threads=72): Parsed 7 configurations
-    10k_1p5.mtx (threads=96): Parsed 7 configurations
-=== Processing Matrix: matrices/11k_0p35.mtx ===
-    11k_0p35.mtx (threads=24): Parsed 7 configurations
-    11k_0p35.mtx (threads=48): Parsed 7 configurations
-    11k_0p35.mtx (threads=72): Parsed 7 configurations
-    11k_0p35.mtx (threads=96): Parsed 7 configurations
-=== Processing Matrix: matrices/11k_0p38.mtx ===
-    11k_0p38.mtx (threads=24): Parsed 7 configurations
-    11k_0p38.mtx (threads=48): Parsed 7 configurations
-    11k_0p38.mtx (threads=72): Parsed 7 configurations
-    11k_0p38.mtx (threads=96): Parsed 7 configurations
-=== Processing Matrix: matrices/15k_0p41.mtx ===
