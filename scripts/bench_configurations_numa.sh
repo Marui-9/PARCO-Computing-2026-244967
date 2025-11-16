@@ -148,13 +148,30 @@ for mtx in "${MATRICES[@]}"; do
     # Run test_config_numa with timeout
     # Note: test_config_numa expects basename and adds matrices/ prefix internally
     echo "    Executing timeout command..." >> "$OUT_LOG"
+    echo "    Command: timeout $TIMEOUT_SECS $EXE $threads $mtx_basename $ITERATIONS" >> "$OUT_LOG"
     sync
     
-    timeout "$TIMEOUT_SECS" "$EXE" "$threads" "$mtx_basename" "$ITERATIONS" > "$tmpout" 2> "$tmperr"
+    # Add a shorter timeout initially to detect hangs faster
+    timeout "$TIMEOUT_SECS" "$EXE" "$threads" "$mtx_basename" "$ITERATIONS" > "$tmpout" 2> "$tmperr" &
+    timeout_pid=$!
+    echo "    Process started with PID: $timeout_pid" >> "$OUT_LOG"
+    sync
+    
+    # Wait for it to complete
+    wait $timeout_pid
     exitcode=$?
     
     echo "    Command completed" >> "$OUT_LOG"
+    echo "    Exit code: $exitcode" >> "$OUT_LOG"
     echo "    End time: $(date)" >> "$OUT_LOG"
+    
+    # Check what's in stderr immediately
+    if [ -f "$tmperr" ] && [ -s "$tmperr" ]; then
+      echo "    stderr content:" >> "$OUT_LOG"
+      head -20 "$tmperr" >> "$OUT_LOG"
+    else
+      echo "    stderr is empty" >> "$OUT_LOG"
+    fi
     sync
     
     # Force sync to ensure files are written
