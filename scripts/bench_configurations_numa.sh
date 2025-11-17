@@ -7,7 +7,7 @@ set -eu
 EXE="./test_config_numa"
 OUT_CSV="results/configurations_numa_results.csv"
 OUT_LOG="results/configurations_numa_results.txt"
-TIMEOUT_SECS=900    # 15 minutes per matrix/thread combo
+TIMEOUT_SECS=3600   # 60 minutes per matrix/thread combo (increased for large matrices)
 ITERATIONS=10       # 10 iterations for better statistical accuracy
 
 # Thread counts: reduced to 4 key points for 6-hour walltime
@@ -151,26 +151,27 @@ for mtx in "${MATRICES[@]}"; do
     echo "    Command: timeout $TIMEOUT_SECS $EXE $threads $mtx_basename $ITERATIONS" >> "$OUT_LOG"
     sync
     
-    # Add a shorter timeout initially to detect hangs faster
-    timeout "$TIMEOUT_SECS" "$EXE" "$threads" "$mtx_basename" "$ITERATIONS" > "$tmpout" 2> "$tmperr" &
-    timeout_pid=$!
-    echo "    Process started with PID: $timeout_pid" >> "$OUT_LOG"
-    sync
-    
-    # Wait for it to complete
-    wait $timeout_pid
+    # Run with timeout and capture output
+    timeout "$TIMEOUT_SECS" "$EXE" "$threads" "$mtx_basename" "$ITERATIONS" > "$tmpout" 2> "$tmperr"
     exitcode=$?
     
-    echo "    Command completed" >> "$OUT_LOG"
-    echo "    Exit code: $exitcode" >> "$OUT_LOG"
+    echo "    Command completed with exit code: $exitcode" >> "$OUT_LOG"
     echo "    End time: $(date)" >> "$OUT_LOG"
     
-    # Check what's in stderr immediately
+    # Check stderr immediately for any errors
     if [ -f "$tmperr" ] && [ -s "$tmperr" ]; then
-      echo "    stderr content:" >> "$OUT_LOG"
-      head -20 "$tmperr" >> "$OUT_LOG"
+      tmperr_size=$(wc -c < "$tmperr" 2>/dev/null || echo "unknown")
+      echo "    stderr size: $tmperr_size bytes" >> "$OUT_LOG"
+      echo "    stderr content (first 50 lines):" >> "$OUT_LOG"
+      head -50 "$tmperr" >> "$OUT_LOG"
     else
       echo "    stderr is empty" >> "$OUT_LOG"
+    fi
+    
+    # Check stdout size
+    if [ -f "$tmpout" ]; then
+      tmpout_size=$(wc -c < "$tmpout" 2>/dev/null || echo "unknown")
+      echo "    stdout size: $tmpout_size bytes" >> "$OUT_LOG"
     fi
     sync
     
