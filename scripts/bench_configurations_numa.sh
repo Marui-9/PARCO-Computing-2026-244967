@@ -7,7 +7,7 @@ set -eu
 EXE="./test_config_numa"
 OUT_CSV="results/configurations_numa_results.csv"
 OUT_LOG="results/configurations_numa_results.txt"
-TIMEOUT_SECS=3600   # 60 minutes per matrix/thread combo (increased for large matrices)
+TIMEOUT_SECS=9900   # 60 minutes per matrix/thread combo (increased for large matrices)
 ITERATIONS=10       # 10 iterations for better statistical accuracy
 
 # Thread counts: reduced to 4 key points for 6-hour walltime
