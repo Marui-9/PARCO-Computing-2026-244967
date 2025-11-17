@@ -282,8 +282,15 @@ for mtx in "${MATRICES[@]}"; do
       IMPROVEMENT=$(echo "$line" | awk '{print $5}' | tr -d '%+')
       STDDEV="0.0"
       
-      # Validate we got actual data (config name and numeric time)
-      if [[ -z "$CONFIG" ]] || [[ ! "$TIME_MS" =~ ^[0-9]+\.?[0-9]*$ ]]; then
+      # Validate we got actual data: 
+      # - CONFIG must not be empty and should contain "+" (e.g., "Static+SIMD+spread")
+      # - TIME_MS must be numeric and have a decimal point (e.g., "0.08" not just "24")
+      # - SPEEDUP must end with 'x' in original (already stripped above)
+      if [[ -z "$CONFIG" ]] || [[ ! "$CONFIG" == *"+"* ]]; then
+        continue
+      fi
+      
+      if [[ ! "$TIME_MS" =~ ^[0-9]+\.[0-9]+$ ]]; then
         continue
       fi
       
