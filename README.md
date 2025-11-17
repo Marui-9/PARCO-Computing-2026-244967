@@ -20,8 +20,8 @@ PARCO-Computing-2026-244967/
 │   ├── multiply.c              # SpMV kernel implementations
 │   ├── generator.h, multiply.h, m_to_csr.h  # Header files
 │   └── *.o                     # Compiled object files
-├── matrices/                    # Small/medium sparse matrices (.mtx)
-│   └── *.mtx                   # 9 matrices: 2k-15k, 0.23%-9.37% density
+├── matrices/                    # Sparse matrices (.mtx)
+│   └── *.mtx                   # 15 matrices: 2k-60k, 0.005%-9.37% density
 ├── scripts/                     # Benchmark and analysis scripts
 │   ├── bench_matrices.sh       # Speedup benchmarks (Phase 1)
 │   ├── bench_configurations.sh # Compare 30 OpenMP configs (Phase 1)
@@ -141,13 +141,13 @@ Run sparse matrix-vector multiplication with specified thread count:
 **Examples:**
 ```bash
 # Run with 8 threads on a small matrix
-./executable 8 matrices/2k_0p23.mtx
+./executable 8 matrices/2k_0p22.mtx
 
 # Run with 24 threads on a larger matrix
 ./executable 24 matrices/15k_0p41.mtx
 
 # Serial execution (1 thread)
-./executable 1 matrices/6k_6p28.mtx
+./executable 1 matrices/6k_6p3.mtx
 ```
 
 **Output:**
@@ -168,13 +168,13 @@ Compare 30 OpenMP configurations on a single NUMA node (1-24 threads):
 **Examples:**
 ```bash
 # Quick test: 8 threads, 10 iterations
-./test_config 8 matrices/6k_6p28.mtx 10
+./test_config 8 matrices/6k_6p3.mtx 10
 
 # Full statistical test: 24 threads, 30 iterations (recommended)
 ./test_config 24 matrices/10k_1p5.mtx 30
 
 # Low thread count comparison
-./test_config 4 matrices/2k_0p23.mtx 30
+./test_config 4 matrices/2k_0p22.mtx 30
 ```
 
 **What it tests (30 configurations):**
@@ -207,31 +207,27 @@ Test NUMA-optimized configurations across multiple sockets (24-96 threads):
 **Examples:**
 ```bash
 # Test on single socket (24 threads)
-./test_config_numa 24 matrices_large/citationCiteseer.mtx 10
+./test_config_numa 24 10k_1p5.mtx 10
 
 # Test on two sockets (48 threads)
-./test_config_numa 48 matrices_large/F1.mtx 10
+./test_config_numa 48 15k_0p41.mtx 10
 
 # Test on all four sockets (96 threads)
-./test_config_numa 96 matrices_large/cnr-2000.mtx 10
+./test_config_numa 96 60k_0p005.mtx 10
 
 # Default iterations (10 if omitted)
-./test_config_numa 72 matrices_large/RM07R.mtx
+./test_config_numa 72 30k_0p05.mtx
 ```
 
-**What it tests (7 NUMA configurations):**
-1. **Static+SIMD+chunk=32+close** - Single-socket optimized
-2. **Static+SIMD+chunk=32+spread** - Multi-socket thread distribution
-3. **Static+SIMD+chunk=32+master** - Master thread binding
-4. **Guided+SIMD+chunk=32+close** - Guided with single-socket binding
-5. **Guided+SIMD+chunk=32+spread** - Guided with multi-socket distribution
-6. **Dynamic+SIMD+chunk=32+spread** - Dynamic load balancing
-7. **Static+SIMD+Reg+close** - With register blocking hints
+**What it tests (3 NUMA configurations):**
+1. **Static+SIMD+spread** - Multi-socket thread distribution (best performance)
+2. **Static+SIMD+close** - Single-socket binding (NUMA locality comparison)
+3. **Dynamic+SIMD+spread** - Dynamic load balancing for irregular matrices
 
 **Output format:**
 Similar to Phase 1, but optimized for NUMA effects and cross-socket communication.
 
-**Note:** Phase 2 results are currently being collected. Use `matrices_large/` directory for testing.
+**Note:** Phase 2 uses the same matrices from `matrices/` directory, tested at higher thread counts (24-96).
 
 ---
 
@@ -247,9 +243,9 @@ Similar to Phase 1, but optimized for NUMA effects and cross-socket communicatio
 
 **What it does:**
 - Tests all 30 configurations
-- Across all 9 matrices in `matrices/`
+- Across all 15 matrices in `matrices/`
 - At 10 thread counts: 1, 2, 4, 8, 12, 16, 18, 20, 22, 24
-- **Total: 2,700 measurements**
+- **Total: 4,500 possible measurements** (3,893 completed successfully)
 - Runtime: ~2-3 hours
 - Output: `results/configurations_results.csv` and `results/configurations_results.txt`
 
@@ -280,16 +276,16 @@ Similar to Phase 1, but optimized for NUMA effects and cross-socket communicatio
 ```
 
 **What it does:**
-- Tests 7 NUMA-aware configurations
-- Across 5 large matrices in `matrices_large/`
+- Tests 3 NUMA-aware configurations
+- Across 15 matrices in `matrices/`
 - At 4 thread counts: 24, 48, 72, 96
-- **Total: 140 measurements** (7 configs × 5 matrices × 4 thread counts)
-- Runtime: ~3-6 hours (15 min timeout per test)
+- **Total: 180 measurements** (3 configs × 15 matrices × 4 thread counts)
+- Runtime: ~4-6 hours (30 min timeout per test)
 - Output: `results/configurations_numa_results.csv` and `.txt`
 
 **Requirements:**
 - Multi-socket NUMA system
-- Matrices in `matrices_large/` directory
+- Matrices in `matrices/` directory
 - `test_config_numa` executable compiled
 
 #### Cluster Execution (PBS)
@@ -369,7 +365,7 @@ python3 scripts/plot_cache.py
 
 ### configurations_results.csv (Phase 1)
 
-2,700 rows containing:
+3,893 rows containing:
 - Matrix name, dimensions, density, NNZ count
 - Thread count (1-24)
 - Configuration name and binding policy
@@ -381,7 +377,7 @@ python3 scripts/plot_cache.py
 
 ### configurations_numa_results.csv (Phase 2)
 
-140 rows (when complete) containing:
+180 rows (when complete) containing:
 - Matrix name, dimensions, density, NNZ count  
 - Thread count (24, 48, 72, 96)
 - NUMA configuration and binding policy
@@ -413,25 +409,26 @@ Matrix files follow the pattern: `{size}_{density}.mtx`
 
 ### Available Matrices
 
-**Phase 1 (matrices/):** 9 matrices
-| File | Dimensions | Density | NNZ | Category |
-|------|------------|---------|-----|----------|
-| 2k_0p23.mtx | 1,624 × 1,624 | 0.23% | 6,080 | Ultra-sparse |
-| 5k_0p23.mtx | 4,690 × 4,690 | 0.23% | 20,316 | Ultra-sparse |
-| 6k_6p28.mtx | 6,156 × 6,156 | 6.28% | 2,380,515 | Dense |
-| 10k_0p31.mtx | 9,800 × 9,800 | 0.31% | 52,329 | Sparse |
-| 10k_1p5.mtx | 10,000 × 10,000 | 1.50% | 684,692 | Moderately sparse |
-| 10k_3p17.mtx | 10,638 × 10,638 | 3.17% | 1,096,948 | Moderately dense |
-| 15k_0p41.mtx | 15,449 × 15,449 | 0.41% | 973,227 | Sparse |
-| 5k_9p37.mtx | 5,005 × 5,005 | 9.37% | 2,462,970 | Very dense |
-| 2k_0p73.mtx | 1,952 × 1,952 | 0.73% | 3,837 | Sparse |
+**matrices/ directory:** 15 matrices
+| File | Dimensions | Density | Category |
+|------|------------|---------|----------|
+| 2k_0p22.mtx | ~2,000 × 2,000 | 0.22% | Ultra-sparse |
+| 2k_0p52.mtx | ~2,000 × 2,000 | 0.52% | Sparse |
+| 5k_9p37.mtx | ~5,000 × 5,000 | 9.37% | Very dense |
+| 6k_6p3.mtx | ~6,000 × 6,000 | 6.3% | Dense |
+| 9k_0p77.mtx | ~9,000 × 9,000 | 0.77% | Sparse |
+| 10k_1p5.mtx | ~10,000 × 10,000 | 1.50% | Moderately sparse |
+| 11k_0p35.mtx | ~11,000 × 11,000 | 0.35% | Sparse |
+| 11k_0p38.mtx | ~11,000 × 11,000 | 0.38% | Sparse |
+| 15k_0p41.mtx | ~15,000 × 15,000 | 0.41% | Sparse |
+| 20k_0p38.mtx | ~20,000 × 20,000 | 0.38% | Sparse |
+| 25k_0p03.mtx | ~25,000 × 25,000 | 0.03% | Ultra-sparse |
+| 30k_0p05.mtx | ~30,000 × 30,000 | 0.05% | Ultra-sparse |
+| 40k_0p02.mtx | ~40,000 × 40,000 | 0.02% | Ultra-sparse |
+| 50k_0p008.mtx | ~50,000 × 50,000 | 0.008% | Extreme ultra-sparse |
+| 60k_0p005.mtx | ~60,000 × 60,000 | 0.005% | Extreme ultra-sparse |
 
-**Phase 2 (matrices_large/):** 5 large matrices for NUMA testing
-- `citationCiteseer.mtx`
-- `cnr-2000.mtx`
-- `F1.mtx`
-- `n4c6-b9.mtx`
-- `RM07R.mtx`
+**Note:** All matrices are used for both Phase 1 and Phase 2 testing.
 
 ### Matrix Format
 
@@ -451,16 +448,16 @@ Converted to **CSR (Compressed Sparse Row)** format at runtime for efficient SpM
 
 ### Phase 1: Single-Node Optimization (COMPLETED)
 
-From 2,700 benchmark measurements across 30 configurations:
+From 3,893 benchmark measurements across 30 configurations:
 
 **Overall Performance:**
-- **Average speedup**: 925× across all matrices and configurations
-- **Peak speedup**: 3,300× on ultra-sparse matrices at 18 threads
-- **Best configuration**: Static+SIMD+chunk=32+Alignment+Affinity
+- **Average speedup**: 2,624× across all thread counts (3,893× at 24 threads)
+- **Peak speedup**: 50,087× maximum achieved
+- **Best configuration**: Static+SIMD+Align+Affin (with cache alignment and affinity)
 
 **Optimization Impact Hierarchy:**
-1. **SIMD Vectorization**: 188× improvement (dominant factor)
-   - Transforms 1.02× (non-SIMD) to 73× (SIMD) at single thread
+1. **SIMD Vectorization**: 72× single-thread improvement (dominant factor)
+   - Transforms scalar baseline to vectorized SIMD implementation
    - Non-negotiable for performance
 2. **Cache Alignment**: +28% average (+35% on ultra-sparse)
 3. **Static Scheduling**: +16% over dynamic/guided (925× vs 805×)
@@ -521,7 +518,7 @@ make
 ./executable 8 matrices/10k_1p5.mtx
 
 # 4. Configuration comparison (single matrix)
-./test_config 24 matrices/6k_6p28.mtx 30
+./test_config 24 matrices/6k_6p3.mtx 30
 
 # 5. Full Phase 1 benchmarks (~2-3 hours)
 ./scripts/bench_configurations.sh
@@ -538,9 +535,9 @@ qsub pbs_jobs/run_numa_bench.pbs
 ```
 
 **Expected Results:**
-- `results/configurations_results.csv`: 2,700 measurements
+- `results/configurations_results.csv`: 3,893 measurements
 - `plots/strong_scaling/`: Speedup curves, efficiency analysis
-- Performance matching published results (925× average speedup)
+- Performance matching published results (2,624× average speedup across all thread counts)
 
 ---
 
@@ -583,13 +580,13 @@ ls -lh matrices/*.mtx
 free -h
 
 # Try smaller matrix or fewer threads
-./executable 4 matrices/2k_0p23.mtx
+./executable 4 matrices/2k_0p22.mtx
 ```
 
 **NUMA benchmarks produce no output**
 ```bash
-# Check matrices_large/ directory exists and has files
-ls -lh matrices_large/
+# Check matrices/ directory exists and has files
+ls -lh matrices/
 
 # Verify test_config_numa is compiled
 ls -lh test_config_numa
@@ -597,8 +594,8 @@ ls -lh test_config_numa
 # Check error log for details
 cat results/configurations_numa_results.txt
 
-# Try manual test
-./test_config_numa 24 matrices_large/citationCiteseer.mtx 1
+# Try manual test with a smaller matrix
+./test_config_numa 24 10k_1p5.mtx 1
 ```
 
 ### Analysis Script Issues
