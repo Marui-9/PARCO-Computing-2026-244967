@@ -35,6 +35,13 @@ df['configuration'] = df['configuration'].str.strip()
 # Remove rows with missing configuration values
 df = df.dropna(subset=['configuration'])
 
+# Filter out invalid/garbage rows (from parsing issues)
+# Valid configs contain "+" like "Static+SIMD+spread"
+df = df[df['configuration'].str.contains(r'\+', na=False)]
+
+# Also filter out rows where time_ms is not numeric
+df = df[pd.to_numeric(df['time_ms'], errors='coerce').notna()]
+
 # Create matrix size metric
 df['matrix_size'] = df['rows'] * df['cols']
 df['matrix_size_M'] = df['matrix_size'] / 1e6
