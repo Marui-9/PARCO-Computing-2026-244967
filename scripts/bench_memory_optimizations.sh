@@ -10,23 +10,22 @@ RESULTS_DIR="results"
 OUTPUT_CSV="${RESULTS_DIR}/memory_optimizations_results.csv"
 OUTPUT_TXT="${RESULTS_DIR}/memory_optimizations_results.txt"
 
-# Representative matrices: focus on larger ones where memory bottleneck dominates
-MATRICES=(
-    "10k_1p5.mtx"
-    "20k_0p38.mtx"
-    "40k_0p02.mtx"
-    "60k_0p005.mtx"
-)
+# Use all .mtx files in the matrices directory
+MATRICES=()
+while IFS= read -r -d '' file; do
+    MATRICES+=("$(basename "$file")")
+done < <(find matrices/ -maxdepth 1 -type f -name '*.mtx' -print0 | sort -z)
+
 
 # Thread counts to test (focus on higher thread counts where bandwidth is saturated)
-THREAD_COUNTS=(1 8 16 24)
+THREAD_COUNTS=(2 4 8 16 24)
 
 ITERATIONS=30
 
 echo "=== Phase 3: Memory-Level Optimization Benchmarking ===" | tee "$OUTPUT_TXT"
 echo "Testing register blocking and software prefetching" | tee -a "$OUTPUT_TXT"
 echo "Date: $(date)" | tee -a "$OUTPUT_TXT"
-echo "Matrices: ${MATRICES[*]}" | tee -a "$OUTPUT_TXT"
+echo "Matrices: ${MATRICES[*]} (all .mtx files in matrices/)" | tee -a "$OUTPUT_TXT"
 echo "Thread counts: ${THREAD_COUNTS[*]}" | tee -a "$OUTPUT_TXT"
 echo "Iterations: $ITERATIONS" | tee -a "$OUTPUT_TXT"
 echo "" | tee -a "$OUTPUT_TXT"
