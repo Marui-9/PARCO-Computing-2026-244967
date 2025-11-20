@@ -1,7 +1,7 @@
 ========================================================================
 NUMA-AWARE CONFIGURATION BENCHMARK LOG
 ========================================================================
-Started at: Mon Nov 17 21:54:30 CET 2025
+Started at: Mon Nov 17 14:45:41 CET 2025
 Executable: ./test_config_numa
 Timeout per run: 3600s
 Iterations per config: 10
@@ -14,10 +14,901 @@ NUMA nodes: 4 (assumed 24 cores each)
 === Processing Matrix: matrices/10k_1p5.mtx ===
   Processing: 10k_1p5.mtx, threads=24
     Running: ./test_config_numa 24 10k_1p5.mtx 10
-    tmpout: /var/tmp/pbs.4685732.hpc-head-n1.unitn.it/tmp.WSW9iaXvrc
-    tmperr: /var/tmp/pbs.4685732.hpc-head-n1.unitn.it/tmp.4hnLZIiazd
-    Start time: Mon Nov 17 21:54:30 CET 2025
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.tIg0O9Dg2q
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.u0Mb7A6OuM
+    Start time: Mon Nov 17 14:45:41 CET 2025
     Testing if executable responds...
 usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
     Executing timeout command...
     Command: timeout 3600 ./test_config_numa 24 10k_1p5.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 15:01:17 CET 2025
+    stderr is empty
+    stdout size: 1370 bytes
+    Exit code: 0
+    tmpout size: 1370 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.10 ms)
+      Parsed config 2: Static+SIMD+spread (time=0.10 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=0.13 ms)
+    10k_1p5.mtx (threads=24): Parsed 3 configurations
+  Processing: 10k_1p5.mtx, threads=48
+    Running: ./test_config_numa 48 10k_1p5.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.r2x6pt3FhL
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.AJypBVc8Es
+    Start time: Mon Nov 17 15:01:18 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 48 10k_1p5.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 15:16:02 CET 2025
+    stderr is empty
+    stdout size: 1372 bytes
+    Exit code: 0
+    tmpout size: 1372 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Dynamic+SIMD+spread (time=21.22 ms)
+      Parsed config 2: Static+SIMD+spread (time=26.00 ms)
+      Parsed config 3: Static+SIMD+close (time=26.00 ms)
+    10k_1p5.mtx (threads=48): Parsed 3 configurations
+  Processing: 10k_1p5.mtx, threads=72
+    Running: ./test_config_numa 72 10k_1p5.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.mdo8MvUwog
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.jpPivUH6Ei
+    Start time: Mon Nov 17 15:16:03 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 72 10k_1p5.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 15:30:56 CET 2025
+    stderr is empty
+    stdout size: 1372 bytes
+    Exit code: 0
+    tmpout size: 1372 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Dynamic+SIMD+spread (time=0.36 ms)
+      Parsed config 2: Static+SIMD+close (time=0.40 ms)
+      Parsed config 3: Static+SIMD+spread (time=0.46 ms)
+    10k_1p5.mtx (threads=72): Parsed 3 configurations
+  Processing: 10k_1p5.mtx, threads=96
+    Running: ./test_config_numa 96 10k_1p5.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.4BdfxXamOz
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.9er3fObe6o
+    Start time: Mon Nov 17 15:30:57 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 96 10k_1p5.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 15:45:57 CET 2025
+    stderr is empty
+    stdout size: 1372 bytes
+    Exit code: 0
+    tmpout size: 1372 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Dynamic+SIMD+spread (time=0.48 ms)
+      Parsed config 2: Static+SIMD+close (time=0.57 ms)
+      Parsed config 3: Static+SIMD+spread (time=0.68 ms)
+    10k_1p5.mtx (threads=96): Parsed 3 configurations
+=== Processing Matrix: matrices/11k_0p35.mtx ===
+  Processing: 11k_0p35.mtx, threads=24
+    Running: ./test_config_numa 24 11k_0p35.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.ubKqsNRzyN
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.38252UodN7
+    Start time: Mon Nov 17 15:45:58 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 24 11k_0p35.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 15:47:32 CET 2025
+    stderr is empty
+    stdout size: 1372 bytes
+    Exit code: 0
+    tmpout size: 1372 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.04 ms)
+      Parsed config 2: Static+SIMD+spread (time=0.07 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=0.07 ms)
+    11k_0p35.mtx (threads=24): Parsed 3 configurations
+  Processing: 11k_0p35.mtx, threads=48
+    Running: ./test_config_numa 48 11k_0p35.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.EQvOAJwysq
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.fJfMZMonsD
+    Start time: Mon Nov 17 15:47:33 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 48 11k_0p35.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 15:49:07 CET 2025
+    stderr is empty
+    stdout size: 1372 bytes
+    Exit code: 0
+    tmpout size: 1372 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.03 ms)
+      Parsed config 2: Static+SIMD+spread (time=0.03 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=0.08 ms)
+    11k_0p35.mtx (threads=48): Parsed 3 configurations
+  Processing: 11k_0p35.mtx, threads=72
+    Running: ./test_config_numa 72 11k_0p35.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.9GmOldcttJ
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.Wlpl0N3CPS
+    Start time: Mon Nov 17 15:49:08 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 72 11k_0p35.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 15:50:41 CET 2025
+    stderr is empty
+    stdout size: 1372 bytes
+    Exit code: 0
+    tmpout size: 1372 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.34 ms)
+      Parsed config 2: Dynamic+SIMD+spread (time=0.37 ms)
+      Parsed config 3: Static+SIMD+spread (time=0.40 ms)
+    11k_0p35.mtx (threads=72): Parsed 3 configurations
+  Processing: 11k_0p35.mtx, threads=96
+    Running: ./test_config_numa 96 11k_0p35.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.BeY6cpdK0t
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.pQGUjLIbRw
+    Start time: Mon Nov 17 15:50:42 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 96 11k_0p35.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 15:52:15 CET 2025
+    stderr is empty
+    stdout size: 1374 bytes
+    Exit code: 0
+    tmpout size: 1374 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Dynamic+SIMD+spread (time=0.42 ms)
+      Parsed config 2: Static+SIMD+close (time=0.44 ms)
+      Parsed config 3: Static+SIMD+spread (time=0.54 ms)
+    11k_0p35.mtx (threads=96): Parsed 3 configurations
+=== Processing Matrix: matrices/11k_0p38.mtx ===
+  Processing: 11k_0p38.mtx, threads=24
+    Running: ./test_config_numa 24 11k_0p38.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.5YH4cfRZsq
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.5uDarBANlL
+    Start time: Mon Nov 17 15:52:16 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 24 11k_0p38.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 15:54:18 CET 2025
+    stderr is empty
+    stdout size: 1320 bytes
+    Exit code: 0
+    tmpout size: 1320 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.03 ms)
+      Parsed config 2: Static+SIMD+spread (time=0.04 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=0.07 ms)
+    11k_0p38.mtx (threads=24): Parsed 3 configurations
+  Processing: 11k_0p38.mtx, threads=48
+    Running: ./test_config_numa 48 11k_0p38.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.4KBG6CyYhK
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.h0rBj5tdJM
+    Start time: Mon Nov 17 15:54:19 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 48 11k_0p38.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 15:56:22 CET 2025
+    stderr is empty
+    stdout size: 1326 bytes
+    Exit code: 0
+    tmpout size: 1326 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Dynamic+SIMD+spread (time=0.08 ms)
+      Parsed config 2: Static+SIMD+close (time=24.00 ms)
+      Parsed config 3: Static+SIMD+spread (time=26.00 ms)
+    11k_0p38.mtx (threads=48): Parsed 3 configurations
+  Processing: 11k_0p38.mtx, threads=72
+    Running: ./test_config_numa 72 11k_0p38.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.o9CToaw2Dt
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.j8GlVKaa6G
+    Start time: Mon Nov 17 15:56:23 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 72 11k_0p38.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 15:58:24 CET 2025
+    stderr is empty
+    stdout size: 1322 bytes
+    Exit code: 0
+    tmpout size: 1322 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Dynamic+SIMD+spread (time=0.33 ms)
+      Parsed config 2: Static+SIMD+spread (time=0.36 ms)
+      Parsed config 3: Static+SIMD+close (time=0.39 ms)
+    11k_0p38.mtx (threads=72): Parsed 3 configurations
+  Processing: 11k_0p38.mtx, threads=96
+    Running: ./test_config_numa 96 11k_0p38.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.Nf64B0ot5d
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.XmoL4iBpVB
+    Start time: Mon Nov 17 15:58:25 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 96 11k_0p38.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 16:00:28 CET 2025
+    stderr is empty
+    stdout size: 1320 bytes
+    Exit code: 0
+    tmpout size: 1320 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.43 ms)
+      Parsed config 2: Dynamic+SIMD+spread (time=0.44 ms)
+      Parsed config 3: Static+SIMD+spread (time=0.49 ms)
+    11k_0p38.mtx (threads=96): Parsed 3 configurations
+=== Processing Matrix: matrices/15k_0p41.mtx ===
+  Processing: 15k_0p41.mtx, threads=24
+    Running: ./test_config_numa 24 15k_0p41.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.6z973mhbX5
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.JYTmiPEx43
+    Start time: Mon Nov 17 16:00:29 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 24 15k_0p41.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 16:34:34 CET 2025
+    stderr is empty
+    stdout size: 1375 bytes
+    Exit code: 0
+    tmpout size: 1375 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.12 ms)
+      Parsed config 2: Static+SIMD+spread (time=0.13 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=0.20 ms)
+    15k_0p41.mtx (threads=24): Parsed 3 configurations
+  Processing: 15k_0p41.mtx, threads=48
+    Running: ./test_config_numa 48 15k_0p41.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.KEPHIb6WV1
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.VJgPbZoBA7
+    Start time: Mon Nov 17 16:34:35 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 48 15k_0p41.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 17:08:25 CET 2025
+    stderr is empty
+    stdout size: 1381 bytes
+    Exit code: 0
+    tmpout size: 1381 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Dynamic+SIMD+spread (time=0.18 ms)
+      Parsed config 2: Static+SIMD+close (time=9.04 ms)
+      Parsed config 3: Static+SIMD+spread (time=24.66 ms)
+    15k_0p41.mtx (threads=48): Parsed 3 configurations
+  Processing: 15k_0p41.mtx, threads=72
+    Running: ./test_config_numa 72 15k_0p41.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.KA6hqRDitt
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.LfBJxXK4cK
+    Start time: Mon Nov 17 17:08:26 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 72 15k_0p41.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 17:41:50 CET 2025
+    stderr is empty
+    stdout size: 1377 bytes
+    Exit code: 0
+    tmpout size: 1377 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Dynamic+SIMD+spread (time=0.37 ms)
+      Parsed config 2: Static+SIMD+close (time=0.41 ms)
+      Parsed config 3: Static+SIMD+spread (time=0.44 ms)
+    15k_0p41.mtx (threads=72): Parsed 3 configurations
+  Processing: 15k_0p41.mtx, threads=96
+    Running: ./test_config_numa 96 15k_0p41.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.teKVgQCxF9
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.JG5kW9Jz9S
+    Start time: Mon Nov 17 17:41:51 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 96 15k_0p41.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 18:15:46 CET 2025
+    stderr is empty
+    stdout size: 1377 bytes
+    Exit code: 0
+    tmpout size: 1377 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Dynamic+SIMD+spread (time=0.48 ms)
+      Parsed config 2: Static+SIMD+close (time=0.48 ms)
+      Parsed config 3: Static+SIMD+spread (time=0.57 ms)
+    15k_0p41.mtx (threads=96): Parsed 3 configurations
+=== Processing Matrix: matrices/20k_0p38.mtx ===
+  Processing: 20k_0p38.mtx, threads=24
+    Running: ./test_config_numa 24 20k_0p38.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.OK8uVGDQ4q
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.8Xq3zNWfj6
+    Start time: Mon Nov 17 18:15:47 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 24 20k_0p38.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 18:43:34 CET 2025
+    stderr is empty
+    stdout size: 1377 bytes
+    Exit code: 0
+    tmpout size: 1377 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Dynamic+SIMD+spread (time=0.39 ms)
+      Parsed config 2: Static+SIMD+close (time=0.42 ms)
+      Parsed config 3: Static+SIMD+spread (time=0.43 ms)
+    20k_0p38.mtx (threads=24): Parsed 3 configurations
+  Processing: 20k_0p38.mtx, threads=48
+    Running: ./test_config_numa 48 20k_0p38.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.0sK6w7e0xo
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.gwsjvHof36
+    Start time: Mon Nov 17 18:43:35 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 48 20k_0p38.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 19:11:31 CET 2025
+    stderr is empty
+    stdout size: 1376 bytes
+    Exit code: 0
+    tmpout size: 1376 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+spread (time=25.66 ms)
+      Parsed config 2: Dynamic+SIMD+spread (time=26.00 ms)
+      Parsed config 3: Static+SIMD+close (time=26.00 ms)
+    20k_0p38.mtx (threads=48): Parsed 3 configurations
+  Processing: 20k_0p38.mtx, threads=72
+    Running: ./test_config_numa 72 20k_0p38.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.NxOLon2XQN
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.67SEILhPDk
+    Start time: Mon Nov 17 19:11:32 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 72 20k_0p38.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 19:38:29 CET 2025
+    stderr is empty
+    stdout size: 1377 bytes
+    Exit code: 0
+    tmpout size: 1377 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Dynamic+SIMD+spread (time=0.57 ms)
+      Parsed config 2: Static+SIMD+close (time=0.71 ms)
+      Parsed config 3: Static+SIMD+spread (time=0.77 ms)
+    20k_0p38.mtx (threads=72): Parsed 3 configurations
+  Processing: 20k_0p38.mtx, threads=96
+    Running: ./test_config_numa 96 20k_0p38.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.teOCMTDBux
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.G45CajyyW4
+    Start time: Mon Nov 17 19:38:30 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 96 20k_0p38.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:06:52 CET 2025
+    stderr is empty
+    stdout size: 1377 bytes
+    Exit code: 0
+    tmpout size: 1377 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Dynamic+SIMD+spread (time=0.60 ms)
+      Parsed config 2: Static+SIMD+close (time=0.68 ms)
+      Parsed config 3: Static+SIMD+spread (time=0.73 ms)
+    20k_0p38.mtx (threads=96): Parsed 3 configurations
+=== Processing Matrix: matrices/25k_0p03.mtx ===
+  Processing: 25k_0p03.mtx, threads=24
+    Running: ./test_config_numa 24 25k_0p03.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.CPKU3EKyOC
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.IibufRZqcC
+    Start time: Mon Nov 17 20:06:53 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 24 25k_0p03.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:07:07 CET 2025
+    stderr is empty
+    stdout size: 1321 bytes
+    Exit code: 0
+    tmpout size: 1321 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.02 ms)
+      Parsed config 2: Static+SIMD+spread (time=0.03 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=0.08 ms)
+    25k_0p03.mtx (threads=24): Parsed 3 configurations
+  Processing: 25k_0p03.mtx, threads=48
+    Running: ./test_config_numa 48 25k_0p03.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.24R0J4ueY3
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.bd1XJfgj5t
+    Start time: Mon Nov 17 20:07:08 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 48 25k_0p03.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:07:22 CET 2025
+    stderr is empty
+    stdout size: 1322 bytes
+    Exit code: 0
+    tmpout size: 1322 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Dynamic+SIMD+spread (time=25.55 ms)
+      Parsed config 2: Static+SIMD+close (time=25.95 ms)
+      Parsed config 3: Static+SIMD+spread (time=26.00 ms)
+    25k_0p03.mtx (threads=48): Parsed 3 configurations
+  Processing: 25k_0p03.mtx, threads=72
+    Running: ./test_config_numa 72 25k_0p03.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.q9VkGLOtuU
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.5ZFG87tkcD
+    Start time: Mon Nov 17 20:07:23 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 72 25k_0p03.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:07:37 CET 2025
+    stderr is empty
+    stdout size: 1320 bytes
+    Exit code: 0
+    tmpout size: 1320 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.27 ms)
+      Parsed config 2: Static+SIMD+spread (time=0.30 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=0.31 ms)
+    25k_0p03.mtx (threads=72): Parsed 3 configurations
+  Processing: 25k_0p03.mtx, threads=96
+    Running: ./test_config_numa 96 25k_0p03.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.KdyQPdsXq4
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.kh6bPbj1dK
+    Start time: Mon Nov 17 20:07:38 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 96 25k_0p03.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:07:51 CET 2025
+    stderr is empty
+    stdout size: 1320 bytes
+    Exit code: 0
+    tmpout size: 1320 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.37 ms)
+      Parsed config 2: Static+SIMD+spread (time=0.37 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=0.41 ms)
+    25k_0p03.mtx (threads=96): Parsed 3 configurations
+=== Processing Matrix: matrices/2k_0p22.mtx ===
+  Processing: 2k_0p22.mtx, threads=24
+    Running: ./test_config_numa 24 2k_0p22.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.cYTV8ZGFFj
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.1Uz7LpBLDD
+    Start time: Mon Nov 17 20:07:52 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 24 2k_0p22.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:07:52 CET 2025
+    stderr is empty
+    stdout size: 1359 bytes
+    Exit code: 0
+    tmpout size: 1359 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.01 ms)
+      Parsed config 2: Static+SIMD+spread (time=0.01 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=0.03 ms)
+    2k_0p22.mtx (threads=24): Parsed 3 configurations
+  Processing: 2k_0p22.mtx, threads=48
+    Running: ./test_config_numa 48 2k_0p22.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.pMqomCGi2y
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.lH1ULP5H69
+    Start time: Mon Nov 17 20:07:53 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 48 2k_0p22.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:07:54 CET 2025
+    stderr is empty
+    stdout size: 1360 bytes
+    Exit code: 0
+    tmpout size: 1360 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+spread (time=26.00 ms)
+      Parsed config 2: Dynamic+SIMD+spread (time=26.40 ms)
+      Parsed config 3: Static+SIMD+close (time=26.40 ms)
+    2k_0p22.mtx (threads=48): Parsed 3 configurations
+  Processing: 2k_0p22.mtx, threads=72
+    Running: ./test_config_numa 72 2k_0p22.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.k6wnoT8DdO
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.DtNArcGNCu
+    Start time: Mon Nov 17 20:07:55 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 72 2k_0p22.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:07:56 CET 2025
+    stderr is empty
+    stdout size: 1360 bytes
+    Exit code: 0
+    tmpout size: 1360 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+spread (time=0.24 ms)
+      Parsed config 2: Dynamic+SIMD+spread (time=0.24 ms)
+      Parsed config 3: Static+SIMD+close (time=0.24 ms)
+    2k_0p22.mtx (threads=72): Parsed 3 configurations
+  Processing: 2k_0p22.mtx, threads=96
+    Running: ./test_config_numa 96 2k_0p22.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.U3xrDGsXz7
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.Kbk7s8JCvf
+    Start time: Mon Nov 17 20:07:57 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 96 2k_0p22.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:07:57 CET 2025
+    stderr is empty
+    stdout size: 1359 bytes
+    Exit code: 0
+    tmpout size: 1359 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.30 ms)
+      Parsed config 2: Dynamic+SIMD+spread (time=0.32 ms)
+      Parsed config 3: Static+SIMD+spread (time=0.35 ms)
+    2k_0p22.mtx (threads=96): Parsed 3 configurations
+=== Processing Matrix: matrices/2k_0p52.mtx ===
+  Processing: 2k_0p52.mtx, threads=24
+    Running: ./test_config_numa 24 2k_0p52.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.nF7YQS71Qa
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.iT21Thke0s
+    Start time: Mon Nov 17 20:07:58 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 24 2k_0p52.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:07:58 CET 2025
+    stderr is empty
+    stdout size: 1363 bytes
+    Exit code: 0
+    tmpout size: 1363 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.02 ms)
+      Parsed config 2: Static+SIMD+spread (time=0.03 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=0.05 ms)
+    2k_0p52.mtx (threads=24): Parsed 3 configurations
+  Processing: 2k_0p52.mtx, threads=48
+    Running: ./test_config_numa 48 2k_0p52.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.6rwc8Tp5We
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.q1Jm8dYx6n
+    Start time: Mon Nov 17 20:07:59 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 48 2k_0p52.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:08:01 CET 2025
+    stderr is empty
+    stdout size: 1363 bytes
+    Exit code: 0
+    tmpout size: 1363 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=24.78 ms)
+      Parsed config 2: Static+SIMD+spread (time=25.84 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=26.00 ms)
+    2k_0p52.mtx (threads=48): Parsed 3 configurations
+  Processing: 2k_0p52.mtx, threads=72
+    Running: ./test_config_numa 72 2k_0p52.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.OdR1oUAyUt
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.ZuhDIOgvKC
+    Start time: Mon Nov 17 20:08:02 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 72 2k_0p52.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:08:02 CET 2025
+    stderr is empty
+    stdout size: 1365 bytes
+    Exit code: 0
+    tmpout size: 1365 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Dynamic+SIMD+spread (time=0.26 ms)
+      Parsed config 2: Static+SIMD+close (time=0.27 ms)
+      Parsed config 3: Static+SIMD+spread (time=0.28 ms)
+    2k_0p52.mtx (threads=72): Parsed 3 configurations
+  Processing: 2k_0p52.mtx, threads=96
+    Running: ./test_config_numa 96 2k_0p52.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.wLCWZwmpDZ
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.qmIh1keXzs
+    Start time: Mon Nov 17 20:08:03 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 96 2k_0p52.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:08:04 CET 2025
+    stderr is empty
+    stdout size: 1364 bytes
+    Exit code: 0
+    tmpout size: 1364 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+spread (time=0.33 ms)
+      Parsed config 2: Dynamic+SIMD+spread (time=0.34 ms)
+      Parsed config 3: Static+SIMD+close (time=0.34 ms)
+    2k_0p52.mtx (threads=96): Parsed 3 configurations
+=== Processing Matrix: matrices/30k_0p05.mtx ===
+  Processing: 30k_0p05.mtx, threads=24
+    Running: ./test_config_numa 24 30k_0p05.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.6uNw53ZDKV
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.qWYcALSbmW
+    Start time: Mon Nov 17 20:08:05 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 24 30k_0p05.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:09:46 CET 2025
+    stderr is empty
+    stdout size: 1373 bytes
+    Exit code: 0
+    tmpout size: 1373 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.03 ms)
+      Parsed config 2: Static+SIMD+spread (time=0.04 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=0.10 ms)
+    30k_0p05.mtx (threads=24): Parsed 3 configurations
+  Processing: 30k_0p05.mtx, threads=48
+    Running: ./test_config_numa 48 30k_0p05.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.f0MffZzKr8
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.wWmr5uMoA8
+    Start time: Mon Nov 17 20:09:47 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 48 30k_0p05.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:11:28 CET 2025
+    stderr is empty
+    stdout size: 1374 bytes
+    Exit code: 0
+    tmpout size: 1374 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Dynamic+SIMD+spread (time=23.06 ms)
+      Parsed config 2: Static+SIMD+close (time=24.67 ms)
+      Parsed config 3: Static+SIMD+spread (time=26.00 ms)
+    30k_0p05.mtx (threads=48): Parsed 3 configurations
+  Processing: 30k_0p05.mtx, threads=72
+    Running: ./test_config_numa 72 30k_0p05.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.1Z3lPOVPt0
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.ZHvTlZenWC
+    Start time: Mon Nov 17 20:11:29 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 72 30k_0p05.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:13:10 CET 2025
+    stderr is empty
+    stdout size: 1372 bytes
+    Exit code: 0
+    tmpout size: 1372 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.28 ms)
+      Parsed config 2: Static+SIMD+spread (time=0.31 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=0.32 ms)
+    30k_0p05.mtx (threads=72): Parsed 3 configurations
+  Processing: 30k_0p05.mtx, threads=96
+    Running: ./test_config_numa 96 30k_0p05.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.kRRsVSK1Ea
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.LkhDgTeybu
+    Start time: Mon Nov 17 20:13:11 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 96 30k_0p05.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:14:52 CET 2025
+    stderr is empty
+    stdout size: 1372 bytes
+    Exit code: 0
+    tmpout size: 1372 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.40 ms)
+      Parsed config 2: Dynamic+SIMD+spread (time=0.40 ms)
+      Parsed config 3: Static+SIMD+spread (time=0.51 ms)
+    30k_0p05.mtx (threads=96): Parsed 3 configurations
+=== Processing Matrix: matrices/40k_0p02.mtx ===
+  Processing: 40k_0p02.mtx, threads=24
+    Running: ./test_config_numa 24 40k_0p02.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.SfavWc0Vgd
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.wiVaz1GEi4
+    Start time: Mon Nov 17 20:14:53 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 24 40k_0p02.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:16:52 CET 2025
+    stderr is empty
+    stdout size: 1374 bytes
+    Exit code: 0
+    tmpout size: 1374 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+spread (time=0.04 ms)
+      Parsed config 2: Static+SIMD+close (time=0.04 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=0.13 ms)
+    40k_0p02.mtx (threads=24): Parsed 3 configurations
+  Processing: 40k_0p02.mtx, threads=48
+    Running: ./test_config_numa 48 40k_0p02.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.SOgRgXmP1j
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.NnvE1SBnEi
+    Start time: Mon Nov 17 20:16:53 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 48 40k_0p02.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:18:52 CET 2025
+    stderr is empty
+    stdout size: 1374 bytes
+    Exit code: 0
+    tmpout size: 1374 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Dynamic+SIMD+spread (time=25.11 ms)
+      Parsed config 2: Static+SIMD+spread (time=26.00 ms)
+      Parsed config 3: Static+SIMD+close (time=26.66 ms)
+    40k_0p02.mtx (threads=48): Parsed 3 configurations
+  Processing: 40k_0p02.mtx, threads=72
+    Running: ./test_config_numa 72 40k_0p02.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.hlv5ZsoxI3
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.hH1O1Q2f03
+    Start time: Mon Nov 17 20:18:53 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 72 40k_0p02.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:20:52 CET 2025
+    stderr is empty
+    stdout size: 1372 bytes
+    Exit code: 0
+    tmpout size: 1372 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.32 ms)
+      Parsed config 2: Static+SIMD+spread (time=0.39 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=0.39 ms)
+    40k_0p02.mtx (threads=72): Parsed 3 configurations
+  Processing: 40k_0p02.mtx, threads=96
+    Running: ./test_config_numa 96 40k_0p02.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.Oy2KRZDLw0
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.RqvNnuO1zr
+    Start time: Mon Nov 17 20:20:53 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 96 40k_0p02.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:22:52 CET 2025
+    stderr is empty
+    stdout size: 1372 bytes
+    Exit code: 0
+    tmpout size: 1372 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.34 ms)
+      Parsed config 2: Dynamic+SIMD+spread (time=0.38 ms)
+      Parsed config 3: Static+SIMD+spread (time=0.44 ms)
+    40k_0p02.mtx (threads=96): Parsed 3 configurations
+=== Processing Matrix: matrices/50k_0p008.mtx ===
+  Processing: 50k_0p008.mtx, threads=24
+    Running: ./test_config_numa 24 50k_0p008.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.ZtkGzJD5mr
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.TsvDqf1ij0
+    Start time: Mon Nov 17 20:22:53 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 24 50k_0p008.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:23:56 CET 2025
+    stderr is empty
+    stdout size: 1376 bytes
+    Exit code: 0
+    tmpout size: 1376 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.03 ms)
+      Parsed config 2: Static+SIMD+spread (time=0.03 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=0.15 ms)
+    50k_0p008.mtx (threads=24): Parsed 3 configurations
+  Processing: 50k_0p008.mtx, threads=48
+    Running: ./test_config_numa 48 50k_0p008.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.s6cwUADozM
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.K9zLLRXapg
+    Start time: Mon Nov 17 20:23:57 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 48 50k_0p008.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:25:02 CET 2025
+    stderr is empty
+    stdout size: 1375 bytes
+    Exit code: 0
+    tmpout size: 1375 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=24.89 ms)
+      Parsed config 2: Static+SIMD+spread (time=25.78 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=26.00 ms)
+    50k_0p008.mtx (threads=48): Parsed 3 configurations
+  Processing: 50k_0p008.mtx, threads=72
+    Running: ./test_config_numa 72 50k_0p008.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.pTtX7mdsIN
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.iLITXqTRHk
+    Start time: Mon Nov 17 20:25:03 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 72 50k_0p008.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:26:07 CET 2025
+    stderr is empty
+    stdout size: 1376 bytes
+    Exit code: 0
+    tmpout size: 1376 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+spread (time=0.30 ms)
+      Parsed config 2: Static+SIMD+close (time=0.33 ms)
+      Parsed config 3: Dynamic+SIMD+spread (time=0.35 ms)
+    50k_0p008.mtx (threads=72): Parsed 3 configurations
+  Processing: 50k_0p008.mtx, threads=96
+    Running: ./test_config_numa 96 50k_0p008.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.LsI7oaQmhb
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.v2UqdG2QKd
+    Start time: Mon Nov 17 20:26:08 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 96 50k_0p008.mtx 10
+    Command completed with exit code: 0
+    End time: Mon Nov 17 20:27:11 CET 2025
+    stderr is empty
+    stdout size: 1375 bytes
+    Exit code: 0
+    tmpout size: 1375 bytes
+    tmperr size: 0 bytes
+      Parsed config 1: Static+SIMD+close (time=0.44 ms)
+      Parsed config 2: Dynamic+SIMD+spread (time=0.47 ms)
+      Parsed config 3: Static+SIMD+spread (time=0.50 ms)
+    50k_0p008.mtx (threads=96): Parsed 3 configurations
+=== Processing Matrix: matrices/5k_9p37.mtx ===
+  Processing: 5k_9p37.mtx, threads=24
+    Running: ./test_config_numa 24 5k_9p37.mtx 10
+    tmpout: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.VP7CWxnrSr
+    tmperr: /var/tmp/pbs.4682412.hpc-head-n1.unitn.it/tmp.ZBEJ4IAAfR
+    Start time: Mon Nov 17 20:27:12 CET 2025
+    Testing if executable responds...
+usage: ./test_config_numa <thread_count> <matrix_file> [iterations]
+    Executing timeout command...
+    Command: timeout 3600 ./test_config_numa 24 5k_9p37.mtx 10
