@@ -56,7 +56,6 @@ void Print_vector(char* title, float y[], int m);
 void serial_mat_vect(float A[], float x[], float y[], int m, int n);
 
 /* Parallel functions */
-void *Pth_mat_vect(void* rank);
 void Omp_mat_vect(int thread_count, csr_matrix *csr_A);
 
 int compare_doubles(const void *a, const void *b) {
@@ -253,28 +252,6 @@ void serial_mat_vect(float A[], float x[], float y[], int m, int n) {
    }
 }
 
-/*------------------------------------------------------------------
- * Function:       Pth_mat_vect
- * Purpose:        Multiply an mxn matrix by an nx1 column vector
- * In arg:         rank
- * Global in vars: A, x, m, n, thread_count
- * Global out var: y
- */
-void *Pth_mat_vect(void* rank) {
-   long my_rank = (long) rank;
-   int i, j;
-   int local_m = m/thread_count; 
-   int my_first_row = my_rank*local_m; 
-   int my_last_row = (my_rank+1)*local_m - 1;
-
-   for (i = my_first_row; i <= my_last_row; i++) {
-      y[i] = 0.0f;
-      for (j = 0; j < n; j++)
-          y[i] += A[i*n+j]*x[j];
-   }
-
-   return NULL;
-}  /* Pth_mat_vect */
 
 
 /*------------------------------------------------------------------
@@ -282,14 +259,7 @@ void *Pth_mat_vect(void* rank) {
  * Purpose:        Multiply an mxn matrix by an nx1 column vector using OpenMP
  *                 Configuration: Static+SIMD+Align+Affin (based on configurations_results.csv)
  *                 
- * Performance (from configurations_results.csv analysis):
- *   - Average speedup: 925x across all matrices and thread counts
- *   - At 12 threads: 1090x average (best shown in heatmap)
- *   - At 24 threads: 1333x average  
- *   - Best for sparse matrices (<0.5% density): 1647x average
- *   - 28% faster than non-aligned version
- *
- * Key optimizations:
+ * key optimizations:
  *   1. Static scheduling (chunk=32) - minimizes scheduling overhead
  *   2. SIMD vectorization - enables AVX2/AVX-512 instructions
  *   3. Cache alignment (64-byte) - prevents false sharing
@@ -302,25 +272,33 @@ void *Pth_mat_vect(void* rank) {
 void Omp_mat_vect(int thread_count, csr_matrix *csr_A) {
    int i, j;
    const int chunk = 32;
-   
    // Inform compiler about 64-byte alignment for better vectorization
    float *x_aligned = __builtin_assume_aligned(x, 64);
    float *y_aligned = __builtin_assume_aligned(y, 64);
-   
-   // Static+SIMD+Align+Affin: Best practical configuration from benchmark analysis
+
+   // register blocking (4-way) + SIMD 
+   // + static scheduling + alignment + affinity
    #pragma omp parallel for schedule(static, chunk) num_threads(thread_count) \
       proc_bind(close) default(none) \
       shared(csr_A, x_aligned, y_aligned, m, chunk) private(i, j)
    for (i = 0; i < m; i++) {
-      float sum = 0.0f;
-      
-      // SIMD reduction with aligned directive for optimal vector instructions
-      #pragma omp simd reduction(+:sum) aligned(x_aligned, y_aligned: 64)
-      for (j = csr_A->row_ptr[i]; j < csr_A->row_ptr[i + 1]; j++) {
-         sum += csr_A->values[j] * x_aligned[csr_A->col_ind[j]];
+      float sum0 = 0.0f, sum1 = 0.0f, sum2 = 0.0f, sum3 = 0.0f;
+      int row_start = csr_A->row_ptr[i];
+      int row_end = csr_A->row_ptr[i + 1];
+      // SIMD + register blocking: process 4 elements at a time
+      #pragma omp simd reduction(+:sum0, sum1, sum2, sum3) aligned(x_aligned, y_aligned: 64)
+      for (j = row_start; j < row_end - 3; j += 4) {
+         sum0 += csr_A->values[j]   * x_aligned[csr_A->col_ind[j]];
+         sum1 += csr_A->values[j+1] * x_aligned[csr_A->col_ind[j+1]];
+         sum2 += csr_A->values[j+2] * x_aligned[csr_A->col_ind[j+2]];
+         sum3 += csr_A->values[j+3] * x_aligned[csr_A->col_ind[j+3]];
       }
-      
-      y_aligned[i] = sum;
+      // Handle remainder elements 
+      // that don't fit into a block of 4 (at most 3 elements)
+      for (; j < row_end; j++) {
+         sum0 += csr_A->values[j] * x_aligned[csr_A->col_ind[j]];
+      }
+      y_aligned[i] = sum0 + sum1 + sum2 + sum3;
    }
 }  /* Omp_mat_vect */
 

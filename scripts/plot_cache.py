@@ -20,16 +20,19 @@ if not os.path.exists(csv_file):
     print(f"Error: {csv_file} not found")
     sys.exit(1)
 
-# Read the data
-df = pd.read_csv(csv_file)
+
+# Read the data, force all columns to string to avoid type inference issues from non-numeric values (e.g., '×')
+df = pd.read_csv(csv_file, dtype=str)
 
 # Clean column names (strip quotes and whitespace)
 df.columns = df.columns.str.strip().str.replace('"', '')
 df['matrix'] = df['matrix'].str.strip().str.replace('"', '')
 
-# Fix columns: cols is not numeric, so set to 0 or skip size calc
-df['rows'] = pd.to_numeric(df['rows'], errors='coerce')
-df['threads'] = pd.to_numeric(df['threads'], errors='coerce')
+
+# Convert only relevant columns to numeric
+for col in ['rows', 'threads', 'd1_miss_rate', 'branch_miss_rate']:
+    if col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
 
 # Use d_refs for L1 data cache loads, d1_misses for misses, d1_miss_rate for miss rate
 # Use branches, branch_misses, branch_miss_rate for branch metrics
@@ -41,7 +44,13 @@ if 'density_pct' in df.columns:
 else:
     df['density_clean'] = 0.0
 
-# Remove rows with NA values in critical fields
+
+# Convert d1_miss_rate and branch_miss_rate to numeric, coercing errors (e.g., 'NA') to NaN
+df['d1_miss_rate'] = pd.to_numeric(df['d1_miss_rate'], errors='coerce')
+df['branch_miss_rate'] = pd.to_numeric(df['branch_miss_rate'], errors='coerce')
+df['threads'] = pd.to_numeric(df['threads'], errors='coerce')
+
+# Remove rows with NA values in critical fields after conversion
 df = df.dropna(subset=['d1_miss_rate', 'branch_miss_rate', 'threads'])
 
 if len(df) == 0:
