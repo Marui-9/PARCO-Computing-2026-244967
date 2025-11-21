@@ -71,13 +71,9 @@ for mtx in $MATRIX_FILES; do
         PROG_OUTPUT=$(mktemp)
         PROG_STDERR=$(mktemp)
         
-        # Run with valgrind cachegrind and timeout
-        # Note: --tool=cachegrind profiles cache behavior
-        # Pass full path to executable (not just basename)
-        timeout $TIMEOUT_SECONDS valgrind --tool=cachegrind \
-            --cachegrind-out-file="$CACHEGRIND_OUT" \
-            --cache-sim=yes \
-            --branch-sim=yes \
+        # Run with valgrind memcheck for memory leak analysis
+        # Note: --tool=memcheck checks for memory leaks
+        timeout $TIMEOUT_SECONDS valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all \
             "$EXECUTABLE" "$threads" "$mtx" > "$PROG_OUTPUT" 2>"$PROG_STDERR"
         
         EXIT_CODE=$?

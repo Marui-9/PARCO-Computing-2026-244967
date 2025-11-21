@@ -8,19 +8,34 @@ import pandas as pd
 import sys
 
 def main():
+    import matplotlib.pyplot as plt
+    import os
+
     csv_file = "results/memory_optimizations_results.csv"
-    
     try:
         df = pd.read_csv(csv_file)
     except FileNotFoundError:
         print(f"Error: {csv_file} not found.")
         print("Run ./scripts/bench_memory_optimizations.sh first.")
         sys.exit(1)
-    
+
     if df.empty:
         print("No data found in results file.")
         sys.exit(1)
-    
+
+    # --- Visualization: Improvement by Optimization Type ---
+    plt.figure(figsize=(10, 6))
+    opt_summary = df.groupby('Optimization').agg({'Improvement_Percent': 'mean'}).sort_values('Improvement_Percent', ascending=False)
+    plt.bar(opt_summary.index, opt_summary['Improvement_Percent'], color='tab:blue', alpha=0.8)
+    plt.ylabel('Mean Improvement over Phase 1 (%)', fontsize=12, fontweight='bold')
+    plt.xlabel('Optimization', fontsize=12, fontweight='bold')
+    plt.title('Mean Improvement by Memory Optimization', fontsize=14, fontweight='bold')
+    plt.xticks(rotation=20, ha='right')
+    plt.tight_layout()
+    os.makedirs('plots', exist_ok=True)
+    plt.savefig('plots/memory_optimization_improvement.png', dpi=300, bbox_inches='tight')
+    print('✓ Plot saved to: plots/memory_optimization_improvement.png')
+
     print("=" * 80)
     print("Phase 3: Memory-Level Optimization Analysis")
     print("=" * 80)

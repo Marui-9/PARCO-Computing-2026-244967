@@ -69,7 +69,7 @@ echo "Executable verified and permissions set"
 export EXECUTABLE="./executable_cache_perf"
 
 echo "========================================"
-echo "Starting Cache Benchmark with perf stat"
+echo "Starting Cache Benchmark with valgrind memcheck"
 echo "========================================"
 echo "Started at: $(date)"
 echo "Working directory: $(pwd)"
@@ -77,22 +77,22 @@ echo "Available matrices:"
 ls -lh matrices/*.mtx
 echo ""
 
-# Run the perf cache benchmark
-bash scripts/bench_cache_perf.sh
+# Run the valgrind memory check benchmark
+bash scripts/bench_cache_valgrind.sh
 
 echo ""
 echo "========================================"
-echo "Cache perf Benchmark Completed"
+echo "Cache valgrind Benchmark Completed"
 echo "========================================"
 echo "Completed at: $(date)"
-echo "Results saved to: results/cache_perf_results.csv"
+echo "Results saved to: results/cache_valgrind_results.csv"
 echo ""
 
 # Display results summary if file exists
-if [ -f results/cache_perf_results.csv ]; then
+if [ -f results/cache_valgrind_results.csv ]; then
     echo "Total test runs:"
-    wc -l < results/cache_perf_results.csv | awk '{print $1-1}'
+    wc -l < results/cache_valgrind_results.csv | awk '{print $1-1}'
     echo ""
     echo "First few results:"
-    head -5 results/cache_perf_results.csv
+    head -5 results/cache_valgrind_results.csv
 fi
