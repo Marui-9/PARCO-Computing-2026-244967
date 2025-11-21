@@ -29,9 +29,9 @@ if [ ! -f ./test_config_numa ]; then
 fi
 
 echo ""
-echo "Running: ./test_config_numa 24 citationCiteseer.mtx 5"
+echo "Running: ./test_config_numa 24 2k_0p22.mtx 5"
 echo "=========================================="
-./test_config_numa 24 citationCiteseer.mtx 5
+./test_config_numa 24 2k_0p22.mtx 5
 
 echo ""
 echo "=========================================="
