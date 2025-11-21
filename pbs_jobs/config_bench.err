@@ -1,7 +1,0 @@
-src/test_configurations.c: In function ‘main’:
-src/test_configurations.c:223:63: warning: cast between incompatible function types from ‘void (*)(int,  csr_matrix *)’ {aka ‘void (*)(int,  struct <anonymous> *)’} to ‘void (*)(int,  csr_matrix *, int)’ {aka ‘void (*)(int,  struct <anonymous> *, int)’} [-Wcast-function-type]
-  223 |     run_benchmark(&configs[num_configs], thread_count, csr_A, (void (*)(int, csr_matrix*, int))mat_vect_auto, 0, num_iterations);
-      |                                                               ^
-src/test_configurations.c:329:63: warning: cast between incompatible function types from ‘void (*)(int,  csr_matrix *)’ {aka ‘void (*)(int,  struct <anonymous> *)’} to ‘void (*)(int,  csr_matrix *, int)’ {aka ‘void (*)(int,  struct <anonymous> *, int)’} [-Wcast-function-type]
-  329 |     run_benchmark(&configs[num_configs], thread_count, csr_A, (void (*)(int, csr_matrix*, int))mat_vect_task_based, 0, num_iterations);
-      |                                                               ^

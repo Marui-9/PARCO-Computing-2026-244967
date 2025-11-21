@@ -14,12 +14,6 @@ module load gcc91
 gcc() { gcc-9.1.0 "$@"; }
 gcc --version
 
-# Verify perf is available
-module load perf
-echo "perf version:"
-which perf
-perf --version
-
 module load valgrind
 valgrind --version
 # Navigate to project root directory

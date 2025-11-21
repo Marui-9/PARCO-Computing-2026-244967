@@ -52,8 +52,6 @@ print(f"Data points: {len(df)}")
 # Create figure directory
 os.makedirs('plots', exist_ok=True)
 
-cbar = plt.colorbar(scatter, ax=ax)
-cbar.set_label('Density (%)', fontsize=12, fontweight='bold')
 
 # Only plot: Speedup vs Thread Count by Configuration Category
 fig, ax = plt.subplots(figsize=(12, 7))
@@ -72,6 +70,6 @@ ax.legend(fontsize=11, loc='upper left')
 ax.grid(True, alpha=0.3)
 ax.set_xticks(sorted(df['threads'].unique()))
 plt.tight_layout()
-plt.savefig('plots/speedup_vs_threads.png', dpi=300, bbox_inches='tight')
-print("✓ Generated: plots/speedup_vs_threads.png")
+plt.savefig('plots/speedup_configs.png', dpi=300, bbox_inches='tight')
+print("✓ Generated: plots/speedup_configs.png")
 plt.close()

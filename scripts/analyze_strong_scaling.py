@@ -30,15 +30,34 @@ def calculate_strong_scaling_metrics(df):
     """
     Calculate strong scaling metrics for each matrix and configuration.
     Strong scaling: Fixed problem size, varying thread count
-    - Speedup(p) = T(1) / T(p)
+    By default this function computes speedup relative to a serial baseline per matrix.
+    The preferred serial baseline is the time at `threads == 1` for the unoptimized
+    static configuration (e.g., `Static (default)`). If that is not available, the
+    fastest 1-thread time for the matrix is used as a fallback.
+    - Speedup(p) = T_serial / T(p)
     """
     metrics = []
+    # Build per-matrix serial baseline times (prefer unoptimized Static at 1 thread)
+    serial_baseline = {}
+    for matrix, group in df.groupby('matrix'):
+        one_thread = group[group['threads'] == 1]
+        if one_thread.empty:
+            continue
+        # Prefer 'Static' config without SIMD in the name
+        preferred = one_thread[one_thread['configuration'].str.contains('Static', na=False) & ~one_thread['configuration'].str.contains('SIMD', na=False)]
+        if not preferred.empty:
+            serial_time = preferred['time_ms'].values[0]
+        else:
+            # Fallback: fastest 1-thread time
+            serial_time = one_thread['time_ms'].min()
+        serial_baseline[matrix] = serial_time
     for (matrix, config), group in df.groupby(['matrix', 'configuration']):
         group_sorted = group.sort_values('threads')
-        baseline = group_sorted[group_sorted['threads'] == 1]
-        if baseline.empty:
+        # Use serial baseline for this matrix when available
+        if matrix not in serial_baseline:
+            # If no serial baseline (no 1-thread data), skip this (matrix,config)
             continue
-        baseline_time = baseline['time_ms'].values[0]
+        baseline_time = serial_baseline[matrix]
         for _, row in group_sorted.iterrows():
             threads = row['threads']
             time_ms = row['time_ms']
@@ -56,7 +75,11 @@ def main():
     project_root = script_dir.parent
     results_dir = project_root / 'results'
     plots_dir = project_root / 'plots'
-    csv_file = results_dir / 'configurations_results.csv'
+    # Prefer matrices_results.csv if available (contains best-config speedups per matrix)
+    if (results_dir / 'matrices_results.csv').exists():
+        csv_file = results_dir / 'matrices_results.csv'
+    else:
+        csv_file = results_dir / 'configurations_results.csv'
 
     print("=" * 80)
     print("STRONG SCALING ANALYSIS: AVERAGE SPEEDUP")
@@ -66,32 +89,71 @@ def main():
     print()
 
     df = load_data(csv_file)
-    print("\nCalculating strong scaling metrics...")
-    metrics_df = calculate_strong_scaling_metrics(df)
+    # If using matrices_results.csv, it already contains best-config speedups per matrix
+    if csv_file.name == 'matrices_results.csv':
+        print("\nUsing matrices_results.csv: building metrics from 'speedup_x' column")
+        # create a clean matrix name column (avoid touching existing 'matrix' column)
+        df['matrix_name'] = df['matrix'].apply(lambda x: os.path.basename(str(x).strip('"')).replace('.mtx', ''))
+        # ensure numeric
+        df['speedup_x'] = pd.to_numeric(df['speedup_x'], errors='coerce')
+        df = df.dropna(subset=['speedup_x', 'threads', 'matrix_name'])
+        # Build metrics_df with unique column names to avoid duplicate 'matrix' column issues
+        metrics_df = df[['matrix_name', 'threads', 'speedup_x']].copy()
+        metrics_df.columns = ['matrix', 'threads', 'speedup']
+        print(f"Built metrics for {metrics_df['matrix'].nunique()} matrices, {len(metrics_df)} rows total")
+    else:
+        print("\nCalculating strong scaling metrics from configurations_results.csv...")
+        metrics_df = calculate_strong_scaling_metrics(df)
     print(f"Calculated metrics for {len(metrics_df)} test runs")
 
+    # --- Plot 1: Strong Scaling (Best configuration per matrix OR provided best results) ---
+    # If 'configuration' exists in metrics_df (we built metrics from configurations_results.csv),
+    # select the best configuration per matrix at the matrix's largest thread count.
+    # If metrics_df comes from matrices_results.csv (already per-matrix bests), just use each matrix's series.
+    per_matrix_series = []
+    if 'configuration' in metrics_df.columns:
+        for matrix, group in metrics_df.groupby('matrix'):
+            max_t = int(group['threads'].max())
+            candidates = group[group['threads'] == max_t]
+            if candidates.empty:
+                continue
+            best_row = candidates.loc[candidates['speedup'].idxmax()]
+            best_cfg = best_row['configuration']
+            sel = metrics_df[(metrics_df['matrix'] == matrix) & (metrics_df['configuration'] == best_cfg)].copy()
+            if not sel.empty:
+                per_matrix_series.append(sel)
+    else:
+        # metrics_df already contains one (best) configuration per matrix across threads
+        for matrix, group in metrics_df.groupby('matrix'):
+            sel = group.sort_values('threads').copy()
+            if not sel.empty:
+                per_matrix_series.append(sel)
 
-    avg_speedup = metrics_df.groupby('threads').agg({'speedup': ['mean', 'std']}).reset_index()
-    avg_speedup.columns = ['threads', 'mean', 'std']
+    output_file = plots_dir / 'strong_scaling_best_configs.png'
+    if per_matrix_series:
+        best_df = pd.concat(per_matrix_series, ignore_index=True)
+        plt.figure(figsize=(12, 8))
+        matrices = sorted(best_df['matrix'].unique())
+        for m in matrices:
+            series = best_df[best_df['matrix'] == m].sort_values('threads')
+            plt.plot(series['threads'], series['speedup'], '-o', linewidth=1.5, markersize=6, label=str(m))
 
-    # --- Plot 1: Strong Scaling (Speedup vs Threads) ---
-    plt.figure(figsize=(10, 7))
-    plt.plot(avg_speedup['threads'], avg_speedup['mean'], 'b-o', linewidth=2, label='Mean Speedup')
-    plt.fill_between(avg_speedup['threads'],
-                     avg_speedup['mean'] - avg_speedup['std'],
-                     avg_speedup['mean'] + avg_speedup['std'],
-                     alpha=0.3, label='±1 Std Dev')
-    plt.plot(avg_speedup['threads'], avg_speedup['threads'], 'k--', linewidth=2, label='Ideal', alpha=0.5)
-    plt.xlabel('Number of Threads', fontsize=12, fontweight='bold')
-    plt.ylabel('Average Speedup', fontsize=12, fontweight='bold')
-    plt.title('Average Speedup Across All Matrices/Configs', fontsize=14, fontweight='bold')
-    plt.legend()
-    plt.xlim(left=0)
-    plt.ylim(bottom=0)
-    os.makedirs(plots_dir, exist_ok=True)
-    output_file = plots_dir / 'average_speedup_vs_threads.png'
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
-    print(f"\n✓ Plot saved to: {output_file}")
+        # Plot mean across matrices (best configs)
+        mean_best = best_df.groupby('threads')['speedup'].mean().sort_index()
+        plt.plot(mean_best.index, mean_best.values, 'k--', linewidth=3, label='Mean (best configs)')
+
+        plt.xlabel('Number of Threads', fontsize=12, fontweight='bold')
+        plt.ylabel('Speedup (Best Config per Matrix)', fontsize=12, fontweight='bold')
+        plt.title('Strong Scaling: Best Configuration per Matrix', fontsize=16, fontweight='bold')
+        plt.legend(fontsize=8, ncol=2)
+        plt.xlim(left=0)
+        plt.ylim(bottom=0)
+        os.makedirs(plots_dir, exist_ok=True)
+        output_file = plots_dir / 'strong_scaling_best_configs.png'
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
+        print(f"\n✓ Plot saved to: {output_file}")
+    else:
+        print("No per-matrix series found to plot strong scaling.")
 
     # --- Plot 2: Parallel Efficiency vs Threads ---
     metrics_df['efficiency'] = metrics_df['speedup'] / metrics_df['threads']

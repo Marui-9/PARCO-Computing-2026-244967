@@ -21,22 +21,20 @@ PARCO-Computing-2026-244967/
 │   ├── generator.h, multiply.h, m_to_csr.h  # Header files
 │   └── *.o                     # Compiled object files
 ├── matrices/                    # Sparse matrices (.mtx)
-│   └── *.mtx                   # 15 matrices: 2k-60k, 0.005%-9.37% density
+│   └── *.mtx                   # Benchmark matrices (various sizes; 13 matrices appear in results)
 ├── scripts/                     # Benchmark and analysis scripts
-│   ├── bench_matrices.sh       # Speedup benchmarks (Phase 1)
-│   ├── bench_configurations.sh # Compare 30 OpenMP configs (Phase 1)
-│   ├── bench_configurations_numa.sh # NUMA benchmarks (Phase 2)
-│   ├── bench_cache.sh          # Cache performance benchmarks
-│   ├── bench_cache_valgrind.sh # Cache analysis with valgrind
-│   ├── analyze_configurations.py # Analyze Phase 1 results
-│   ├── analyze_configurations_numa.py # Analyze Phase 2 results
-│   ├── analyze_strong_scaling.py # Strong scaling analysis
-│   ├── plot_speedup.py         # Generate speedup plots
-│   ├── plot_configurations.py  # Configuration comparison plots
-│   ├── plot_cache.py           # Cache performance plots
-│   ├── plot_results.sh         # Batch plot generation
-│   ├── setup_numa_benchmarks.sh # NUMA benchmark setup
-│   └── test_bench_small.sh     # Quick benchmark test
+│   ├── bench_matrices.sh               # Run speedup benchmarks across matrices (writes results/matrices_results.csv)
+│   ├── bench_configurations.sh         # Compare 30 OpenMP configurations (Phase 1)
+│   ├── bench_configurations_numa.sh    # NUMA-aware configuration benchmark (Phase 2)
+│   ├── bench_memory_optimizations.sh   # Memory/kernel optimization experiments (Phase 3)
+│   ├── analyze_strong_scaling.py       # Strong-scaling analysis and plotting
+│   ├── analyze_memory_optimizations.py # Analyze memory-optimization experiment results
+│   ├── analyze_configurations_text.py  # Text-summary analysis of configuration results
+│   ├── plot_speedup.py                 # Generate speedup curves from matrices_results.csv
+│   ├── plot_configurations.py          # Generate configuration comparison plots
+│   ├── plot_configurations_numa.py     # NUMA-specific configuration plots
+│   ├── plot_cache.py                   # Cache-related plots
+│   └── (other helpers)                 # Additional plotting and runner scripts
 ├── pbs_jobs/                    # PBS cluster job scripts
 │   ├── run_numa_bench.pbs      # NUMA benchmark job (Phase 2)
 │   ├── run_config_bench.pbs    # Configuration benchmark job
@@ -47,7 +45,7 @@ PARCO-Computing-2026-244967/
 │   ├── *.out, *.err            # Job output/error logs
 │   └── *.pbs                   # Additional job scripts
 ├── results/                     # Benchmark output data
-│   ├── configurations_results.csv # Phase 1: 2,700 measurements
+│   ├── configurations_results.csv # Phase 1: 3,893 measurements
 │   ├── configurations_results.txt # Phase 1: Detailed log
 │   ├── configurations_numa_results.csv # Phase 2: NUMA results
 │   ├── configurations_numa_results.txt # Phase 2: Detailed log
@@ -69,10 +67,7 @@ PARCO-Computing-2026-244967/
 ├── *.o                          # Compiled object files
 ├── Makefile                     # Build configuration
 ├── README.md                    # This file (project documentation)
-├── TEST_CONFIG_README.md        # Configuration testing guide
-├── NUMA_SETUP.md                # NUMA optimization guide
-├── PERFORMANCE_NOTES.md         # Performance analysis notes
-├── numa_optimization_guide.md   # Additional NUMA documentation
+<!-- Additional documentation files (not included in this repository) -->
 ├── .gitignore                   # Git ignore rules
 └── *.err, *.out                 # Build/run logs
 ```
@@ -82,7 +77,7 @@ PARCO-Computing-2026-244967/
 ### Prerequisites
 - **Compiler**: GCC ≥ 9.1 with OpenMP 4.5+ support
 - **System**: x86-64 CPU with AVX2 (AVX-512 optional)
-- **Memory**: ≥ 8GB RAM recommended
+- **Memory**: ≥ 16GB RAM recommended
 - **Python** (optional): For analysis scripts (matplotlib, pandas, numpy)
 
 ### Build All Executables
@@ -317,20 +312,24 @@ cat numa_bench.err
 ### Analyze Phase 1 Results
 
 ```bash
-# Comprehensive configuration analysis
-python3 scripts/analyze_configurations.py
+# Comprehensive configuration analysis (text summary)
+python3 scripts/analyze_configurations_text.py
 
 # Strong scaling analysis with detailed plots
 python3 scripts/analyze_strong_scaling.py
 ```
 
-**Generates:**
-- SIMD impact analysis (typically 188× improvement)
+- **Generates:**
+- SIMD impact analysis (typical improvements vary by matrix)
 - Thread affinity benefits (~5% gain)
 - Optimal configurations per matrix type
 - Scaling efficiency across thread counts
-- Best performance: **925× average speedup**, **3,300× peak**
-- Plots saved to `plots/strong_scaling/`
+- Speedup summary (from `results/matrices_results.csv`):
+  - **Mean speedup:** 1192.55× (117 numeric entries)
+  - **Median speedup:** 465.7×
+  - **Peak (max) speedup observed:** 6152.31×
+  - **Unique matrices in that results file:** 13
+- Plots saved to `plots/`
 
 ### Analyze Phase 2 Results (When Available)
 
@@ -524,7 +523,7 @@ make
 ./scripts/bench_configurations.sh
 
 # 6. Analyze results
-python3 scripts/analyze_configurations.py
+python3 scripts/analyze_configurations_text.py
 python3 scripts/analyze_strong_scaling.py
 
 # 7. Generate visualizations
@@ -536,7 +535,7 @@ qsub pbs_jobs/run_numa_bench.pbs
 
 **Expected Results:**
 - `results/configurations_results.csv`: 3,893 measurements
-- `plots/strong_scaling/`: Speedup curves, efficiency analysis
+  - `plots/`: Speedup curves, efficiency analysis
 - Performance matching published results (2,624× average speedup across all thread counts)
 
 ---
