@@ -7,3 +7,5 @@ core.*
 
 # Large matrices directory (too large for git)
 matrices_large/
+
+*.o
