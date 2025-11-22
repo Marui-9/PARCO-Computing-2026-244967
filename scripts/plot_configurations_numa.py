@@ -59,8 +59,10 @@ ax.legend(fontsize=11, loc='upper left')
 ax.grid(True, alpha=0.3)
 ax.set_xticks(sorted(df['threads'].unique()))
 plt.tight_layout()
-plt.savefig('plots/numa_speedup_vs_threads_binding.png', dpi=300, bbox_inches='tight')
+f1 = 'plots/numa_speedup_vs_threads_binding.png'
+plt.savefig(f1, dpi=300, bbox_inches='tight')
 plt.close()
+
 
 # Plot 2: Scaling Efficiency (speedup ratio when doubling threads)
 fig, ax = plt.subplots(figsize=(12, 7))
@@ -108,5 +110,15 @@ ax.set_xticklabels(pair_labels, fontsize=12)
 ax.legend(fontsize=11, loc='upper left')
 ax.grid(True, alpha=0.3, axis='y')
 plt.tight_layout()
-plt.savefig('plots/numa_scaling_efficiency_doubling.png', dpi=300, bbox_inches='tight')
+f2 = 'plots/numa_scaling_efficiency_doubling.png'
+plt.savefig(f2, dpi=300, bbox_inches='tight')
 plt.close()
+
+# Report generated files for this run
+generated_files = [f1, f2]
+print('\nGenerated plot files:')
+for gf in generated_files:
+    if os.path.exists(gf):
+        print(f"  - {gf}")
+    else:
+        print(f"  - {gf} (MISSING)")
