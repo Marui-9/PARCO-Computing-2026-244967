@@ -184,9 +184,20 @@ print(f"   Dense matrices (≥1.0% density):  {dense_matrices:.2f}x avg speedup"
 print(f"\n5. Optimal Thread Count (SIMD configs):")
 for matrix in df['matrix'].unique():
     matrix_data = df[(df['matrix'] == matrix) & (df['config_category'].isin(['SIMD', 'SIMD+Affinity']))]
-    best_threads = matrix_data.groupby('threads')['speedup'].mean().idxmax()
-    best_speedup = matrix_data.groupby('threads')['speedup'].mean().max()
-    print(f"   {matrix:20s}: {int(best_threads):2d} threads ({best_speedup:.1f}x speedup)")
+    if matrix_data.empty:
+        print(f"   {matrix:20s}: N/A threads (no SIMD data)")
+        continue
+    grouped = matrix_data.groupby('threads')['speedup'].mean()
+    if grouped.empty:
+        print(f"   {matrix:20s}: N/A threads (no grouped speedup data)")
+        continue
+    best_threads = grouped.idxmax()
+    best_speedup = grouped.max()
+    try:
+        bt_int = int(best_threads)
+    except Exception:
+        bt_int = best_threads
+    print(f"   {matrix:20s}: {bt_int:2d} threads ({best_speedup:.1f}x speedup)")
 
 print("\n" + "="*80)
 print("END OF ANALYSIS")

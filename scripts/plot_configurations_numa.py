@@ -10,6 +10,9 @@ Analyze NUMA-aware configurations_numa_results.csv to examine:
 
 import pandas as pd
 import numpy as np
+import matplotlib
+# Use non-interactive backend for headless environments (avoids Qt errors)
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
 

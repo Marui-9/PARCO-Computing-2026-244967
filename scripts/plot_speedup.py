@@ -6,6 +6,9 @@ Usage: python3 plot_speedup.py [results.csv]
 """
 
 import pandas as pd
+import matplotlib
+# Use non-interactive backend for headless environments (prevents Qt/QSocketNotifier errors)
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import sys
 import os
