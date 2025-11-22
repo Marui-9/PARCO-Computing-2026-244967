@@ -52,12 +52,15 @@ PARCO-Computing-2026-244967/
 │   ├── matrices_results.csv    # Speedup benchmark results
 │   └── cache_valgrind_results.csv # Cache analysis results
 ├── plots/                       # Generated figures (PNG)
-│   ├── strong_scaling/         # Strong scaling analysis plots
-│   ├── speedup_vs_threads.png  # Thread scaling visualization
-│   ├── speedup_vs_density.png  # Density impact analysis
-│   ├── speedup_heatmap.png     # Configuration heatmap
-│   ├── parallel_efficiency.png # Efficiency curves
-│   ├── top_configurations.png  # Best config comparison
+│   ├── average_efficiency_vs_threads.png
+│   ├── average_speedup_vs_threads.png
+│   ├── memory_optimization_improvement.png
+│   ├── numa_scaling_efficiency_doubling.png
+│   ├── numa_speedup_vs_threads_binding.png
+│   ├── speedup_per_matrix_subplots.png
+│   ├── speedup_vs_threads.png
+│   ├── speedup_vs_threads_best.png
+│   ├── strong_scaling_best_configs.png
 │   └── *.png                   # Additional visualizations
 ├── executable                   # Main SpMV program (compiled)
 ├── test_config                  # Phase 1 testing tool (compiled)
@@ -319,6 +322,11 @@ python3 scripts/analyze_configurations_text.py
 python3 scripts/analyze_strong_scaling.py
 ```
 
+```bash
+# Print per-thread average parallel efficiency (mean/std/count in %)
+python3 scripts/print_avg_eff.py
+```
+
 - **Generates:**
 - SIMD impact analysis (typical improvements vary by matrix)
 - Thread affinity benefits (~5% gain)
@@ -328,7 +336,7 @@ python3 scripts/analyze_strong_scaling.py
   - **Mean speedup:** 1192.55× (117 numeric entries)
   - **Median speedup:** 465.7×
   - **Peak (max) speedup observed:** 6152.31×
-  - **Unique matrices in that results file:** 13
+  - **Unique matrices in that results file:** 15
 - Plots saved to `plots/`
 
 ### Analyze Phase 2 Results (When Available)

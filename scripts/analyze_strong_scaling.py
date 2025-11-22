@@ -89,21 +89,56 @@ def main():
     print()
 
     df = load_data(csv_file)
-    # If using matrices_results.csv, it already contains best-config speedups per matrix
-    if csv_file.name == 'matrices_results.csv':
-        print("\nUsing matrices_results.csv: building metrics from 'speedup_x' column")
-        # create a clean matrix name column (avoid touching existing 'matrix' column)
-        df['matrix_name'] = df['matrix'].apply(lambda x: os.path.basename(str(x).strip('"')).replace('.mtx', ''))
-        # ensure numeric
-        df['speedup_x'] = pd.to_numeric(df['speedup_x'], errors='coerce')
-        df = df.dropna(subset=['speedup_x', 'threads', 'matrix_name'])
-        # Build metrics_df with unique column names to avoid duplicate 'matrix' column issues
-        metrics_df = df[['matrix_name', 'threads', 'speedup_x']].copy()
-        metrics_df.columns = ['matrix', 'threads', 'speedup']
+
+    # Recompute speedups using per-matrix 1-thread times from configurations_results.csv when available.
+    conf_csv = results_dir / 'configurations_results.csv'
+    if conf_csv.exists():
+        print("\nRecomputing speedup using per-matrix 1-thread baselines from 'configurations_results.csv'...")
+        conf = pd.read_csv(conf_csv)
+        # ensure numeric and filter successful runs
+        conf['time_ms'] = pd.to_numeric(conf['time_ms'], errors='coerce')
+        if 'exit_code' in conf.columns:
+            conf = conf[conf['exit_code'] == 0]
+        conf = conf.dropna(subset=['time_ms', 'threads', 'matrix'])
+        # normalize matrix names (strip directories)
+        conf['matrix_name'] = conf['matrix'].apply(lambda x: os.path.basename(str(x).strip('"')).replace('.mtx', ''))
+
+        # build per-matrix serial baseline: use the fastest 1-thread time (best single-thread)
+        # This ensures speedup is relative to the best observed serial performance for each matrix.
+        serial_baseline = {}
+        for m, g in conf.groupby('matrix_name'):
+            one = g[g['threads'] == 1]
+            if one.empty:
+                continue
+            # fastest 1-thread time across configurations
+            serial_time = one['time_ms'].min()
+            serial_baseline[m] = serial_time
+
+        # for each matrix and thread count, pick best (min) time across configurations and compute speedup
+        rows = []
+        for (m, t), group in conf.groupby(['matrix_name', 'threads']):
+            if m not in serial_baseline:
+                continue
+            best_time = group['time_ms'].min()
+            if best_time <= 0 or pd.isna(best_time):
+                continue
+            speedup = serial_baseline[m] / best_time
+            efficiency = speedup / float(t) if t > 0 else float('nan')
+            rows.append({'matrix': m, 'threads': int(t), 'speedup': float(speedup), 'efficiency': float(efficiency)})
+
+        metrics_df = pd.DataFrame(rows)
         print(f"Built metrics for {metrics_df['matrix'].nunique()} matrices, {len(metrics_df)} rows total")
     else:
-        print("\nCalculating strong scaling metrics from configurations_results.csv...")
-        metrics_df = calculate_strong_scaling_metrics(df)
+        # Fallback: if configurations_results.csv missing, try to use matrices_results.csv speedup_x
+        print("\nconfigurations_results.csv not found — falling back to matrices_results.csv 'speedup_x' values")
+        if csv_file.name == 'matrices_results.csv':
+            df['matrix_name'] = df['matrix'].apply(lambda x: os.path.basename(str(x).strip('"')).replace('.mtx', ''))
+            df['speedup_x'] = pd.to_numeric(df['speedup_x'], errors='coerce')
+            df = df.dropna(subset=['speedup_x', 'threads', 'matrix_name'])
+            metrics_df = df[['matrix_name', 'threads', 'speedup_x']].copy()
+            metrics_df.columns = ['matrix', 'threads', 'speedup']
+        else:
+            metrics_df = calculate_strong_scaling_metrics(df)
     print(f"Calculated metrics for {len(metrics_df)} test runs")
 
     # --- Plot 1: Strong Scaling (Best configuration per matrix OR provided best results) ---
@@ -155,24 +190,41 @@ def main():
     else:
         print("No per-matrix series found to plot strong scaling.")
 
+    # Summary plot removed per user request; using average efficiency plot instead.
+
     # --- Plot 2: Parallel Efficiency vs Threads ---
+    # Compute parallel efficiency (speedup per thread) and convert to percentage
     metrics_df['efficiency'] = metrics_df['speedup'] / metrics_df['threads']
-    avg_eff = metrics_df.groupby('threads').agg({'efficiency': ['mean', 'std']}).reset_index()
-    avg_eff.columns = ['threads', 'mean', 'std']
+    avg_eff = metrics_df.groupby('threads').agg({'efficiency': ['mean', 'std', 'count']}).reset_index()
+    avg_eff.columns = ['threads', 'mean', 'std', 'count']
+
+    # Convert to percentage for plotting
+    avg_eff['mean_pct'] = avg_eff['mean'] * 100.0
+    avg_eff['std_pct'] = avg_eff['std'] * 100.0
 
     plt.figure(figsize=(10, 7))
-    plt.plot(avg_eff['threads'], avg_eff['mean'], 'g-o', linewidth=2, label='Mean Efficiency')
+    plt.plot(avg_eff['threads'], avg_eff['mean_pct'], 'g-o', linewidth=2, label='Mean Efficiency (%)')
     plt.fill_between(avg_eff['threads'],
-                     avg_eff['mean'] - avg_eff['std'],
-                     avg_eff['mean'] + avg_eff['std'],
+                     avg_eff['mean_pct'] - avg_eff['std_pct'],
+                     avg_eff['mean_pct'] + avg_eff['std_pct'],
                      alpha=0.3, color='green', label='±1 Std Dev')
-    plt.axhline(1.0, color='k', linestyle='--', linewidth=2, alpha=0.5, label='Ideal (100%)')
+    # Removed the ideal 100% horizontal line per user request
     plt.xlabel('Number of Threads', fontsize=12, fontweight='bold')
-    plt.ylabel('Average Parallel Efficiency', fontsize=12, fontweight='bold')
+    plt.ylabel('Average Parallel Efficiency (%)', fontsize=12, fontweight='bold')
     plt.title('Average Parallel Efficiency Across All Matrices/Configs', fontsize=14, fontweight='bold')
     plt.legend()
-    plt.xlim(left=0)
-    plt.ylim(bottom=0)
+    ax = plt.gca()
+    ax.set_xlim(left=0)
+    # Force y-axis to percentage range 0-100
+    ax.set_ylim(0, 100)
+    ax.set_yticks(np.arange(0, 101, 10))
+    ax.set_yticklabels([f"{int(t)}%" for t in ax.get_yticks()])
+    # Annotate sample counts under x ticks
+    xticks = avg_eff['threads'].astype(int).tolist()
+    labels = [f"{t}\n(n={int(c)})" for t, c in zip(avg_eff['threads'], avg_eff['count'])]
+    ax.set_xticks(xticks)
+    ax.set_xticklabels(labels)
+
     output_file_eff = plots_dir / 'average_efficiency_vs_threads.png'
     plt.savefig(output_file_eff, dpi=300, bbox_inches='tight')
     print(f"✓ Plot saved to: {output_file_eff}")
