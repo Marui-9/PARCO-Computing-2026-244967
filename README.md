@@ -2,9 +2,10 @@
 
 Parallel sparse matrix-vector multiplication (SpMV) benchmark using OpenMP with SIMD optimizations.
 
-This project implements a two-phase optimization approach:
-1. **Phase 1**: Single-node optimization (1-24 threads) - **COMPLETED**
-2. **Phase 2**: NUMA-aware multi-node optimization (24-96 threads) - **IN PROGRESS**
+This project implements a three-phase optimization approach:
+1. **Phase 1**: Single-socket optimization (1-24 threads)
+2. **Phase 2**: NUMA-aware multi-socket optimization (24-96 threads) 
+3. **Phase 3**: Memory-level kernel optimizations (register blocking, prefetching, alignment) 
 
 ## Project Structure
 
