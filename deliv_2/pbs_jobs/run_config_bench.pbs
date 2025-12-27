@@ -1,0 +1,49 @@
+#!/bin/bash
+#PBS -N config_bench
+#PBS -o ./config_bench.out
+#PBS -e ./config_bench.err
+#PBS -q short_cpuQ
+#PBS -l walltime=6:00:00
+#PBS -l select=1:ncpus=24:mem=16gb
+
+# Load modules
+module load gcc91
+
+# Navigate to project root directory
+echo "Starting directory: $(pwd)"
+
+# Find project root (handles submission from anywhere)
+if [ -d "src" ]; then
+    echo "Found src/ - already in project root"
+elif [ -d "../src" ]; then
+    cd ..
+    echo "Moved up one directory to: $(pwd)"
+elif [ -d "PARCO-Computing-2026-244967/src" ]; then
+    cd PARCO-Computing-2026-244967
+    echo "Changed to project directory: $(pwd)"
+elif [ -d "pbs_jobs" ]; then
+    echo "In pbs_jobs/ directory, moving up"
+    cd ..
+else
+    echo "ERROR: Cannot find project directory!"
+    echo "Current location: $(pwd)"
+    ls -la
+    exit 1
+fi
+
+echo "Project root: $(pwd)"
+
+# Clean and recompile the project (to ensure correct GLIBC version)
+echo "Cleaning old build artifacts..."
+rm -f *.o executable test_config test_config_numa
+
+echo "Compiling test configurations executable..."
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/test_configurations.c -o test_configurations.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/generator.c -o generator.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -c src/m_to_csr.c -o m_to_csr.o
+gcc-9.1.0 -O3 -Wall -Wextra -fopenmp -o test_config test_configurations.o generator.o m_to_csr.o -lm
+
+echo "=== Starting Configurations Benchmark ==="
+bash scripts/bench_configurations.sh
+
+echo "=== Configurations benchmark completed ==="
