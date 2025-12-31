@@ -1,8 +1,8 @@
-# Simple Makefile for spmv project
-CC ?= gcc
+# Makefile for distributed SpMV with MPI and OpenMP
+CC ?= mpicc
 CFLAGS ?= -O3 -Wall -Wextra -march=native -fopenmp
 LDLIBS ?= -lm
-OUT ?= executable
+OUT ?= mtrvec
 TEST_OUT ?= test_config
 TEST_NUMA_OUT ?= test_config_numa
 TEST_MEMORY_OUT ?= test_memory_opt
@@ -57,7 +57,7 @@ clean:
 	      $(SRCDIR)/test_memory_optimizations.o
 
 run: all
-	./$(OUT)
+	mpirun -np 2 ./$(OUT) 96 matrices/121k_0p0093.mtx
 
 #gcc -O3 -Wall -Wextra -march=native -fopenmp -c main.c -o main.o
 #for threads in {1..16}; do echo "Testing with $threads threads"; ./executable $threads bcsstk30.mtx; done
