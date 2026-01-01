@@ -1,0 +1,143 @@
+#!/bin/bash
+#PBS -N mpi_matrices_bench
+#PBS -o ./mpi_matrices_bench.out
+#PBS -e ./mpi_matrices_bench.err
+#PBS -q short_cpuQ
+#PBS -l walltime=4:00:00
+#PBS -l select=2:ncpus=96:mem=32gb
+
+# MPI Benchmarking: Test distributed SpMV across all matrices
+# Uses 2 MPI ranks, 48 threads per rank
+# Output: results/mpi_matrices_results.csv
+
+echo "=== MPI SpMV Benchmark ==="
+echo "Starting directory: $(pwd)"
+
+# Find project root (handles submission from anywhere)
+if [ -d "src" ]; then
+    echo "Found src/ - already in project root"
+    PROJECT_ROOT="."
+elif [ -d "../src" ]; then
+    cd ..
+    echo "Moved up one directory to: $(pwd)"
+    PROJECT_ROOT="."
+elif [ -d "PARCO-Computing-2026-244967/src" ]; then
+    cd PARCO-Computing-2026-244967
+    echo "Changed to project directory: $(pwd)"
+    PROJECT_ROOT="."
+elif [ -d "pbs_jobs" ]; then
+    echo "In pbs_jobs/ directory, moving up"
+    cd ..
+    PROJECT_ROOT="."
+else
+    echo "ERROR: Cannot find project directory!"
+    exit 1
+fi
+
+echo "Project root: $(pwd)"
+
+# Load necessary modules
+echo "Loading modules..."
+module load gcc91
+module load openmpi
+
+# Verify MPI installation
+echo "Verifying MPI installation..."
+mpicc --version || { echo "mpicc not found!"; exit 1; }
+mpirun --version || { echo "mpirun not found!"; exit 1; }
+
+# Compile the MPI code
+echo "Compiling MPI code..."
+cd deliv_2
+make clean > /dev/null 2>&1
+make > compile.log 2>&1
+if [ ! -f "mtrvec" ]; then
+    echo "ERROR: Compilation failed!"
+    cat compile.log
+    exit 1
+fi
+echo "Compilation successful: mtrvec executable created"
+
+# Setup output files
+OUTPUT_CSV="results/mpi_matrices_results.csv"
+mkdir -p results
+
+# Write CSV header
+echo "matrix,rows,cols,density_pct,nnz,threads_per_rank,omp_time_ms,mpi_time_ms,speedup" > "$OUTPUT_CSV"
+echo "CSV header written to $OUTPUT_CSV"
+
+# Configuration
+NUM_RANKS=2
+THREADS_PER_RANK=48
+
+echo ""
+echo "=== Benchmark Configuration ==="
+echo "Number of MPI ranks: $NUM_RANKS"
+echo "Threads per rank: $THREADS_PER_RANK"
+echo "Matrices: $(ls matrices/*.mtx | wc -l) files found"
+echo ""
+
+# Counter for progress
+TOTAL_MATRICES=$(ls matrices/*.mtx 2>/dev/null | wc -l)
+CURRENT=0
+
+# Loop through all matrices
+for matrix_file in matrices/*.mtx; do
+    CURRENT=$((CURRENT + 1))
+    matrix_basename=$(basename "$matrix_file")
+    
+    echo "[$CURRENT/$TOTAL_MATRICES] Processing: $matrix_basename"
+    
+    # Run the benchmark and capture output
+    output=$(mpirun -np $NUM_RANKS ./mtrvec $THREADS_PER_RANK "$matrix_file" 2>&1)
+    
+    # Extract matrix details from output
+    # Format: "Matrix loaded from file: matrices/121k_0p0093.mtx"
+    # Format: "Matrix dimensions: 121500 rows × 121500 cols, 0.01% non-zero entries"
+    
+    matrix_name=$(echo "$output" | grep "Matrix loaded from file" | awk '{print $NF}' | xargs basename)
+    
+    rows=$(echo "$output" | grep "Matrix dimensions:" | awk '{print $3}')
+    cols=$(echo "$output" | grep "Matrix dimensions:" | awk '{print $6}')
+    density=$(echo "$output" | grep "Matrix dimensions:" | awk '{print $9}' | sed 's/%//')
+    
+    # Extract the number of non-zeros from output
+    # Parse "nnz" from the CSR output (if available) or calculate from density
+    # For now, extract from output if present
+    nnz=$(echo "$output" | grep -oP 'nnz.*?(?=\n)' | awk '{print $NF}' | head -1)
+    if [ -z "$nnz" ]; then
+        # If not found, calculate from density
+        nnz=$(echo "scale=0; $rows * $cols * $density / 100" | bc)
+    fi
+    
+    # Extract timing results
+    # Format: "Average OpenMP execution time:      X.XXXXXX milliseconds"
+    omp_time=$(echo "$output" | grep "Average OpenMP execution time:" | awk '{print $NF}' | sed 's/milliseconds//')
+    
+    # Format: "Average MPI+OpenMP execution time:  Y.YYYYYY milliseconds"
+    mpi_time=$(echo "$output" | grep "Average MPI+OpenMP execution time:" | awk '{print $NF}' | sed 's/milliseconds//')
+    
+    # Format: "Speedup (OpenMP vs MPI+OpenMP):     Z.XXfx"
+    speedup=$(echo "$output" | grep "Speedup (OpenMP vs MPI+OpenMP):" | awk '{print $NF}' | sed 's/x$//')
+    
+    # Validate extracted values
+    if [ -z "$rows" ] || [ -z "$omp_time" ] || [ -z "$mpi_time" ]; then
+        echo "  WARNING: Failed to parse output for $matrix_basename"
+        echo "  Rows=$rows, OMP=$omp_time, MPI=$mpi_time"
+        continue
+    fi
+    
+    # Append to CSV
+    echo "$matrix_name,$rows,$cols,$density,$nnz,$THREADS_PER_RANK,$omp_time,$mpi_time,$speedup" >> "$OUTPUT_CSV"
+    
+    echo "  ✓ Results: OMP=${omp_time}ms, MPI=${mpi_time}ms, Speedup=${speedup}x"
+done
+
+echo ""
+echo "=== Benchmark Complete ==="
+echo "Results written to: $OUTPUT_CSV"
+echo "Summary:"
+wc -l "$OUTPUT_CSV"
+echo ""
+echo "First few results:"
+head -5 "$OUTPUT_CSV"
