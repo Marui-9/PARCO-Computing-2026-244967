@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
    }
 
    // ===== OPENMP BASELINE (Rank 0 only) =====
-   int num_iterations = 30;
+   int num_iterations = 10;
    double *omp_times = malloc(num_iterations * sizeof(double));
    double *mpi_times = malloc(num_iterations * sizeof(double));
    
