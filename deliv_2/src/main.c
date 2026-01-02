@@ -38,7 +38,6 @@
 int     thread_count;
 int     m, n;  // global matrix dimensions
 int     rank, num_ranks;
-float* A;      // The global matrix (only on rank 0)
 float* x;      // The full input vector
 float* y;      // The output vector
 float* local_y; // Local output vector for this rank
@@ -83,34 +82,35 @@ int main(int argc, char* argv[]) {
    }
 
    // ===== LOAD AND DISTRIBUTE MATRIX =====
-   A = import_matrix(matrix_file, &m, &n);
-   if (!A) {
-      if (rank == 0) {
-         fprintf(stderr, "Failed to import matrix from %s\n", matrix_file);
-         fprintf(stderr, "Matrix may be too large to load as dense format.\n");
-      }
-      MPI_Finalize();
-      return 1;
-   }
-
-   // Calculate nonzero percentage and print info (rank 0 only)
+   // Only rank 0 imports full matrix for baseline; MPI version each rank loads its rows
+   // Use sparse CSR format directly (no dense allocation)
+   csr_matrix *csr_A = NULL;
+   
    if (rank == 0) {
-      int nnz_count = 0;
-      size_t total_size = (size_t)m * (size_t)n;
-      for (size_t i = 0; i < total_size; i++) {
-         if (A[i] != 0.0f) nnz_count++;
+      int result = import_matrix_to_csr(matrix_file, &csr_A);
+      if (result != 0) {
+         fprintf(stderr, "Failed to import matrix from %s\n", matrix_file);
+         MPI_Finalize();
+         return 1;
       }
-      double nnz_percentage = (nnz_count / (double)total_size) * 100.0;
+      m = csr_A->rows;
+      n = csr_A->cols;
+      int nnz = csr_A->nnz;
+      double nnz_percentage = (nnz / (double)(m * n)) * 100.0;
       printf("Matrix loaded from file: %s\n", matrix_file);
       printf("Matrix dimensions: %d rows × %d cols, %.2f%% non-zero entries\n", 
              m, n, nnz_percentage);
    }
+   
+   // Broadcast matrix dimensions to all ranks
+   MPI_Bcast(&m, 1, MPI_INT, 0, MPI_COMM_WORLD);
+   MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
    // Generate x vector (all ranks have full x)
    x = generate_vector(n);
    if (!x) {
       fprintf(stderr, "Failed to generate vector\n");
-      free(A);
+      if (csr_A) csr_free(csr_A);
       MPI_Finalize();
       return 1;
    }
@@ -118,24 +118,10 @@ int main(int argc, char* argv[]) {
    // Allocate full y vector on all ranks for comparison
    if (posix_memalign((void**)&y, 64, (size_t)m * sizeof(float)) != 0) {
        fprintf(stderr, "Failed to allocate aligned memory for y\n");
-       free(A);
+       if (csr_A) csr_free(csr_A);
        free(x);
        MPI_Finalize();
        return 1;
-   }
-
-   // Convert full matrix to CSR (rank 0 only)
-   csr_matrix *csr_A = NULL;
-   if (rank == 0) {
-      int result = matrix_to_csr(A, m, n, &csr_A);
-      if (result != 0) {
-         fprintf(stderr, "matrix_to_csr failed\n");
-         free(A);
-         free(x);
-         free(y);
-         MPI_Finalize();
-         return 1;
-      }
    }
 
    // ===== OPENMP BASELINE (Rank 0 only) =====
@@ -146,7 +132,6 @@ int main(int argc, char* argv[]) {
    if (!omp_times || !mpi_times) {
       fprintf(stderr, "Failed to allocate timing arrays\n");
       if (csr_A) csr_free(csr_A);
-      free(A);
       free(x);
       free(y);
       MPI_Finalize();
@@ -180,7 +165,6 @@ int main(int argc, char* argv[]) {
       if (posix_memalign((void**)&local_y, 64, (size_t)local_m * sizeof(float)) != 0) {
          fprintf(stderr, "Rank %d: Failed to allocate local_y\n", rank);
          if (csr_A) csr_free(csr_A);
-         free(A);
          free(x);
          free(y);
          free(omp_times);
@@ -189,38 +173,18 @@ int main(int argc, char* argv[]) {
          return 1;
       }
 
-      // Create local CSR matrix (dense -> CSR for this rank's rows)
+      // Create local CSR matrix (read directly from .mtx file for this rank's rows)
       csr_matrix *local_csr_A = NULL;
       
-      // ALL ranks extract and convert their OWN rows (not just rank 0)
-      float *local_A = (float *)malloc((size_t)local_m * n * sizeof(float));
-      if (!local_A) {
-         fprintf(stderr, "Rank %d: Failed to allocate local_A\n", rank);
-         if (csr_A) csr_free(csr_A);
-         free(A);
-         free(x);
-         free(y);
-         free(omp_times);
-         free(mpi_times);
-         MPI_Finalize();
-         return 1;
-      }
-      
-      // Extract this rank's rows from the full matrix
-      for (int i = 0; i < local_m; i++) {
-         memcpy(&local_A[i * n], &A[(row_start + i) * n], n * sizeof(float));
-      }
-      
-      // Convert to CSR (each rank does this independently)
-      int result = matrix_to_csr(local_A, local_m, n, &local_csr_A);
-      free(local_A);
+      // Each rank reads only its row range from the .mtx file
+      int result = import_matrix_rows_to_csr(matrix_file, row_start, row_end, n, &local_csr_A);
       if (result != 0) {
-         fprintf(stderr, "Rank %d: matrix_to_csr failed for local matrix\n", rank);
+         fprintf(stderr, "Rank %d: Failed to import rows [%d,%d) from %s\n", 
+                 rank, row_start, row_end, matrix_file);
          free(local_y);
          free(omp_times);
          free(mpi_times);
          if (csr_A) csr_free(csr_A);
-         free(A);
          free(x);
          free(y);
          MPI_Finalize();
@@ -311,7 +275,6 @@ int main(int argc, char* argv[]) {
    free(omp_times);
    free(mpi_times);
    if (csr_A) csr_free(csr_A);
-   free(A);
    free(x);
    free(y);
 

@@ -294,3 +294,291 @@ int import_matrix_to_csr(const char *filename, csr_matrix **out_csr) {
     
     return 0;
 }
+
+/* Read Matrix Market (.mtx) file directly to CSR format */
+/* Avoids materializing the full dense matrix */
+int import_matrix_to_csr(
+    const char *filename,
+    csr_matrix **out_csr
+) {
+    if (!filename || !out_csr) return EINVAL;
+    
+    FILE *fp = fopen(filename, "r");
+    if (!fp) {
+        fprintf(stderr, "Error: Cannot open file %s\n", filename);
+        return ENOENT;
+    }
+    
+    /* Skip comments (lines starting with %) */
+    char line[256];
+    int rows = 0, cols = 0, nnz = 0;
+    
+    while (fgets(line, sizeof(line), fp)) {
+        if (line[0] == '%') continue;  /* Skip comment lines */
+        if (sscanf(line, "%d %d %d", &rows, &cols, &nnz) == 3) break;
+    }
+    
+    if (rows <= 0 || cols <= 0 || nnz <= 0) {
+        fprintf(stderr, "Error: Invalid matrix market header\n");
+        fclose(fp);
+        return EINVAL;
+    }
+    
+    printf("Reading Matrix Market file: %d rows, %d cols, %d non-zeros\n", rows, cols, nnz);
+    
+    /* First pass: count entries per row */
+    int *row_counts = (int *)calloc(rows, sizeof(int));
+    if (!row_counts) {
+        fclose(fp);
+        return ENOMEM;
+    }
+    
+    int *col_indices = (int *)malloc(nnz * sizeof(int));
+    int *row_indices = (int *)malloc(nnz * sizeof(int));
+    float *values = (float *)malloc(nnz * sizeof(float));
+    
+    if (!col_indices || !row_indices || !values) {
+        free(row_counts);
+        free(col_indices);
+        free(row_indices);
+        free(values);
+        fclose(fp);
+        return ENOMEM;
+    }
+    
+    /* Read all entries */
+    int entry = 0;
+    while (fgets(line, sizeof(line), fp) && entry < nnz) {
+        int r, c;
+        float val;
+        if (sscanf(line, "%d %d %f", &r, &c, &val) == 3) {
+            r--;  /* Convert from 1-indexed to 0-indexed */
+            c--;
+            if (r < 0 || r >= rows || c < 0 || c >= cols) {
+                fprintf(stderr, "Error: Invalid entry index (%d, %d)\n", r, c);
+                continue;
+            }
+            row_indices[entry] = r;
+            col_indices[entry] = c;
+            values[entry] = val;
+            row_counts[r]++;
+            entry++;
+        }
+    }
+    fclose(fp);
+    
+    if (entry != nnz) {
+        fprintf(stderr, "Warning: Expected %d entries, read %d\n", nnz, entry);
+        nnz = entry;
+    }
+    
+    /* Build CSR row_ptr from row_counts */
+    int *row_ptr = (int *)malloc((rows + 1) * sizeof(int));
+    if (!row_ptr) {
+        free(row_counts);
+        free(col_indices);
+        free(row_indices);
+        free(values);
+        return ENOMEM;
+    }
+    
+    row_ptr[0] = 0;
+    for (int i = 0; i < rows; i++) {
+        row_ptr[i + 1] = row_ptr[i] + row_counts[i];
+    }
+    free(row_counts);
+    
+    /* Second pass: sort entries by row and fill CSR arrays */
+    int *csr_col_ind = (int *)malloc(nnz * sizeof(int));
+    float *csr_values = (float *)malloc(nnz * sizeof(float));
+    int *entry_pos = (int *)calloc(rows, sizeof(int));
+    
+    if (!csr_col_ind || !csr_values || !entry_pos) {
+        free(row_ptr);
+        free(col_indices);
+        free(row_indices);
+        free(values);
+        free(csr_col_ind);
+        free(csr_values);
+        free(entry_pos);
+        return ENOMEM;
+    }
+    
+    for (int i = 0; i < nnz; i++) {
+        int r = row_indices[i];
+        int pos = row_ptr[r] + entry_pos[r];
+        csr_col_ind[pos] = col_indices[i];
+        csr_values[pos] = values[i];
+        entry_pos[r]++;
+    }
+    
+    free(col_indices);
+    free(row_indices);
+    free(values);
+    free(entry_pos);
+    
+    /* Allocate and fill CSR structure */
+    csr_matrix *csr = (csr_matrix *)malloc(sizeof(csr_matrix));
+    if (!csr) {
+        free(row_ptr);
+        free(csr_col_ind);
+        free(csr_values);
+        return ENOMEM;
+    }
+    
+    csr->rows = rows;
+    csr->cols = cols;
+    csr->nnz = nnz;
+    csr->row_ptr = row_ptr;
+    csr->col_ind = csr_col_ind;
+    csr->values = csr_values;
+    
+    *out_csr = csr;
+    
+    double density = (nnz / (double)(rows * cols)) * 100.0;
+    printf("  Matrix imported: %d non-zeros (%.4f%% density)\n", nnz, density);
+    
+    return 0;
+}
+
+/* Import specific rows [row_start, row_end) from Matrix Market file to CSR */
+int import_matrix_rows_to_csr(
+    const char *filename,
+    int row_start,
+    int row_end,
+    int global_cols,
+    csr_matrix **out_csr
+) {
+    if (!filename || !out_csr || row_start < 0 || row_end < row_start) return EINVAL;
+    
+    FILE *fp = fopen(filename, "r");
+    if (!fp) {
+        fprintf(stderr, "Error: Cannot open file %s\n", filename);
+        return ENOENT;
+    }
+    
+    /* Skip comments and read matrix header */
+    char line[256];
+    int global_rows = 0, cols = 0, total_nnz = 0;
+    
+    while (fgets(line, sizeof(line), fp)) {
+        if (line[0] == '%') continue;
+        if (sscanf(line, "%d %d %d", &global_rows, &cols, &total_nnz) == 3) break;
+    }
+    
+    if (global_rows <= 0 || cols <= 0 || total_nnz <= 0) {
+        fprintf(stderr, "Error: Invalid matrix market header\n");
+        fclose(fp);
+        return EINVAL;
+    }
+    
+    if (global_cols != cols) {
+        fprintf(stderr, "Error: Column mismatch (%d vs %d)\n", global_cols, cols);
+        fclose(fp);
+        return EINVAL;
+    }
+    
+    int local_rows = row_end - row_start;
+    
+    /* Count entries in our row range */
+    int *row_counts = (int *)calloc(local_rows, sizeof(int));
+    int *row_indices = (int *)malloc(total_nnz * sizeof(int));
+    int *col_indices = (int *)malloc(total_nnz * sizeof(int));
+    float *values = (float *)malloc(total_nnz * sizeof(float));
+    
+    if (!row_counts || !row_indices || !col_indices || !values) {
+        free(row_counts);
+        free(row_indices);
+        free(col_indices);
+        free(values);
+        fclose(fp);
+        return ENOMEM;
+    }
+    
+    /* Read entries, keep only those in [row_start, row_end) */
+    int nnz_local = 0;
+    while (fgets(line, sizeof(line), fp)) {
+        int r, c;
+        float val;
+        if (sscanf(line, "%d %d %f", &r, &c, &val) == 3) {
+            r--;  /* Convert from 1-indexed to 0-indexed */
+            c--;
+            if (r >= row_start && r < row_end && c < cols) {
+                row_indices[nnz_local] = r - row_start;  /* Local row index */
+                col_indices[nnz_local] = c;
+                values[nnz_local] = val;
+                row_counts[r - row_start]++;
+                nnz_local++;
+            }
+        }
+    }
+    fclose(fp);
+    
+    /* Build CSR row_ptr */
+    int *row_ptr = (int *)malloc((local_rows + 1) * sizeof(int));
+    if (!row_ptr) {
+        free(row_counts);
+        free(row_indices);
+        free(col_indices);
+        free(values);
+        return ENOMEM;
+    }
+    
+    row_ptr[0] = 0;
+    for (int i = 0; i < local_rows; i++) {
+        row_ptr[i + 1] = row_ptr[i] + row_counts[i];
+    }
+    free(row_counts);
+    
+    /* Sort entries by row and fill CSR arrays */
+    int *csr_col_ind = (int *)malloc(nnz_local * sizeof(int));
+    float *csr_values = (float *)malloc(nnz_local * sizeof(float));
+    int *entry_pos = (int *)calloc(local_rows, sizeof(int));
+    
+    if (!csr_col_ind || !csr_values || !entry_pos) {
+        free(row_ptr);
+        free(row_indices);
+        free(col_indices);
+        free(values);
+        free(csr_col_ind);
+        free(csr_values);
+        free(entry_pos);
+        return ENOMEM;
+    }
+    
+    for (int i = 0; i < nnz_local; i++) {
+        int r = row_indices[i];
+        int pos = row_ptr[r] + entry_pos[r];
+        csr_col_ind[pos] = col_indices[i];
+        csr_values[pos] = values[i];
+        entry_pos[r]++;
+    }
+    
+    free(row_indices);
+    free(col_indices);
+    free(values);
+    free(entry_pos);
+    
+    /* Allocate and fill CSR structure */
+    csr_matrix *csr = (csr_matrix *)malloc(sizeof(csr_matrix));
+    if (!csr) {
+        free(row_ptr);
+        free(csr_col_ind);
+        free(csr_values);
+        return ENOMEM;
+    }
+    
+    csr->rows = local_rows;
+    csr->cols = global_cols;
+    csr->nnz = nnz_local;
+    csr->row_ptr = row_ptr;
+    csr->col_ind = csr_col_ind;
+    csr->values = csr_values;
+    
+    *out_csr = csr;
+    
+    double density = (nnz_local / (double)(local_rows * global_cols)) * 100.0;
+    printf("  Rows [%d,%d): %d non-zeros (%.4f%% density)\n", row_start, row_end, nnz_local, density);
+    
+    return 0;
+}

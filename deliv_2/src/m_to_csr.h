@@ -26,6 +26,15 @@ int import_matrix_to_csr(
     csr_matrix **out_csr
 );
 
+/* Import only specific rows from Matrix Market file to CSR format */
+int import_matrix_rows_to_csr(
+    const char *filename,
+    int row_start,
+    int row_end,
+    int global_cols,
+    csr_matrix **out_csr
+);
+
 void print_csr(csr_matrix *csr);
 void csr_free(csr_matrix *A);
 #endif
