@@ -12,7 +12,7 @@
 
 echo "=== MPI SpMV Benchmark ==="
 echo "Initial directory: $(pwd)"
-
+cd PARCO-Computing-2026-244967/deliv_2/
 # Navigate to deliv_2 directory (PBS starts in submission directory or home)
 if [ -d "deliv_2" ]; then
     cd deliv_2
