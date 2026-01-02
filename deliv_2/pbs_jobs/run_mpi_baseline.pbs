@@ -40,19 +40,16 @@ echo "Project root: $(pwd)"
 # Load necessary modules
 echo "Loading modules..."
 module load gcc91
-module load mpich-3.2.1--gcc-9.1.0
+module load openmpi
 
-g++() {
-    g++-9.1.0 "$@"
-}
+# Verify MPI installation
+echo "Verifying MPI installation..."
+mpicc --version || { echo "mpicc not found!"; exit 1; }
+mpirun --version || { echo "mpirun not found!"; exit 1; }
 
-g++ --version
-
-gcc() {
-    gcc-9.1.0 "$@"
-}
-gcc --version
-
+# Set up environment for make
+export CC=mpicc
+export CFLAGS="-O3 -Wall -Wextra -march=native -fopenmp"
 
 # Print the name of the file that contains the list of the nodes assigned to the job and list all the nodes
 NODES=$(cat $PBS_NODEFILE)
