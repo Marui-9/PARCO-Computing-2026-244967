@@ -40,7 +40,7 @@ echo "Project root: $(pwd)"
 # Load necessary modules
 echo "Loading modules..."
 module load gcc91
-module load openmpi
+module load mpich-3.2.1--gcc-9.1.0
 
 # Verify MPI installation
 echo "Verifying MPI installation..."
