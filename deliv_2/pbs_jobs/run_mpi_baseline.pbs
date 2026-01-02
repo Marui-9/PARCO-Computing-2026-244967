@@ -114,8 +114,7 @@ for matrix_file in matrices/*.mtx; do
     density=$(echo "$output" | grep "Matrix dimensions:" | awk '{print $9}' | sed 's/%//')
     
     # Extract the number of non-zeros from output
-    # Parse "nnz" from the CSR output (if available) or calculate from density
-    # For now, extract from output if present
+    # Parse nnz from the CSR output or calculate from density
     nnz=$(echo "$output" | grep -oP 'nnz.*?(?=\n)' | awk '{print $NF}' | head -1)
     if [ -z "$nnz" ]; then
         # If not found, calculate from density
@@ -123,14 +122,11 @@ for matrix_file in matrices/*.mtx; do
     fi
     
     # Extract timing results
-    # Format: "Average OpenMP execution time:      X.XXXXXX milliseconds"
     omp_time=$(echo "$output" | grep "Average OpenMP execution time:" | awk '{print $NF}' | sed 's/milliseconds//')
     
-    # Format: "Average MPI+OpenMP execution time:  Y.YYYYYY milliseconds"
     mpi_time=$(echo "$output" | grep "Average MPI+OpenMP execution time:" | awk '{print $NF}' | sed 's/milliseconds//')
     
-    # Format: "Speedup (OpenMP vs MPI+OpenMP):     Z.XXfx"
-    speedup=$(echo "$output" | grep "Speedup (OpenMP vs MPI+OpenMP):" | awk '{print $NF}' | sed 's/x$//')
+    speedup=$(echo "$output" | grep "Speedup" | awk '{print $NF}' | sed 's/x$//')
     
     # Validate extracted values
     if [ -z "$rows" ] || [ -z "$omp_time" ] || [ -z "$mpi_time" ]; then
