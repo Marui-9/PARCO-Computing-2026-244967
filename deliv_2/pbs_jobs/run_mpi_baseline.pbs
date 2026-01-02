@@ -64,7 +64,6 @@ echo The running nodes are $NODES
 
 # Compile the MPI code
 echo "Compiling MPI code..."
-cd deliv_2
 make clean > /dev/null 2>&1
 make > compile.log 2>&1
 if [ ! -f "mtrvec" ]; then
