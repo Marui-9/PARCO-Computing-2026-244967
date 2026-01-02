@@ -134,7 +134,7 @@ for matrix_file in matrices/*.mtx; do
     
     rows=$(echo "$output" | grep "Matrix dimensions:" | awk '{print $3}')
     cols=$(echo "$output" | grep "Matrix dimensions:" | awk '{print $6}')
-    density=$(echo "$output" | grep "Matrix dimensions:" | awk '{print $9}' | sed 's/%//')
+    density=$(echo "$output" | grep "Matrix dimensions:" | awk '{print $8}' | sed 's/%//')
     
     # Extract the number of non-zeros from output
     # Parse nnz from the CSR output or calculate from density
@@ -145,21 +145,27 @@ for matrix_file in matrices/*.mtx; do
     fi
     
     # Extract timing results
-    omp_time=$(echo "$output" | grep "Average OpenMP execution time:" | awk '{print $NF}' | sed 's/milliseconds//')
+    # Format: "Average OpenMP execution time:      0.332465 milliseconds"
+    omp_time=$(echo "$output" | grep "Average OpenMP execution time:" | grep -oP '[\d.]+(?=\s+milliseconds)')
     
-    mpi_time=$(echo "$output" | grep "Average MPI+OpenMP execution time:" | awk '{print $NF}' | sed 's/milliseconds//')
+    # Format: "Average MPI+OpenMP execution time:  1.016891 milliseconds"
+    mpi_time=$(echo "$output" | grep "Average MPI+OpenMP execution time:" | grep -oP '[\d.]+(?=\s+milliseconds)')
     
-    speedup=$(echo "$output" | grep "Speedup" | awk '{print $NF}' | sed 's/x$//')
+    # Format: "Speedup (OpenMP vs MPI+OpenMP):     0.33x"
+    speedup=$(echo "$output" | grep "Speedup (OpenMP vs MPI+OpenMP):" | grep -oP '[\d.]+(?=x)')
     
     # Validate extracted values
     if [ -z "$rows" ] || [ -z "$omp_time" ] || [ -z "$mpi_time" ]; then
         echo "  DEBUG: Failed to parse output for $matrix_basename"
-        echo "  DEBUG: Rows=$rows, OMP=$omp_time, MPI=$mpi_time"
+        echo "  DEBUG: matrix_name='$matrix_name', rows='$rows', cols='$cols', density='$density', nnz='$nnz'"
+        echo "  DEBUG: omp_time='$omp_time', mpi_time='$mpi_time', speedup='$speedup'"
         echo "  DEBUG: Full output was:"
         echo "$output"
         echo "  DEBUG: ---"
         continue
     fi
+    
+    echo "  EXTRACTED: $matrix_name, $rows rows, $cols cols, $density%, $nnz nnz, OMP=$omp_time ms, MPI=$mpi_time ms, Speedup=$speedup"
     
     # Append to CSV
     echo "$matrix_name,$rows,$cols,$density,$nnz,$THREADS_PER_RANK,$omp_time,$mpi_time,$speedup" >> "$OUTPUT_CSV"

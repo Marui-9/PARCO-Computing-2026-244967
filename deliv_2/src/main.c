@@ -143,6 +143,44 @@ int main(int argc, char* argv[]) {
       fflush(stdout);
    }
 
+   // ===== PRE-COMPUTE LOCAL CSR MATRICES FOR MPI VERSION =====
+   // Prepare for MPI version: partition matrix by rows
+   int row_start = rank * (m / num_ranks);
+   int row_end = (rank == num_ranks - 1) ? m : (rank + 1) * (m / num_ranks);
+   int local_m = row_end - row_start;
+
+   // Allocate local output
+   if (posix_memalign((void**)&local_y, 64, (size_t)local_m * sizeof(float)) != 0) {
+      fprintf(stderr, "Rank %d: Failed to allocate local_y\n", rank);
+      if (csr_A) csr_free(csr_A);
+      free(x);
+      free(y);
+      free(omp_times);
+      free(mpi_times);
+      MPI_Finalize();
+      return 1;
+   }
+
+   // Create local CSR matrix (read directly from .mtx file for this rank's rows)
+   // This is done ONCE before the iteration loop to avoid repeated file I/O
+   csr_matrix *local_csr_A = NULL;
+   
+   if (rank == 0) printf("Rank %d: Reading rows [%d,%d) from matrix file...\n", rank, row_start, row_end);
+   int result = import_matrix_rows_to_csr(matrix_file, row_start, row_end, n, &local_csr_A);
+   if (result != 0) {
+      fprintf(stderr, "Rank %d: Failed to import rows [%d,%d) from %s\n", 
+              rank, row_start, row_end, matrix_file);
+      free(local_y);
+      free(omp_times);
+      free(mpi_times);
+      if (csr_A) csr_free(csr_A);
+      free(x);
+      free(y);
+      MPI_Finalize();
+      return 1;
+   }
+   if (rank == 0) printf("Rank %d: CSR matrix loaded\n", rank);
+
    for (int iter = 0; iter < num_iterations; iter++) {
       //---------OPENMP VERSION (baseline, rank 0 only)---------
       if (rank == 0) {
@@ -156,41 +194,6 @@ int main(int argc, char* argv[]) {
       MPI_Barrier(MPI_COMM_WORLD);
 
       //---------MPI + OPENMP VERSION---------
-      // Prepare for MPI version: partition matrix by rows
-      int row_start = rank * (m / num_ranks);
-      int row_end = (rank == num_ranks - 1) ? m : (rank + 1) * (m / num_ranks);
-      int local_m = row_end - row_start;
-
-      // Allocate local output
-      if (posix_memalign((void**)&local_y, 64, (size_t)local_m * sizeof(float)) != 0) {
-         fprintf(stderr, "Rank %d: Failed to allocate local_y\n", rank);
-         if (csr_A) csr_free(csr_A);
-         free(x);
-         free(y);
-         free(omp_times);
-         free(mpi_times);
-         MPI_Finalize();
-         return 1;
-      }
-
-      // Create local CSR matrix (read directly from .mtx file for this rank's rows)
-      csr_matrix *local_csr_A = NULL;
-      
-      // Each rank reads only its row range from the .mtx file
-      int result = import_matrix_rows_to_csr(matrix_file, row_start, row_end, n, &local_csr_A);
-      if (result != 0) {
-         fprintf(stderr, "Rank %d: Failed to import rows [%d,%d) from %s\n", 
-                 rank, row_start, row_end, matrix_file);
-         free(local_y);
-         free(omp_times);
-         free(mpi_times);
-         if (csr_A) csr_free(csr_A);
-         free(x);
-         free(y);
-         MPI_Finalize();
-         return 1;
-      }
-
       // Synchronize before timing
       MPI_Barrier(MPI_COMM_WORLD);
 
@@ -227,17 +230,16 @@ int main(int argc, char* argv[]) {
       end_time = MPI_Wtime();
       mpi_times[iter] = end_time - start_time;
       
-      // Cleanup
+      // Cleanup per-iteration temporary allocations
       if (rank == 0) {
          free(recvcounts);
          free(displs);
       }
-      if (local_csr_A->row_ptr) free(local_csr_A->row_ptr);
-      if (local_csr_A->col_ind) free(local_csr_A->col_ind);
-      if (local_csr_A->values) free(local_csr_A->values);
-      free(local_csr_A);
-      free(local_y);
    }
+
+   // Cleanup CSR matrices and output buffer
+   if (local_csr_A) csr_free(local_csr_A);
+   free(local_y);
 
    // Sort times
    if (rank == 0) {
