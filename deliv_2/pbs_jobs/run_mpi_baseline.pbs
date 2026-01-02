@@ -11,6 +11,7 @@
 # Output: results/mpi_matrices_results.csv
 
 echo "=== MPI SpMV Benchmark ==="
+cd PARCO-Computing-2026-244967/deliv_2
 echo "Starting directory: $(pwd)"
 
 # Find project root (handles submission from anywhere)
@@ -21,7 +22,7 @@ elif [ -d "../src" ]; then
     cd ..
     echo "Moved up one directory to: $(pwd)"
     PROJECT_ROOT="."
-elif [ -d "PARCO-Computing-2026-244967/src" ]; then
+elif [ -d "PARCO-Computing-2026-244967/deliv_2/src" ]; then
     cd PARCO-Computing-2026-244967
     echo "Changed to project directory: $(pwd)"
     PROJECT_ROOT="."
