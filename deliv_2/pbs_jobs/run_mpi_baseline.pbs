@@ -146,13 +146,13 @@ for matrix_file in matrices/*.mtx; do
     
     # Extract timing results
     # Format: "Average OpenMP execution time:      0.332465 milliseconds"
-    omp_time=$(echo "$output" | grep "Average OpenMP execution time:" | grep -oP '[\d.]+(?=\s+milliseconds)')
+    omp_time=$(echo "$output" | grep "Average OpenMP execution time:" | awk '{print $(NF-1)}')
     
     # Format: "Average MPI+OpenMP execution time:  1.016891 milliseconds"
-    mpi_time=$(echo "$output" | grep "Average MPI+OpenMP execution time:" | grep -oP '[\d.]+(?=\s+milliseconds)')
+    mpi_time=$(echo "$output" | grep "Average MPI+OpenMP execution time:" | awk '{print $(NF-1)}')
     
     # Format: "Speedup (OpenMP vs MPI+OpenMP):     0.33x"
-    speedup=$(echo "$output" | grep "Speedup (OpenMP vs MPI+OpenMP):" | grep -oP '[\d.]+(?=x)')
+    speedup=$(echo "$output" | grep "Speedup (OpenMP vs MPI+OpenMP):" | awk '{print $NF}' | sed 's/x$//')
     
     # Validate extracted values
     if [ -z "$rows" ] || [ -z "$omp_time" ] || [ -z "$mpi_time" ]; then
