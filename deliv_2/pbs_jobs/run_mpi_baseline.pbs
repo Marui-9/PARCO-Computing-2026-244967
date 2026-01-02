@@ -101,11 +101,19 @@ for matrix_file in matrices/*.mtx; do
     echo "[$CURRENT/$TOTAL_MATRICES] Processing: $matrix_basename"
     
     # Run the benchmark and capture output
+    echo "DEBUG: Running: mpirun -np $NUM_RANKS ./mtrvec $THREADS_PER_RANK \"$matrix_file\""
     output=$(mpirun -np $NUM_RANKS ./mtrvec $THREADS_PER_RANK "$matrix_file" 2>&1)
+    mpirun_exit=$?
+    echo "DEBUG: mpirun exit code: $mpirun_exit"
+    echo "DEBUG: output length: $(echo "$output" | wc -c) chars"
     
     # Extract matrix details from output
     # Format: "Matrix loaded from file: matrices/121k_0p0093.mtx"
     # Format: "Matrix dimensions: 121500 rows × 121500 cols, 0.01% non-zero entries"
+    
+    echo "DEBUG: First 20 lines of output:"
+    echo "$output" | head -20
+    echo "DEBUG: ---"
     
     matrix_name=$(echo "$output" | grep "Matrix loaded from file" | awk '{print $NF}' | xargs basename)
     
@@ -130,8 +138,11 @@ for matrix_file in matrices/*.mtx; do
     
     # Validate extracted values
     if [ -z "$rows" ] || [ -z "$omp_time" ] || [ -z "$mpi_time" ]; then
-        echo "  WARNING: Failed to parse output for $matrix_basename"
-        echo "  Rows=$rows, OMP=$omp_time, MPI=$mpi_time"
+        echo "  DEBUG: Failed to parse output for $matrix_basename"
+        echo "  DEBUG: Rows=$rows, OMP=$omp_time, MPI=$mpi_time"
+        echo "  DEBUG: Full output was:"
+        echo "$output"
+        echo "  DEBUG: ---"
         continue
     fi
     
