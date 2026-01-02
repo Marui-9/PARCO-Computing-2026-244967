@@ -394,8 +394,11 @@ void Omp_mat_vect(int thread_count, csr_matrix *csr_A, float *local_x, float *lo
  *     - No inter-rank communication during computation (fully parallel)
  *     - MPI_Gatherv called externally to collect results
  */
-void Mpi_Omp_mat_vect(int thread_count, int rank, int num_ranks,
-                      int global_m, int global_n, csr_matrix *local_csr_A,
+void Mpi_Omp_mat_vect(int thread_count, int rank __attribute__((unused)), 
+                      int num_ranks __attribute__((unused)),
+                      int global_m __attribute__((unused)), 
+                      int global_n __attribute__((unused)), 
+                      csr_matrix *local_csr_A,
                       float *x, float *local_y, int local_m) {
    // Each rank computes its local portion independently using the optimized OpenMP kernel
    Omp_mat_vect(thread_count, local_csr_A, x, local_y);
