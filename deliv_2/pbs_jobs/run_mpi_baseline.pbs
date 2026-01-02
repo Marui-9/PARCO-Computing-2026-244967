@@ -11,31 +11,25 @@
 # Output: results/mpi_matrices_results.csv
 
 echo "=== MPI SpMV Benchmark ==="
-cd PARCO-Computing-2026-244967/deliv_2
-echo "Starting directory: $(pwd)"
+echo "Initial directory: $(pwd)"
 
-# Find project root (handles submission from anywhere)
-if [ -d "src" ]; then
-    echo "Found src/ - already in project root"
-    PROJECT_ROOT="."
-elif [ -d "../src" ]; then
-    cd ..
-    echo "Moved up one directory to: $(pwd)"
-    PROJECT_ROOT="."
-elif [ -d "PARCO-Computing-2026-244967/deliv_2/src" ]; then
-    cd PARCO-Computing-2026-244967
-    echo "Changed to project directory: $(pwd)"
-    PROJECT_ROOT="."
-elif [ -d "pbs_jobs" ]; then
-    echo "In pbs_jobs/ directory, moving up"
-    cd ..
-    PROJECT_ROOT="."
+# Navigate to deliv_2 directory (PBS starts in submission directory or home)
+if [ -d "deliv_2" ]; then
+    cd deliv_2
+    echo "Changed to deliv_2/"
+elif [ -d "../deliv_2" ]; then
+    cd ../deliv_2
+    echo "Changed to ../deliv_2/"
+elif [ -d "." ] && [ -f "Makefile" ] && grep -q "mtrvec" Makefile; then
+    echo "Already in deliv_2 directory"
 else
-    echo "ERROR: Cannot find project directory!"
+    echo "ERROR: Cannot find deliv_2 directory!"
+    echo "Current directory: $(pwd)"
+    ls -la
     exit 1
 fi
 
-echo "Project root: $(pwd)"
+echo "Working directory: $(pwd)"
 
 # Load necessary modules
 echo "Loading modules..."
@@ -106,6 +100,13 @@ for matrix_file in matrices/*.mtx; do
     mpirun_exit=$?
     echo "DEBUG: mpirun exit code: $mpirun_exit"
     echo "DEBUG: output length: $(echo "$output" | wc -c) chars"
+    
+    if [ $mpirun_exit -ne 0 ]; then
+        echo "DEBUG: mpirun failed with exit code $mpirun_exit"
+        echo "DEBUG: Full output:"
+        echo "$output"
+        continue
+    fi
     
     # Extract matrix details from output
     # Format: "Matrix loaded from file: matrices/121k_0p0093.mtx"
