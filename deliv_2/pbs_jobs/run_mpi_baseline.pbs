@@ -130,7 +130,7 @@ for matrix_file in matrices/*.mtx; do
     # Append to CSV
     echo "$matrix_name,$rows,$cols,$density,$nnz,$THREADS_PER_RANK,$omp_time,$mpi_time,$speedup" >> "$OUTPUT_CSV"
     
-    echo "  ✓ Results: OMP=${omp_time}ms, MPI=${mpi_time}ms, Speedup=${speedup}x"
+    echo "  [OK] Results: OMP=${omp_time}ms, MPI=${mpi_time}ms, Speedup=${speedup}x"
 done
 
 echo ""
