@@ -13,6 +13,7 @@
 echo "=== MPI SpMV Benchmark ==="
 echo "Initial directory: $(pwd)"
 cd PARCO-Computing-2026-244967/deliv_2/
+
 # Navigate to deliv_2 directory (PBS starts in submission directory or home)
 if [ -d "deliv_2" ]; then
     cd deliv_2
@@ -66,10 +67,14 @@ echo "Compilation successful: mtrvec executable created"
 
 # Setup output files
 OUTPUT_CSV="results/mpi_matrices_results.csv"
+echo "DEBUG: Creating results directory..."
 mkdir -p results
+echo "DEBUG: Results directory created"
 
 # Write CSV header
+echo "DEBUG: Writing CSV header to $OUTPUT_CSV..."
 echo "matrix,rows,cols,density_pct,nnz,threads_per_rank,omp_time_ms,mpi_time_ms,speedup" > "$OUTPUT_CSV"
+echo "DEBUG: CSV header written. File size: $(wc -c < "$OUTPUT_CSV") bytes"
 echo "CSV header written to $OUTPUT_CSV"
 
 # Configuration
@@ -77,15 +82,24 @@ NUM_RANKS=2
 THREADS_PER_RANK=48
 
 echo ""
+echo "DEBUG: About to show benchmark configuration"
 echo "=== Benchmark Configuration ==="
 echo "Number of MPI ranks: $NUM_RANKS"
 echo "Threads per rank: $THREADS_PER_RANK"
-echo "Matrices: $(ls matrices/*.mtx | wc -l) files found"
+
+echo "DEBUG: Checking matrices directory..."
+ls -la matrices/ | head -5
+echo "DEBUG: Counting matrices..."
+MATRIX_COUNT=$(ls matrices/*.mtx 2>/dev/null | wc -l)
+echo "Matrices: $MATRIX_COUNT files found"
 echo ""
 
 # Counter for progress
 TOTAL_MATRICES=$(ls matrices/*.mtx 2>/dev/null | wc -l)
+echo "DEBUG: TOTAL_MATRICES=$TOTAL_MATRICES"
 CURRENT=0
+
+echo "DEBUG: Starting matrix loop"
 
 # Loop through all matrices
 for matrix_file in matrices/*.mtx; do
