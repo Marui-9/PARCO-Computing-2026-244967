@@ -40,12 +40,27 @@ echo "Project root: $(pwd)"
 # Load necessary modules
 echo "Loading modules..."
 module load gcc91
-module load openmpi
+module load mpich-3.2.1--gcc-9.1.0
 
-# Verify MPI installation
-echo "Verifying MPI installation..."
-mpicc --version || { echo "mpicc not found!"; exit 1; }
-mpirun --version || { echo "mpirun not found!"; exit 1; }
+g++() {
+    g++-9.1.0 "$@"
+}
+
+g++ --version
+
+gcc() {
+    gcc-9.1.0 "$@"
+}
+gcc --version
+
+
+# Print the name of the file that contains the list of the nodes assigned to the job and list all the nodes
+NODES=$(cat $PBS_NODEFILE)
+echo The running nodes are $NODES
+
+# Get the list of unique nodes assigned to the job
+NODES=$(sort -u $PBS_NODEFILE)
+echo The running nodes are $NODES
 
 # Compile the MPI code
 echo "Compiling MPI code..."
