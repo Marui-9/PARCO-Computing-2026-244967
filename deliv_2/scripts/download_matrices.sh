@@ -1,15 +1,15 @@
 #!/bin/bash
-# Download 10 large square sparse matrices from SuiteSparse Matrix Collection
+# Download 10 square sparse matrices from SuiteSparse Matrix Collection
 # https://sparse.tamu.edu/
 #
-# Selected matrices span 1M to 100M nnz for distributed SpMV benchmarking
-# with 2-3 nodes (192-288 threads).
+# Selected matrices: 50k-500k rows for distributed SpMV benchmarking
+# with 2-3 nodes (192-288 threads). Fast file I/O (seconds, not hours).
 #
 # Matrices are auto-renamed to match project convention: {rows_in_k}k_{density%}.mtx
-# Example: A 1.5M row matrix with 0.03% density -> 1500k_0p03.mtx
+# Example: A 150k row matrix with 0.5% density -> 150k_0p5.mtx
 #
-# Data size: ~2.5 GB total (fits in 10 minutes at 50 Mbps)
-# Estimated download time at 50 Mbps: ~7 minutes
+# Data size: ~200 MB total
+# Estimated download time at 50 Mbps: ~30 seconds
 #
 # Usage: ./download_matrices.sh
 
@@ -28,33 +28,33 @@ echo "=============================================="
 echo "SuiteSparse Matrix Downloader for Distributed SpMV"
 echo "Output directory: $OUTPUT_DIR"
 echo "Naming convention: {rows_in_k}k_{density%}.mtx"
-echo "Estimated download size: ~2.5 GB"
-echo "Estimated time (50 Mbps): ~7 minutes"
+echo "Estimated download size: ~200 MB"
+echo "Estimated time (50 Mbps): ~30 seconds"
 echo "=============================================="
 
 # Base URL for SuiteSparse Matrix Collection
 BASE_URL="https://suitesparse-collection-website.herokuapp.com/MM"
 
-# 10 square matrices spanning 1M to 100M nnz
-# Selected for good compression, square structure, and representativeness
+# 10 square matrices spanning 50k-500k rows
+# Selected for fast file I/O (seconds, not hours) while still showing MPI benefits
 declare -A MATRICES=(
-    # ~1-5M nnz: Small matrices
-    ["Williams/cop20k_A"]="cop20k_A"
-    ["SNAP/amazon0312"]="amazon0312"
+    # ~50-100k rows
+    ["Mycielski/mycielskian17"]="mycielskian17"
+    ["Williams/pdb1HYS"]="pdb1HYS"
+    ["Pajek/EPA"]="EPA"
     
-    # ~5-15M nnz: Medium matrices
-    ["SNAP/web-Google"]="web-Google"
-    ["AMD/G3_circuit"]="G3_circuit"
-    ["Janna/Geo_1438"]="Geo_1438"
+    # ~100-200k rows
+    ["DIMACS10/delaunay_n18"]="delaunay_n18"
+    ["LAW/cnr-2000"]="cnr-2000"
     
-    # ~15-50M nnz: Large matrices
-    ["Freescale/circuit5M"]="circuit5M"
-    ["Schenk_AFE/af_shell10"]="af_shell10"
+    # ~200-300k rows
+    ["SNAP/soc-Epinions1"]="soc-Epinions1"
+    ["Hamm/scircuit"]="scircuit"
     
-    # ~50-100M nnz: Very large matrices
-    ["SNAP/com-LiveJournal"]="com-LiveJournal"
-    ["Janna/Flan_1565"]="Flan_1565"
-    ["vanHeukelum/cage15"]="cage15"
+    # ~300-500k rows
+    ["DIMACS10/delaunay_n19"]="delaunay_n19"
+    ["Newman/cond-mat-2005"]="cond-mat-2005"
+    ["Pajek/patents_main"]="patents_main"
 )
 
 # Function to generate filename from matrix properties
@@ -275,15 +275,16 @@ usage() {
     echo "Usage: $0"
     echo ""
     echo "Downloads 10 square matrices from SuiteSparse Collection"
-    echo "Total size: ~2.5 GB"
-    echo "Estimated time (50 Mbps): ~7 minutes"
+    echo "Matrix size: 50k-500k rows (fast file I/O for efficient benchmarking)"
+    echo "Total size: ~200 MB"
+    echo "Estimated time (50 Mbps): ~30 seconds"
     echo ""
     echo "Output: Matrices saved to ./matrices/ with naming convention:"
     echo "        {rows_in_k}k_{density%}.mtx"
     echo ""
     echo "Examples:"
-    echo "  1500k_0p03.mtx  = 1.5M rows, 0.03% density"
-    echo "  400k_0p8.mtx    = 400k rows, 0.8% density"
+    echo "  150k_0p5.mtx  = 150k rows, 0.5% density"
+    echo "  400k_0p03.mtx = 400k rows, 0.03% density"
 }
 
 if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
