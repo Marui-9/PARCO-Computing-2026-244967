@@ -3,7 +3,7 @@
 #PBS -o ./mpi_matrices_bench.out
 #PBS -e ./mpi_matrices_bench.err
 #PBS -q common_cpuQ
-#PBS -l walltime=15:00:00
+#PBS -l walltime=12:00:00
 #PBS -l select=2:ncpus=96:mem=32gb
 
 # MPI Benchmarking: Test distributed SpMV across all matrices
