@@ -1,17 +1,17 @@
 #!/bin/bash
-# Download matrices optimized for MPI SpMV benchmarking with 2-3 nodes
+# Download matrices from SuiteSparse Collection
 # https://sparse.tamu.edu/
 #
 # Matrix selection strategy:
 #   - 3 small matrices (100k-300k rows): Quick testing, baseline comparison
-#   - 5 sweet spot matrices (500k-1.8M rows, 10-50M nnz): Show MPI benefit (10+ ms computation)
-#   - 2 big matrices (4-5M rows, 70-100M nnz): Strong MPI advantage
+#   - 5 sweet spot matrices (500k-1.8M rows, 10-50M nnz): Larger computation
+#   - 2 big matrices (4-5M rows, 70-100M nnz): Largest matrices
 #
 # Matrices are auto-renamed to match project convention: {rows_in_k}k_{density%}.mtx
 # Example: A 1.4M row matrix with 0.015% density -> 1400k_0p015.mtx
 #
 # Data size: ~1.8 GB total
-# Estimated job time (with MPI_Bcast): ~7-9 hours for full benchmark
+# Estimated download time: 3-10 minutes (depends on internet speed)
 #
 # Usage: ./download_matrices_mpi.sh
 
@@ -27,35 +27,34 @@ mkdir -p "$OUTPUT_DIR"
 mkdir -p "$TEMP_DIR"
 
 echo "=============================================="
-echo "SuiteSparse Matrix Downloader for Distributed SpMV"
-echo "Optimized for MPI benchmarking"
+echo "SuiteSparse Matrix Downloader"
 echo "Output directory: $OUTPUT_DIR"
 echo "Naming convention: {rows_in_k}k_{density%}.mtx"
-echo "Estimated download size: ~1.8 GB"
-echo "Estimated benchmark time (6h job): ~7-9 hours"
+echo "Estimated total download size: ~1.8 GB"
+echo "Estimated download time: 3-10 minutes (depending on internet speed)"
 echo "=============================================="
 
 # Base URL for SuiteSparse Matrix Collection
 BASE_URL="https://suitesparse-collection-website.herokuapp.com/MM"
 
-# 10 matrices spanning 3 size categories for MPI benchmarking
+# 10 matrices spanning 3 size categories
 declare -A MATRICES=(
-    # Small matrices: 100k-300k rows, 0.3-3M nnz (~20 min each)
+    # Small matrices: 100k-300k rows
     # Quick testing, baseline comparison
     ["Mycielski/mycielskian17"]="mycielskian17"           # 131k rows
     ["DIMACS10/delaunay_n18"]="delaunay_n18"             # 262k rows, 0.79M nnz
     ["Williams/pdb1HYS"]="pdb1HYS"                        # 36k rows
     
-    # Sweet spot: 500k-1.8M rows, 10-50M nnz (~45 min each)
-    # Show clear MPI benefit: 10+ ms computation time
+    # Medium: 500k-1.8M rows, 10-50M nnz
+    # Larger computation
     ["SNAP/web-Google"]="web-Google"                      # 916k rows, 5M nnz
     ["Janna/Geo_1438"]="Geo_1438"                         # 1.4M rows, 15M nnz
     ["Schenk_AFE/af_shell10"]="af_shell10"                # 1.8M rows, 11M nnz
     ["AMD/G3_circuit"]="G3_circuit"                       # 1.6M rows, 4.7M nnz
     ["LAW/cnr-2000"]="cnr-2000"                           # 325k rows, 3M nnz
     
-    # Big matrices: 4-5M rows, 70-100M nnz (~90 min each)
-    # Strong MPI advantage: 50+ ms computation time
+    # Big matrices: 4-5M rows, 70-100M nnz
+    # Largest matrices
     ["SNAP/com-LiveJournal"]="com-LiveJournal"            # 4.8M rows, 69M nnz
     ["vanHeukelum/cage15"]="cage15"                       # 5.2M rows, 99M nnz
 )
@@ -184,10 +183,8 @@ download_matrix() {
 # Main script logic
 main() {
     echo ""
-    echo "Downloading 10 matrices for MPI SpMV benchmarking..."
-    echo "  - 3 small (quick, baseline)"
-    echo "  - 5 sweet spot (MPI benefit)"
-    echo "  - 2 big (strong MPI advantage)"
+    echo "Downloading 10 matrices..."
+    echo "  (~1.8 GB total, estimated time: 3-10 minutes)"
     echo ""
     
     # Download all matrices in MATRICES array
@@ -208,10 +205,10 @@ main() {
     # Calculate total size
     local total_size=$(du -sh "$OUTPUT_DIR" 2>/dev/null | awk '{print $1}')
     echo ""
-    echo "Total size: $total_size"
+    echo "Total downloaded size: $total_size"
     echo "Naming convention: {rows_in_k}k_{density%}.mtx"
     echo ""
-    echo "Expected benchmark time with MPI_Bcast (6h limit): ~7-9 hours"
+    echo "Download complete! Matrices ready for use."
     echo "=============================================="
 }
 
@@ -219,15 +216,15 @@ main() {
 usage() {
     echo "Usage: $0"
     echo ""
-    echo "Downloads 10 matrices optimized for distributed SpMV benchmarking"
+    echo "Downloads 10 matrices from SuiteSparse Collection"
     echo ""
     echo "Matrix categories:"
-    echo "  - Small (3):     100k-300k rows, fast baseline comparison"
-    echo "  - Sweet spot (5): 500k-1.8M rows, clear MPI benefit (10+ ms computation)"
-    echo "  - Big (2):       4-5M rows, strong MPI advantage (50+ ms computation)"
+    echo "  - Small (3):     100k-300k rows"
+    echo "  - Medium (5): 500k-1.8M rows"
+    echo "  - Big (2):       4-5M rows"
     echo ""
     echo "Total size: ~1.8 GB"
-    echo "Estimated benchmark time: ~7-9 hours per 6-hour job"
+    echo "Estimated download time: 3-10 minutes (depending on internet speed)"
     echo ""
     echo "Output: Matrices saved to ./matrices/ with naming convention:"
     echo "        {rows_in_k}k_{density%}.mtx"
