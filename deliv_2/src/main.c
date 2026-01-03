@@ -144,20 +144,19 @@ int main(int argc, char* argv[]) {
    }
 
    // ===== PRE-COMPUTE LOCAL CSR MATRICES FOR MPI VERSION =====
-   // Strategy: Rank 0 reads full CSR once, then each rank extracts its own rows
-   // This avoids reading the .mtx file multiple times for large matrices
+   // Strategy: Rank 0 reads full CSR once, broadcasts to all ranks via MPI
+   // This eliminates redundant file I/O on other ranks (huge speedup for large files)
    
    csr_matrix *full_csr_A = NULL;
    
    // Rank 0 reads the full matrix (already done above in csr_A, reuse it)
-   if (rank != 0) {
-      // Other ranks need the full matrix to extract their rows
-      // For now, have them read it too (could optimize with MPI broadcast)
-      // This is still faster than reading by row range
-      int dummy_result = import_matrix_to_csr(matrix_file, &full_csr_A);
-      if (dummy_result != 0) {
-         fprintf(stderr, "Rank %d: Failed to import full matrix\n", rank);
-         if (csr_A) csr_free(csr_A);
+   if (rank == 0) {
+      full_csr_A = csr_A;
+   } else {
+      // Rank != 0: will receive broadcasted CSR structure below
+      full_csr_A = (csr_matrix *)malloc(sizeof(csr_matrix));
+      if (!full_csr_A) {
+         fprintf(stderr, "Rank %d: Failed to allocate CSR structure\n", rank);
          free(x);
          free(y);
          free(omp_times);
@@ -165,8 +164,42 @@ int main(int argc, char* argv[]) {
          MPI_Finalize();
          return 1;
       }
-   } else {
-      full_csr_A = csr_A;  // Rank 0 uses the CSR it already read
+   }
+   
+   // Broadcast CSR structure info: rows, cols, nnz
+   MPI_Bcast(&full_csr_A->rows, 1, MPI_INT, 0, MPI_COMM_WORLD);
+   MPI_Bcast(&full_csr_A->cols, 1, MPI_INT, 0, MPI_COMM_WORLD);
+   MPI_Bcast(&full_csr_A->nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
+   
+   // Ranks != 0 allocate CSR arrays after learning dimensions
+   if (rank != 0) {
+      full_csr_A->row_ptr = (int *)malloc((full_csr_A->rows + 1) * sizeof(int));
+      full_csr_A->col_ind = (int *)malloc(full_csr_A->nnz * sizeof(int));
+      full_csr_A->values = (float *)malloc(full_csr_A->nnz * sizeof(float));
+      
+      if (!full_csr_A->row_ptr || !full_csr_A->col_ind || !full_csr_A->values) {
+         fprintf(stderr, "Rank %d: Failed to allocate CSR arrays\n", rank);
+         free(full_csr_A->row_ptr);
+         free(full_csr_A->col_ind);
+         free(full_csr_A->values);
+         free(full_csr_A);
+         free(x);
+         free(y);
+         free(omp_times);
+         free(mpi_times);
+         MPI_Finalize();
+         return 1;
+      }
+   }
+   
+   // Broadcast CSR arrays: row_ptr, col_ind, values
+   MPI_Bcast(full_csr_A->row_ptr, full_csr_A->rows + 1, MPI_INT, 0, MPI_COMM_WORLD);
+   MPI_Bcast(full_csr_A->col_ind, full_csr_A->nnz, MPI_INT, 0, MPI_COMM_WORLD);
+   MPI_Bcast(full_csr_A->values, full_csr_A->nnz, MPI_FLOAT, 0, MPI_COMM_WORLD);
+   
+   if (rank == 0) {
+      printf("Broadcast CSR structure: %d rows, %d cols, %d nnz\n", 
+             full_csr_A->rows, full_csr_A->cols, full_csr_A->nnz);
    }
    
    // Prepare for MPI version: partition matrix by rows
@@ -315,7 +348,7 @@ int main(int argc, char* argv[]) {
    }
 
    // Cleanup CSR matrices and output buffer
-   // Note: local_csr_A points to arrays we allocated, need to free them
+   // Note: local_csr_A points to arrays we allocated (memcpy'd from full_csr_A), need to free them
    if (local_csr_A) {
       free(local_csr_A->row_ptr);
       free(local_csr_A->col_ind);
@@ -323,9 +356,14 @@ int main(int argc, char* argv[]) {
       free(local_csr_A);
    }
    
-   // Free full matrix if rank != 0 (rank 0 uses csr_A which is freed below)
-   if (full_csr_A && rank != 0) {
-      csr_free(full_csr_A);
+   // Free full matrix
+   // Rank 0: full_csr_A points to csr_A which is freed below via csr_free(csr_A)
+   // Rank != 0: full_csr_A is independent, free it explicitly
+   if (rank != 0 && full_csr_A) {
+      free(full_csr_A->row_ptr);
+      free(full_csr_A->col_ind);
+      free(full_csr_A->values);
+      free(full_csr_A);
    }
    
    free(local_y);
