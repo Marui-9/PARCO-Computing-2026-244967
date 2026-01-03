@@ -144,6 +144,31 @@ int main(int argc, char* argv[]) {
    }
 
    // ===== PRE-COMPUTE LOCAL CSR MATRICES FOR MPI VERSION =====
+   // Strategy: Rank 0 reads full CSR once, then each rank extracts its own rows
+   // This avoids reading the .mtx file multiple times for large matrices
+   
+   csr_matrix *full_csr_A = NULL;
+   
+   // Rank 0 reads the full matrix (already done above in csr_A, reuse it)
+   if (rank != 0) {
+      // Other ranks need the full matrix to extract their rows
+      // For now, have them read it too (could optimize with MPI broadcast)
+      // This is still faster than reading by row range
+      int dummy_result = import_matrix_to_csr(matrix_file, &full_csr_A);
+      if (dummy_result != 0) {
+         fprintf(stderr, "Rank %d: Failed to import full matrix\n", rank);
+         if (csr_A) csr_free(csr_A);
+         free(x);
+         free(y);
+         free(omp_times);
+         free(mpi_times);
+         MPI_Finalize();
+         return 1;
+      }
+   } else {
+      full_csr_A = csr_A;  // Rank 0 uses the CSR it already read
+   }
+   
    // Prepare for MPI version: partition matrix by rows
    int row_start = rank * (m / num_ranks);
    int row_end = (rank == num_ranks - 1) ? m : (rank + 1) * (m / num_ranks);
@@ -161,25 +186,77 @@ int main(int argc, char* argv[]) {
       return 1;
    }
 
-   // Create local CSR matrix (read directly from .mtx file for this rank's rows)
+   // Create local CSR matrix by extracting rows from full_csr_A
    // This is done ONCE before the iteration loop to avoid repeated file I/O
-   csr_matrix *local_csr_A = NULL;
-   
-   if (rank == 0) printf("Rank %d: Reading rows [%d,%d) from matrix file...\n", rank, row_start, row_end);
-   int result = import_matrix_rows_to_csr(matrix_file, row_start, row_end, n, &local_csr_A);
-   if (result != 0) {
-      fprintf(stderr, "Rank %d: Failed to import rows [%d,%d) from %s\n", 
-              rank, row_start, row_end, matrix_file);
-      free(local_y);
-      free(omp_times);
-      free(mpi_times);
+   csr_matrix *local_csr_A = (csr_matrix *)malloc(sizeof(csr_matrix));
+   if (!local_csr_A) {
+      fprintf(stderr, "Rank %d: Failed to allocate local CSR structure\n", rank);
+      if (full_csr_A && rank != 0) csr_free(full_csr_A);
       if (csr_A) csr_free(csr_A);
       free(x);
       free(y);
+      free(local_y);
+      free(omp_times);
+      free(mpi_times);
       MPI_Finalize();
       return 1;
    }
-   if (rank == 0) printf("Rank %d: CSR matrix loaded\n", rank);
+   
+   // Extract rows [row_start, row_end) from full_csr_A
+   // Count non-zeros in this range
+   int local_nnz = 0;
+   for (int i = row_start; i < row_end; i++) {
+      local_nnz += full_csr_A->row_ptr[i+1] - full_csr_A->row_ptr[i];
+   }
+   
+   // Allocate CSR arrays for local matrix
+   int *local_row_ptr = (int *)malloc((local_m + 1) * sizeof(int));
+   int *local_col_ind = (int *)malloc(local_nnz * sizeof(int));
+   float *local_values = (float *)malloc(local_nnz * sizeof(float));
+   
+   if (!local_row_ptr || !local_col_ind || !local_values) {
+      fprintf(stderr, "Rank %d: Failed to allocate local CSR arrays\n", rank);
+      free(local_row_ptr);
+      free(local_col_ind);
+      free(local_values);
+      free(local_csr_A);
+      if (full_csr_A && rank != 0) csr_free(full_csr_A);
+      if (csr_A) csr_free(csr_A);
+      free(x);
+      free(y);
+      free(local_y);
+      free(omp_times);
+      free(mpi_times);
+      MPI_Finalize();
+      return 1;
+   }
+   
+   // Copy row_ptr and values for rows [row_start, row_end)
+   local_row_ptr[0] = 0;
+   int nnz_offset = 0;
+   for (int i = row_start; i < row_end; i++) {
+      int row_nnz = full_csr_A->row_ptr[i+1] - full_csr_A->row_ptr[i];
+      // Copy column indices and values
+      memcpy(&local_col_ind[nnz_offset], 
+             &full_csr_A->col_ind[full_csr_A->row_ptr[i]], 
+             row_nnz * sizeof(int));
+      memcpy(&local_values[nnz_offset], 
+             &full_csr_A->values[full_csr_A->row_ptr[i]], 
+             row_nnz * sizeof(float));
+      nnz_offset += row_nnz;
+      local_row_ptr[i - row_start + 1] = nnz_offset;
+   }
+   
+   local_csr_A->rows = local_m;
+   local_csr_A->cols = n;
+   local_csr_A->nnz = local_nnz;
+   local_csr_A->row_ptr = local_row_ptr;
+   local_csr_A->col_ind = local_col_ind;
+   local_csr_A->values = local_values;
+   
+   if (rank == 0) {
+      printf("Rank %d: Extracted rows [%d,%d) - %d non-zeros\n", rank, row_start, row_end, local_nnz);
+   }
 
    for (int iter = 0; iter < num_iterations; iter++) {
       //---------OPENMP VERSION (baseline, rank 0 only)---------
@@ -238,7 +315,19 @@ int main(int argc, char* argv[]) {
    }
 
    // Cleanup CSR matrices and output buffer
-   if (local_csr_A) csr_free(local_csr_A);
+   // Note: local_csr_A points to arrays we allocated, need to free them
+   if (local_csr_A) {
+      free(local_csr_A->row_ptr);
+      free(local_csr_A->col_ind);
+      free(local_csr_A->values);
+      free(local_csr_A);
+   }
+   
+   // Free full matrix if rank != 0 (rank 0 uses csr_A which is freed below)
+   if (full_csr_A && rank != 0) {
+      csr_free(full_csr_A);
+   }
+   
    free(local_y);
 
    // Sort times
