@@ -82,8 +82,8 @@ int main(int argc, char* argv[]) {
    }
 
    // ===== LOAD AND DISTRIBUTE MATRIX =====
-   // Only rank 0 imports full matrix for baseline; MPI version each rank loads its rows
-   // Use sparse CSR format directly (no dense allocation)
+   // Only rank 0 imports full matrix; uses MPI_Bcast to distribute via sparse CSR
+   // This eliminates redundant file I/O on other ranks
    csr_matrix *csr_A = NULL;
    
    if (rank == 0) {
@@ -110,7 +110,6 @@ int main(int argc, char* argv[]) {
    x = generate_vector(n);
    if (!x) {
       fprintf(stderr, "Failed to generate vector\n");
-      if (csr_A) csr_free(csr_A);
       MPI_Finalize();
       return 1;
    }
@@ -118,7 +117,6 @@ int main(int argc, char* argv[]) {
    // Allocate full y vector on all ranks for comparison
    if (posix_memalign((void**)&y, 64, (size_t)m * sizeof(float)) != 0) {
        fprintf(stderr, "Failed to allocate aligned memory for y\n");
-       if (csr_A) csr_free(csr_A);
        free(x);
        MPI_Finalize();
        return 1;
@@ -144,7 +142,7 @@ int main(int argc, char* argv[]) {
    }
 
    // ===== PRE-COMPUTE LOCAL CSR MATRICES FOR MPI VERSION =====
-   // Strategy: Rank 0 reads full CSR once, broadcasts to all ranks via MPI
+   // Strategy: Rank 0 reads full CSR once, broadcasts to all ranks via MPI_Bcast
    // This eliminates redundant file I/O on other ranks (huge speedup for large files)
    
    csr_matrix *full_csr_A = NULL;
@@ -210,6 +208,7 @@ int main(int argc, char* argv[]) {
    // Allocate local output
    if (posix_memalign((void**)&local_y, 64, (size_t)local_m * sizeof(float)) != 0) {
       fprintf(stderr, "Rank %d: Failed to allocate local_y\n", rank);
+      if (full_csr_A && rank != 0) csr_free(full_csr_A);
       if (csr_A) csr_free(csr_A);
       free(x);
       free(y);
