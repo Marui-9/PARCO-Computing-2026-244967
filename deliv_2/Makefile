@@ -1,5 +1,5 @@
 # Makefile for distributed SpMV with MPI and OpenMP
-CC ?= /apps/mpich-3.2.1--gcc-9.1.0/bin/mpicc
+CC := /apps/mpich-3.2.1--gcc-9.1.0/bin/mpicc
 CFLAGS := -O3 -Wall -Wextra -march=native -fopenmp
 LDLIBS := -lm
 OUT ?= mtrvec
