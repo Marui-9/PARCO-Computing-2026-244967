@@ -426,35 +426,23 @@ void Usage (char* prog_name) {
 
 /* Function: Omp_mat_vect 
    Purpose: multiply a mxn matrix (CSR format) by a nx1 column vector using OpenMP
-   This is the baseline optimized kernel from deliv_1.
+   This is a baseline kernel with minimal optimizations.
    */
 void Omp_mat_vect(int thread_count, csr_matrix *csr_A, float *local_x, float *local_y) {
    int i, j;
-   const int chunk = 32;
-   
-   float *x_aligned = __builtin_assume_aligned(local_x, 64);
-   float *y_aligned = __builtin_assume_aligned(local_y, 64);
 
-   #pragma omp parallel for schedule(static, chunk) num_threads(thread_count) \
-      proc_bind(close) default(none) \
-      shared(csr_A, x_aligned, y_aligned, chunk) private(i, j)
+   #pragma omp parallel for schedule(dynamic) num_threads(thread_count) \
+      default(none) \
+      shared(csr_A, local_x, local_y) private(i, j)
    for (i = 0; i < csr_A->rows; i++) {
-      float sum0 = 0.0f, sum1 = 0.0f, sum2 = 0.0f, sum3 = 0.0f;
+      float sum = 0.0f;
       int row_start = csr_A->row_ptr[i];
       int row_end = csr_A->row_ptr[i + 1];
       
-      #pragma omp simd reduction(+:sum0, sum1, sum2, sum3) aligned(x_aligned, y_aligned: 64)
-      for (j = row_start; j < row_end - 3; j += 4) {
-         sum0 += csr_A->values[j]   * x_aligned[csr_A->col_ind[j]];
-         sum1 += csr_A->values[j+1] * x_aligned[csr_A->col_ind[j+1]];
-         sum2 += csr_A->values[j+2] * x_aligned[csr_A->col_ind[j+2]];
-         sum3 += csr_A->values[j+3] * x_aligned[csr_A->col_ind[j+3]];
+      for (j = row_start; j < row_end; j++) {
+         sum += csr_A->values[j] * local_x[csr_A->col_ind[j]];
       }
-      
-      for (; j < row_end; j++) {
-         sum0 += csr_A->values[j] * x_aligned[csr_A->col_ind[j]];
-      }
-      y_aligned[i] = sum0 + sum1 + sum2 + sum3;
+      local_y[i] = sum;
    }
 }  /* Omp_mat_vect */
 
