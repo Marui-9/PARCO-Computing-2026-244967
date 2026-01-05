@@ -4,7 +4,7 @@
 #PBS -e ./mpi_matrices_bench.err
 #PBS -q short_cpuQ
 #PBS -l walltime=06:00:00
-#PBS -l select=2:ncpus=96:mem=32gb
+#PBS -l select=2:ncpus=48:mem=32gb
 
 # MPI Benchmarking: Test distributed SpMV across all matrices
 # Uses 2 MPI ranks, 48 threads per rank
