@@ -107,6 +107,22 @@ int matrix_to_csr(
  * import_matrix_to_csr: Read Matrix Market file directly into CSR format
  * This avoids allocating the huge dense matrix for large sparse matrices
  */
+
+// Comparison function for qsort
+int compare_coo_entries(const void *a, const void *b) {
+    typedef struct {
+        int row;
+        int col;
+        float value;
+    } coo_entry;
+    
+    const coo_entry *ea = (const coo_entry *)a;
+    const coo_entry *eb = (const coo_entry *)b;
+    
+    if (ea->row != eb->row) return ea->row - eb->row;
+    return ea->col - eb->col;
+}
+
 int import_matrix_to_csr(const char *filename, csr_matrix **out_csr) {
     FILE *file = fopen(filename, "r");
     if (!file) {
@@ -223,18 +239,8 @@ int import_matrix_to_csr(const char *filename, csr_matrix **out_csr) {
 
     printf("  Total entries after expansion: %d\n", entry_count);
 
-    // Sort entries by row, then by column (simple bubble sort for now)
-    // For production use a faster sort like qsort
-    for (int i = 0; i < entry_count - 1; i++) {
-        for (int j = 0; j < entry_count - i - 1; j++) {
-            if (entries[j].row > entries[j+1].row ||
-                (entries[j].row == entries[j+1].row && entries[j].col > entries[j+1].col)) {
-                coo_entry temp = entries[j];
-                entries[j] = entries[j+1];
-                entries[j+1] = temp;
-            }
-        }
-    }
+    // Sort entries by row, then by column using qsort (O(n log n) instead of O(n²))
+    qsort(entries, entry_count, sizeof(coo_entry), compare_coo_entries);
 
     // Convert COO to CSR
     int *row_ptr = malloc((rows + 1) * sizeof(int));
