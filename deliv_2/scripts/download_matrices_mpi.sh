@@ -5,7 +5,7 @@
 # Matrix selection strategy:
 #   - 3 small matrices (100k-300k rows): Quick testing, baseline comparison
 #   - 5 sweet spot matrices (500k-1.8M rows, 10-50M nnz): Larger computation
-#   - 2 big matrices (4-5M rows, 70-100M nnz): Largest matrices
+#   - 4 big matrices (4-17M rows, 69-265M nnz): Largest matrices
 #
 # Matrices are auto-renamed to match project convention: {rows_in_k}k_{density%}.mtx
 # Example: A 1.4M row matrix with 0.015% density -> 1400k_0p015.mtx
@@ -30,8 +30,8 @@ echo "=============================================="
 echo "SuiteSparse Matrix Downloader"
 echo "Output directory: $OUTPUT_DIR"
 echo "Naming convention: {rows_in_k}k_{density%}.mtx"
-echo "Estimated total download size: ~1.8 GB"
-echo "Estimated download time: 3-10 minutes (depending on internet speed)"
+echo "Estimated total download size: 5.2 GB"
+echo "Estimated download time: 2-5 minutes (depending on internet speed)"
 echo "=============================================="
 
 # Base URL for SuiteSparse Matrix Collection
@@ -53,10 +53,12 @@ declare -A MATRICES=(
     ["AMD/G3_circuit"]="G3_circuit"                       # 1.6M rows, 4.7M nnz
     ["LAW/cnr-2000"]="cnr-2000"                           # 325k rows, 3M nnz
     
-    # Big matrices: 4-5M rows, 70-100M nnz
+    # Big matrices: 4-17M rows, 69-265M nnz
     # Largest matrices
     ["SNAP/com-LiveJournal"]="com-LiveJournal"            # 4.8M rows, 69M nnz
     ["vanHeukelum/cage15"]="cage15"                       # 5.2M rows, 99M nnz
+    ["DIMACS10/rgg_n_2_24_s0"]="rgg_n_2_24_s0"            # 16.8M rows, 265M nnz
+    ["LAW/uk-2002"]="uk-2002"                             # 18.5M rows, 298M nnz
 )
 
 # Function to generate filename from matrix properties
@@ -183,8 +185,8 @@ download_matrix() {
 # Main script logic
 main() {
     echo ""
-    echo "Downloading 10 matrices..."
-    echo "  (~1.8 GB total, estimated time: 3-10 minutes)"
+    echo "Downloading 12 matrices..."
+    echo "  (~5.2 GB total, estimated time: 10-20 minutes)"
     echo ""
     
     # Download all matrices in MATRICES array
@@ -216,15 +218,15 @@ main() {
 usage() {
     echo "Usage: $0"
     echo ""
-    echo "Downloads 10 matrices from SuiteSparse Collection"
+    echo "Downloads 12 matrices from SuiteSparse Collection"
     echo ""
     echo "Matrix categories:"
     echo "  - Small (3):     100k-300k rows"
-    echo "  - Medium (5): 500k-1.8M rows"
-    echo "  - Big (2):       4-5M rows"
+    echo "  - Medium (5):    500k-1.8M rows"
+    echo "  - Big (4):       4.8M-18.5M rows"
     echo ""
-    echo "Total size: ~1.8 GB"
-    echo "Estimated download time: 3-10 minutes (depending on internet speed)"
+    echo "Total size: ~5.2 GB"
+    echo "Estimated download time: 10-20 minutes (depending on internet speed)"
     echo ""
     echo "Output: Matrices saved to ./matrices/ with naming convention:"
     echo "        {rows_in_k}k_{density%}.mtx"
