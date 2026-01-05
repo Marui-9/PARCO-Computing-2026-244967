@@ -7,7 +7,7 @@
 typedef struct {
     int rows;
     int cols;
-    int nnz;
+    long long nnz;   // Use long long to support matrices with >2.1B non-zeros
     int *row_ptr;    // size rows + 1
     int *col_ind;    // size nnz
     float *values;     // size nnz

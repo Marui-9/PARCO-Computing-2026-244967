@@ -149,20 +149,21 @@ int import_matrix_to_csr(const char *filename, csr_matrix **out_csr) {
     }
 
     // Read matrix dimensions
-    int rows, cols, nnz_file;
-    if (sscanf(line, "%d %d %d", &rows, &cols, &nnz_file) != 3) {
+    int rows, cols;
+    long long nnz_file;  // Use long long to handle large nnz values
+    if (sscanf(line, "%d %d %lld", &rows, &cols, &nnz_file) != 3) {
         fprintf(stderr, "Failed to read matrix dimensions\n");
         fclose(file);
         return EINVAL;
     }
 
-    printf("Reading matrix: %d x %d with %d non-zeros from file\n", rows, cols, nnz_file);
+    printf("Reading matrix: %d x %d with %lld non-zeros from file\n", rows, cols, nnz_file);
     if (is_symmetric) {
         printf("  Matrix is symmetric (will expand to full storage)\n");
     }
 
     // For symmetric matrices, we need to count diagonal and off-diagonal separately
-    int estimated_nnz = is_symmetric ? nnz_file * 2 : nnz_file;
+    long long estimated_nnz = is_symmetric ? nnz_file * 2 : nnz_file;
 
     // Temporary storage for COO format (row, col, value)
     typedef struct {
@@ -179,8 +180,8 @@ int import_matrix_to_csr(const char *filename, csr_matrix **out_csr) {
     }
 
     // Read all entries
-    int entry_count = 0;
-    for (int i = 0; i < nnz_file; i++) {
+    long long entry_count = 0;  // Use long long to count entries
+    for (long long i = 0; i < nnz_file; i++) {
         int row, col;
         float value = 1.0f;
 
@@ -237,7 +238,7 @@ int import_matrix_to_csr(const char *filename, csr_matrix **out_csr) {
     }
     fclose(file);
 
-    printf("  Total entries after expansion: %d\n", entry_count);
+    printf("  Total entries after expansion: %lld\n", entry_count);
 
     // Sort entries by row, then by column using qsort (O(n log n) instead of O(n²))
     qsort(entries, entry_count, sizeof(coo_entry), compare_coo_entries);
@@ -258,7 +259,7 @@ int import_matrix_to_csr(const char *filename, csr_matrix **out_csr) {
     // Build CSR structure
     row_ptr[0] = 0;
     int current_row = 0;
-    for (int i = 0; i < entry_count; i++) {
+    for (long long i = 0; i < entry_count; i++) {
         // Fill in row_ptr for any empty rows
         while (current_row < entries[i].row) {
             current_row++;
@@ -296,7 +297,7 @@ int import_matrix_to_csr(const char *filename, csr_matrix **out_csr) {
     *out_csr = csr;
 
     double density = (entry_count / (double)(rows * cols)) * 100.0;
-    printf("  CSR conversion complete: %d non-zeros (%.4f%% density)\n", entry_count, density);
+    printf("  CSR conversion complete: %lld non-zeros (%.4f%% density)\n", entry_count, density);
     
     return 0;
 }

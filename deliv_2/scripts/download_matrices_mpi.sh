@@ -10,8 +10,8 @@
 # Matrices are auto-renamed to match project convention: {rows_in_k}k_{density%}.mtx
 # Example: A 1.4M row matrix with 0.015% density -> 1400k_0p015.mtx
 #
-# Data size: ~1.8 GB total
-# Estimated download time: 3-10 minutes (depends on internet speed)
+# Data size: 12 GB total
+# Estimated download time: 3-5 minutes (depending on internet speed)
 #
 # Usage: ./download_matrices_mpi.sh
 
@@ -30,8 +30,8 @@ echo "=============================================="
 echo "SuiteSparse Matrix Downloader"
 echo "Output directory: $OUTPUT_DIR"
 echo "Naming convention: {rows_in_k}k_{density%}.mtx"
-echo "Estimated total download size: 5.2 GB"
-echo "Estimated download time: 2-5 minutes (depending on internet speed)"
+echo "Estimated total download size: 12 GB"
+echo "Estimated download time: 3-5 minutes (depending on internet speed)"
 echo "=============================================="
 
 # Base URL for SuiteSparse Matrix Collection
@@ -186,7 +186,7 @@ download_matrix() {
 main() {
     echo ""
     echo "Downloading 12 matrices..."
-    echo "  (~5.2 GB total, estimated time: 10-20 minutes)"
+    echo "  (~12 GB total, estimated time: 3-5 minutes)"
     echo ""
     
     # Download all matrices in MATRICES array
@@ -225,8 +225,8 @@ usage() {
     echo "  - Medium (5):    500k-1.8M rows"
     echo "  - Big (4):       4.8M-18.5M rows"
     echo ""
-    echo "Total size: ~5.2 GB"
-    echo "Estimated download time: 10-20 minutes (depending on internet speed)"
+    echo "Total size: ~12 GB"
+    echo "Estimated download time: 3-5 minutes (depending on internet speed)"
     echo ""
     echo "Output: Matrices saved to ./matrices/ with naming convention:"
     echo "        {rows_in_k}k_{density%}.mtx"

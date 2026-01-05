@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
       }
       m = csr_A->rows;
       n = csr_A->cols;
-      int nnz = csr_A->nnz;
+      long long nnz = csr_A->nnz;
       double nnz_percentage = (nnz / (double)(m * n)) * 100.0;
       printf("Matrix loaded from file: %s\n", matrix_file);
       printf("Matrix dimensions: %d rows × %d cols, %.2f%% non-zero entries\n", 
@@ -167,7 +167,7 @@ int main(int argc, char* argv[]) {
    // Broadcast CSR structure info: rows, cols, nnz
    MPI_Bcast(&full_csr_A->rows, 1, MPI_INT, 0, MPI_COMM_WORLD);
    MPI_Bcast(&full_csr_A->cols, 1, MPI_INT, 0, MPI_COMM_WORLD);
-   MPI_Bcast(&full_csr_A->nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
+   MPI_Bcast(&full_csr_A->nnz, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
    
    // Ranks != 0 allocate CSR arrays after learning dimensions
    if (rank != 0) {
@@ -196,7 +196,7 @@ int main(int argc, char* argv[]) {
    MPI_Bcast(full_csr_A->values, full_csr_A->nnz, MPI_FLOAT, 0, MPI_COMM_WORLD);
    
    if (rank == 0) {
-      printf("Broadcast CSR structure: %d rows, %d cols, %d nnz\n", 
+      printf("Broadcast CSR structure: %d rows, %d cols, %lld nnz\n", 
              full_csr_A->rows, full_csr_A->cols, full_csr_A->nnz);
    }
    
