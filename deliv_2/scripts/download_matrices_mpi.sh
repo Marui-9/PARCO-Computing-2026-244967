@@ -5,13 +5,14 @@
 # Matrix selection strategy:
 #   - 3 small matrices (100k-300k rows): Quick testing, baseline comparison
 #   - 5 sweet spot matrices (500k-1.8M rows, 10-50M nnz): Larger computation
-#   - 4 big matrices (4-17M rows, 69-265M nnz): Largest matrices
+#   - 4 big matrices (4.8M-10M rows, 69-405M nnz): Largest matrices
+#   - 2 commented matrices (16.8M-18.5M rows): Available but not auto-downloaded
 #
 # Matrices are auto-renamed to match project convention: {rows_in_k}k_{density%}.mtx
 # Example: A 1.4M row matrix with 0.015% density -> 1400k_0p015.mtx
 #
-# Data size: 12 GB total
-# Estimated download time: 3-5 minutes (depending on internet speed)
+# Data size: ~8-10 GB total
+# Estimated download time: 20-40 minutes (depends on internet speed)
 #
 # Usage: ./download_matrices_mpi.sh
 
@@ -30,14 +31,14 @@ echo "=============================================="
 echo "SuiteSparse Matrix Downloader"
 echo "Output directory: $OUTPUT_DIR"
 echo "Naming convention: {rows_in_k}k_{density%}.mtx"
-echo "Estimated total download size: 12 GB"
-echo "Estimated download time: 3-5 minutes (depending on internet speed)"
+echo "Estimated total download size: ~8-10 GB"
+echo "Estimated download time: 20-40 minutes (depending on internet speed)"
 echo "=============================================="
 
 # Base URL for SuiteSparse Matrix Collection
 BASE_URL="https://suitesparse-collection-website.herokuapp.com/MM"
 
-# 10 matrices spanning 3 size categories
+# 12 matrices spanning 3 size categories
 declare -A MATRICES=(
     # Small matrices: 100k-300k rows
     # Quick testing, baseline comparison
@@ -53,10 +54,12 @@ declare -A MATRICES=(
     ["AMD/G3_circuit"]="G3_circuit"                       # 1.6M rows, 4.7M nnz
     ["LAW/cnr-2000"]="cnr-2000"                           # 325k rows, 3M nnz
     
-    # Big matrices: 4-17M rows, 69-265M nnz
+    # Big matrices: 4.8M-10M rows
     # Largest matrices
     ["SNAP/com-LiveJournal"]="com-LiveJournal"            # 4.8M rows, 69M nnz
     ["vanHeukelum/cage15"]="cage15"                       # 5.2M rows, 99M nnz
+    ["SNAP/com-Youtube"]="com-Youtube"                    # 6.5M rows, 160M nnz
+    ["LAW/twitter7"]="twitter7"                           # 10M rows, 405M nnz
    # ["DIMACS10/rgg_n_2_24_s0"]="rgg_n_2_24_s0"            # 16.8M rows, 265M nnz
    # ["LAW/uk-2002"]="uk-2002"                             # 18.5M rows, 298M nnz
 )
@@ -185,8 +188,8 @@ download_matrix() {
 # Main script logic
 main() {
     echo ""
-    echo "Downloading 12 matrices..."
-    echo "  (~12 GB total, estimated time: 3-5 minutes)"
+    echo "Downloading 14 matrices..."
+    echo "  (~8-10 GB total, estimated time: 20-40 minutes)"
     echo ""
     
     # Download all matrices in MATRICES array
@@ -218,15 +221,16 @@ main() {
 usage() {
     echo "Usage: $0"
     echo ""
-    echo "Downloads 12 matrices from SuiteSparse Collection"
+    echo "Downloads 14 matrices from SuiteSparse Collection"
     echo ""
     echo "Matrix categories:"
     echo "  - Small (3):     100k-300k rows"
     echo "  - Medium (5):    500k-1.8M rows"
-    echo "  - Big (4):       4.8M-18.5M rows"
+    echo "  - Big (4):       4.8M-10M rows (automatically downloaded)"
+    echo "  - Extra (2):     16.8M-18.5M rows (commented, available on demand)"
     echo ""
-    echo "Total size: ~12 GB"
-    echo "Estimated download time: 3-5 minutes (depending on internet speed)"
+    echo "Total size: ~8-10 GB (for 14 matrices)"
+    echo "Estimated download time: 20-40 minutes (depending on internet speed)"
     echo ""
     echo "Output: Matrices saved to ./matrices/ with naming convention:"
     echo "        {rows_in_k}k_{density%}.mtx"
