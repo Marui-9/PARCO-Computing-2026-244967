@@ -512,26 +512,30 @@ void comm_ring_reduce(int rank, int size, csr_matrix *A_local,
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
 
-    /* Ring-based reduction of y */
+    /* Gather all results to rank 0 (simple approach to avoid size mismatch) */
     t_start = MPI_Wtime();
-    float *y_recv = (float *)malloc(m_local * sizeof(float));
-    memcpy(y_recv, y, m_local * sizeof(float));
+    int *send_counts = (rank == 0) ? (int *)malloc(size * sizeof(int)) : NULL;
+    int *displs = (rank == 0) ? (int *)malloc(size * sizeof(int)) : NULL;
     
-    for (int step = 1; step < size; step++) {
-        int send_to = (rank + 1) % size;
-        int recv_from = (rank - 1 + size) % size;
-        MPI_Sendrecv(y_recv, m_local, MPI_FLOAT, send_to, 0,
-                     y, m_local, MPI_FLOAT, recv_from, 0,
-                     MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        
-        if (rank == 0) {
-            for (int i = 0; i < m_local; i++) {
-                y_recv[i] += y[i];
-            }
+    /* Gather local row counts */
+    MPI_Gather(&m_local, 1, MPI_INT, send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    
+    if (rank == 0) {
+        displs[0] = 0;
+        for (int i = 1; i < size; i++) {
+            displs[i] = displs[i-1] + send_counts[i-1];
         }
     }
-    free(y_recv);
+    
+    float *y_global = (rank == 0) ? (float *)malloc(m_global * sizeof(float)) : NULL;
+    MPI_Gatherv(y, m_local, MPI_FLOAT, y_global, send_counts, displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
     t_comm += MPI_Wtime() - t_start;
+
+    if (rank == 0 && y_global) free(y_global);
+    if (rank == 0) {
+        free(send_counts);
+        free(displs);
+    }
 
     *comm_time = t_comm;
     *compute_time = t_comp;
