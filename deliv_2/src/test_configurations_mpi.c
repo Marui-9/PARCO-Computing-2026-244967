@@ -428,13 +428,9 @@ void comm_allgather(int rank, int size, csr_matrix *A_local,
                     double *comm_time, double *compute_time) {
     double t_comm = 0.0, t_comp = 0.0;
     
-    /* Allgather x on all ranks (ensures consistency) */
+    /* Broadcast x from rank 0 to all ranks (x is global and replicated) */
     double t_start = MPI_Wtime();
-    float *x_local_portion = (float *)malloc(n_global * sizeof(float));
-    MPI_Allgather(x, n_global / size + (rank < n_global % size ? 1 : 0), MPI_FLOAT,
-                  x_local_portion, n_global / size + (rank < n_global % size ? 1 : 0), 
-                  MPI_FLOAT, MPI_COMM_WORLD);
-    memcpy(x, x_local_portion, n_global * sizeof(float));
+    MPI_Bcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD);
     t_comm += MPI_Wtime() - t_start;
 
     /* Local SpMV */
@@ -442,13 +438,12 @@ void comm_allgather(int rank, int size, csr_matrix *A_local,
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
 
-    /* Gather results */
+    /* Gather results to rank 0 */
     t_start = MPI_Wtime();
     float *y_global = (rank == 0) ? (float *)malloc(m_global * sizeof(float)) : NULL;
     MPI_Gather(y, m_local, MPI_FLOAT, y_global, m_local, MPI_FLOAT, 0, MPI_COMM_WORLD);
     t_comm += MPI_Wtime() - t_start;
 
-    free(x_local_portion);
     if (rank == 0 && y_global) free(y_global);
 
     *comm_time = t_comm;
@@ -462,12 +457,12 @@ void comm_pipelined(int rank, int size, csr_matrix *A_local,
                     double *comm_time, double *compute_time) {
     double t_comm = 0.0, t_comp = 0.0;
     
-    /* Distribute x chunks using Alltoall pattern */
+    /* Broadcast x from rank 0 to all ranks */
     double t_start = MPI_Wtime();
-    MPI_Allgather(x, n_global / size, MPI_FLOAT, x, n_global / size, MPI_FLOAT, MPI_COMM_WORLD);
+    MPI_Bcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD);
     t_comm += MPI_Wtime() - t_start;
 
-    /* Local SpMV with pipelined data */
+    /* Local SpMV */
     t_start = MPI_Wtime();
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
