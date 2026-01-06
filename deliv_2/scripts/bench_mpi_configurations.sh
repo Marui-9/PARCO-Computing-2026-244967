@@ -12,7 +12,7 @@ TIMEOUT_SECS=3600      # 60 minutes per node count + matrix combo
 ITERATIONS=10          # 10 iterations per configuration
 
 # Node counts to test
-NODE_COUNTS="2 3 4 5 6"
+NODE_COUNTS="2 3 4"
 
 # Test matrices - comment/uncomment as needed
 MATRICES_DIR="matrices"
