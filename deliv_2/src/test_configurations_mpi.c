@@ -166,11 +166,24 @@ int main(int argc, char* argv[]) {
     
     /* Broadcast CSR data from rank 0 to all ranks */
     MPI_Bcast(A_global->row_ptr, A_global->rows + 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(A_global->col_ind, A_global->nnz, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(A_global->values, A_global->nnz, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    
+    /* For large matrices, nnz might exceed INT_MAX, so we need to cast carefully */
+    int nnz_count = (int)A_global->nnz;
+    if ((long long)nnz_count != A_global->nnz) {
+        fprintf(stderr, "ERROR: Matrix nnz (%lld) exceeds INT_MAX, cannot broadcast with MPI\n", A_global->nnz);
+        MPI_Finalize();
+        exit(1);
+    }
+    
+    MPI_Bcast(A_global->col_ind, nnz_count, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(A_global->values, nnz_count, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     m_global = A_global->rows;
     n_global = A_global->cols;
+
+    if (global_rank == 0) {
+        printf("DEBUG: m_global=%d, n_global=%d, nnz=%lld\n", m_global, n_global, A_global->nnz);
+    }
 
     /* Distribute matrix by rows */
     csr_matrix *A_local = (csr_matrix *)malloc(sizeof(csr_matrix));
@@ -183,9 +196,12 @@ int main(int argc, char* argv[]) {
     /* Allocate vectors */
     x_global = generate_vector_aligned(n_global);
     if (!x_global) {
-        fprintf(stderr, "Rank %d: Failed to allocate x_global\n", global_rank);
+        fprintf(stderr, "Rank %d: Failed to allocate x_global (size=%d)\n", global_rank, n_global);
         MPI_Finalize();
         exit(1);
+    }
+    if (global_rank == 0) {
+        printf("DEBUG: Allocated x_global with %d floats (%.2f MB)\n", n_global, n_global * 4.0 / (1024*1024));
     }
 
     if (posix_memalign((void**)&y_local, 64, (size_t)m_local * sizeof(float)) != 0) {
