@@ -5,8 +5,8 @@
 # Matrix selection strategy:
 #   - 3 small matrices (100k-300k rows): Quick testing, baseline comparison
 #   - 5 sweet spot matrices (500k-1.8M rows, 10-50M nnz): Larger computation
-#   - 4 big matrices (4.8M-10M rows, 69-405M nnz): Largest matrices
-#   - 2 commented matrices (16.8M-18.5M rows): Available but not auto-downloaded
+#   - 4 big matrices (4.8M-10.6M rows, 69-160M nnz): Largest matrices
+#   - 2 commented matrices (10M, 18.5M rows): Available but not auto-downloaded
 #
 # Matrices are auto-renamed to match project convention: {rows_in_k}k_{density%}.mtx
 # Example: A 1.4M row matrix with 0.015% density -> 1400k_0p015.mtx
@@ -31,8 +31,8 @@ echo "=============================================="
 echo "SuiteSparse Matrix Downloader"
 echo "Output directory: $OUTPUT_DIR"
 echo "Naming convention: {rows_in_k}k_{density%}.mtx"
-echo "Estimated total download size: ~8-10 GB"
-echo "Estimated download time: 20-40 minutes (depending on internet speed)"
+echo "Estimated total download size: 12 GB"
+echo "Estimated download time: 3-5 minutes (depending on internet speed)"
 echo "=============================================="
 
 # Base URL for SuiteSparse Matrix Collection
@@ -54,13 +54,13 @@ declare -A MATRICES=(
     ["AMD/G3_circuit"]="G3_circuit"                       # 1.6M rows, 4.7M nnz
     ["LAW/cnr-2000"]="cnr-2000"                           # 325k rows, 3M nnz
     
-    # Big matrices: 4.8M-10M rows
+    # Big matrices: 4.8M-10.6M rows
     # Largest matrices
     ["SNAP/com-LiveJournal"]="com-LiveJournal"            # 4.8M rows, 69M nnz
     ["vanHeukelum/cage15"]="cage15"                       # 5.2M rows, 99M nnz
     ["SNAP/com-Youtube"]="com-Youtube"                    # 6.5M rows, 160M nnz
-    ["LAW/twitter7"]="twitter7"                           # 10M rows, 405M nnz
-   # ["DIMACS10/rgg_n_2_24_s0"]="rgg_n_2_24_s0"            # 16.8M rows, 265M nnz
+    ["DIMACS10/delaunay_n22"]="delaunay_n22"              # 10.6M rows, 78M nnz
+   # ["LAW/twitter7"]="twitter7"                           # 10M rows, 405M nnz (unstable archive)
    # ["LAW/uk-2002"]="uk-2002"                             # 18.5M rows, 298M nnz
 )
 
@@ -226,11 +226,11 @@ usage() {
     echo "Matrix categories:"
     echo "  - Small (3):     100k-300k rows"
     echo "  - Medium (5):    500k-1.8M rows"
-    echo "  - Big (4):       4.8M-10M rows (automatically downloaded)"
-    echo "  - Extra (2):     16.8M-18.5M rows (commented, available on demand)"
+    echo "  - Big (4):       4.8M-10.6M rows (automatically downloaded)"
+    echo "  - Extra (2):     10M-18.5M rows (commented, available on demand)"
     echo ""
-    echo "Total size: ~8-10 GB (for 14 matrices)"
-    echo "Estimated download time: 20-40 minutes (depending on internet speed)"
+    echo "Total size: ~12 GB (for 12 matrices)"
+    echo "Estimated download time: 3-5 minutes (depending on internet speed)"
     echo ""
     echo "Output: Matrices saved to ./matrices/ with naming convention:"
     echo "        {rows_in_k}k_{density%}.mtx"
