@@ -6,8 +6,11 @@
 #PBS -l walltime=06:00:00
 #PBS -l select=6:ncpus=48:mem=32gb
 
-# Load modules
-module load gcc91 openmpi41
+# Load necessary modules
+echo "Loading modules..."
+module load gcc91
+module load mpich-3.2.1--gcc-9.1.0
+
 
 # Navigate to project root directory
 echo "Starting directory: $(pwd)"
@@ -32,12 +35,6 @@ else
 fi
 
 echo "Project root: $(pwd)"
-
-# Load necessary modules
-echo "Loading modules..."
-module load gcc91
-module load mpich-3.2.1--gcc-9.1.0
-
 
 # Verify MPI setup
 echo "=== MPI Environment ==="
