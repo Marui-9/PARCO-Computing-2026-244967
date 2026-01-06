@@ -57,8 +57,8 @@ declare -A MATRICES=(
     # Largest matrices
     ["SNAP/com-LiveJournal"]="com-LiveJournal"            # 4.8M rows, 69M nnz
     ["vanHeukelum/cage15"]="cage15"                       # 5.2M rows, 99M nnz
-    ["DIMACS10/rgg_n_2_24_s0"]="rgg_n_2_24_s0"            # 16.8M rows, 265M nnz
-    ["LAW/uk-2002"]="uk-2002"                             # 18.5M rows, 298M nnz
+   # ["DIMACS10/rgg_n_2_24_s0"]="rgg_n_2_24_s0"            # 16.8M rows, 265M nnz
+   # ["LAW/uk-2002"]="uk-2002"                             # 18.5M rows, 298M nnz
 )
 
 # Function to generate filename from matrix properties
