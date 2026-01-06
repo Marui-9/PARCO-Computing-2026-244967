@@ -87,8 +87,7 @@ void run_benchmark(CommMode *mode, int rank, int size, csr_matrix *A_local,
                    void (*func)(int, int, csr_matrix*, float*, float*, int, double*, double*),
                    int num_iterations, int thread_count);
 double calculate_std_dev(double times[], int count, double mean);
-int verify_result(float *y_local, int m_local, csr_matrix *A_local, 
-                  float *x_global, int rank);
+int compare_doubles(const void *a, const void *b);
 void print_results(CommMode modes[], int num_modes, int rank, int size, 
                    const char *matrix_file, int iterations);
 
@@ -116,8 +115,7 @@ int main(int argc, char* argv[]) {
     int result = 0;
     
     if (global_rank == 0) {
-        A_global = (csr_matrix *)malloc(sizeof(csr_matrix));
-        result = csr_read_matrix(matrix_file, A_global);
+        result = import_matrix_to_csr(matrix_file, &A_global);
         if (result != 0) {
             fprintf(stderr, "Failed to import matrix from %s\n", matrix_file);
             result = 1;
@@ -440,9 +438,6 @@ void comm_pipelined(int rank, int size, csr_matrix *A_local,
                     double *comm_time, double *compute_time) {
     double t_comm = 0.0, t_comp = 0.0;
     
-    /* Pipeline: exchange x in chunks and compute locally */
-    int chunk_size = (n_global + size - 1) / size;
-    
     /* Distribute x chunks using Alltoall pattern */
     double t_start = MPI_Wtime();
     MPI_Allgather(x, n_global / size, MPI_FLOAT, x, n_global / size, MPI_FLOAT, MPI_COMM_WORLD);
@@ -598,6 +593,12 @@ void run_benchmark(CommMode *mode, int rank, int size, csr_matrix *A_local,
 }
 
 /*------------------------------------------------------------------*/
+int compare_doubles(const void *a, const void *b) {
+    double diff = *(double *)a - *(double *)b;
+    return (diff < 0) ? -1 : (diff > 0) ? 1 : 0;
+}
+
+/*------------------------------------------------------------------*/
 double calculate_std_dev(double times[], int count, double mean) {
     double sum_sq = 0.0;
     for (int i = 0; i < count; i++) {
@@ -605,12 +606,6 @@ double calculate_std_dev(double times[], int count, double mean) {
         sum_sq += diff * diff;
     }
     return sqrt(sum_sq / count);
-}
-
-/*------------------------------------------------------------------*/
-int compare_doubles(const void *a, const void *b) {
-    double diff = *(double *)a - *(double *)b;
-    return (diff < 0) ? -1 : (diff > 0) ? 1 : 0;
 }
 
 /*------------------------------------------------------------------*/
@@ -657,7 +652,7 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
     /* Write data rows */
     for (int i = 0; i < num_modes; i++) {
         fprintf(csv, "%d,%s,%d,%d,%lld,%.4f,%s,",
-                size, matrix_file, m_global, n_global, modes[i].speedup, 
+                size, matrix_file, m_global, n_global, (long long)100, 
                 (modes[i].speedup / (double)(m_global * n_global)) * 100.0,
                 modes[i].name);
         fprintf(csv, "%.4f,%.4f,%.4f,%.4f,",

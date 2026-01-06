@@ -8,11 +8,11 @@ set -eu
 EXE="./test_config_mpi"
 OUT_BASE="results/test_config_mpi_results"
 OUT_LOG="results/bench_mpi_configurations.log"
-TIMEOUT_SECS=1800      # 30 minutes per node count + matrix combo
+TIMEOUT_SECS=3600      # 60 minutes per node count + matrix combo
 ITERATIONS=10          # 10 iterations per configuration
 
 # Node counts to test
-NODE_COUNTS="2 3 4"
+NODE_COUNTS="2 3 4 5 6"
 
 # Test matrices - comment/uncomment as needed
 # Small matrices: quick validation
