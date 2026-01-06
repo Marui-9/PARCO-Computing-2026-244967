@@ -11,7 +11,7 @@ echo "Loading modules..."
 module load gcc91
 module load mpich-3.2.1--gcc-9.1.0
 
-
+cd PARCO-Computing-2026-244967/deliv_2/
 # Navigate to project root directory
 echo "Starting directory: $(pwd)"
 
