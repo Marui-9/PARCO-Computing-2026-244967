@@ -12,7 +12,7 @@ TIMEOUT_SECS=3600      # 60 minutes per node count + matrix combo
 ITERATIONS=10          # 10 iterations per configuration
 
 # Node counts to test
-NODE_COUNTS="2 3 4"
+NODE_COUNTS="2"
 
 # Test matrices - comment/uncomment as needed
 MATRICES_DIR="matrices"
@@ -137,14 +137,26 @@ for num_nodes in $NODE_COUNTS; do
         echo "  Start time: $(date)" >> "$OUT_LOG"
         
         # Run MPI test with timeout
-        # Note: Pass matrix path relative to current directory
-        # The C program will open it as-is or search in matrices/
-        timeout "$TIMEOUT_SECS" mpirun -np "$num_nodes" "$EXE" "$mtx_path" "$ITERATIONS" \
-            > "$tmpout" 2> "$tmperr"
+        # Use hostfile if PBS_NODEFILE exists, otherwise just specify -np
+        if [ -n "$PBS_NODEFILE" ] && [ -f "$PBS_NODEFILE" ]; then
+            echo "  Using PBS_NODEFILE: $PBS_NODEFILE" >> "$OUT_LOG"
+            timeout "$TIMEOUT_SECS" mpirun -np "$num_nodes" -hostfile "$PBS_NODEFILE" "$EXE" "$mtx_path" "$ITERATIONS" \
+                > "$tmpout" 2> "$tmperr"
+        else
+            echo "  No PBS_NODEFILE, using -np only" >> "$OUT_LOG"
+            timeout "$TIMEOUT_SECS" mpirun -np "$num_nodes" "$EXE" "$mtx_path" "$ITERATIONS" \
+                > "$tmpout" 2> "$tmperr"
+        fi
         exitcode=$?
         
         echo "  End time: $(date)" >> "$OUT_LOG"
         echo "  Exit code: $exitcode" >> "$OUT_LOG"
+        
+        # Log stderr immediately if there were errors
+        if [ "$exitcode" -ne 0 ] && [ "$exitcode" -ne 124 ] && [ -s "$tmperr" ]; then
+            echo "  STDERR output:" >> "$OUT_LOG"
+            head -30 "$tmperr" | sed 's/^/    /' >> "$OUT_LOG"
+        fi
         
         # Check for timeout
         if [ "$exitcode" -eq 124 ]; then
