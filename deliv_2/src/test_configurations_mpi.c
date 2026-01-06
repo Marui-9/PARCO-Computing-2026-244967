@@ -36,6 +36,7 @@
 /* Global variables */
 int global_rank, global_size;
 int m_global, n_global;  // Global matrix dimensions
+long long nnz_global;    // Global non-zero count
 int m_local, n_local;    // Local matrix dimensions (rank-specific)
 int row_start, row_end;  // Local row range for this rank
 float *x_global;         // Full x vector (replicated on all ranks)
@@ -180,9 +181,10 @@ int main(int argc, char* argv[]) {
 
     m_global = A_global->rows;
     n_global = A_global->cols;
+    nnz_global = A_global->nnz;
 
     if (global_rank == 0) {
-        printf("DEBUG: m_global=%d, n_global=%d, nnz=%lld\n", m_global, n_global, A_global->nnz);
+        printf("DEBUG: m_global=%d, n_global=%d, nnz=%lld\n", m_global, n_global, nnz_global);
     }
 
     /* Distribute matrix by rows */
@@ -681,7 +683,7 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
 
     /* Write CSV */
     char csv_filename[256];
-    snprintf(csv_filename, sizeof(csv_filename), "test_config_mpi_results_%dnodes.csv", size);
+    snprintf(csv_filename, sizeof(csv_filename), "results/test_config_mpi_results_%dnodes.csv", size);
     
     FILE *csv = fopen(csv_filename, "a");
     if (!csv) {
@@ -699,9 +701,10 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
 
     /* Write data rows */
     for (int i = 0; i < num_modes; i++) {
+        double density = (nnz_global / (double)(m_global * n_global)) * 100.0;
         fprintf(csv, "%d,%s,%d,%d,%lld,%.4f,%s,",
-                size, matrix_file, m_global, n_global, (long long)100, 
-                (modes[i].speedup / (double)(m_global * n_global)) * 100.0,
+                size, matrix_file, m_global, n_global, nnz_global, 
+                density,
                 modes[i].name);
         fprintf(csv, "%.4f,%.4f,%.4f,%.4f,",
                 modes[i].avg_time, modes[i].std_dev, modes[i].min_time, modes[i].max_time);
