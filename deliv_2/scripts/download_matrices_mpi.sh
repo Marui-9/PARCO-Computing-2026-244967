@@ -49,7 +49,7 @@ declare -A MATRICES=(
     # Medium: 500k-1.8M rows, 10-50M nnz
     # Larger computation
     ["SNAP/web-Google"]="web-Google"                      # 916k rows, 5M nnz
-    ["Janna/Geo_1438"]="Geo_1438"                         # 1.4M rows, 15M nnz
+    #["Janna/Geo_1438"]="Geo_1438"                         # 1.4M rows, 15M nnz
     ["Schenk_AFE/af_shell10"]="af_shell10"                # 1.8M rows, 11M nnz
     ["AMD/G3_circuit"]="G3_circuit"                       # 1.6M rows, 4.7M nnz
     ["LAW/cnr-2000"]="cnr-2000"                           # 325k rows, 3M nnz
