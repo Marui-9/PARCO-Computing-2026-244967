@@ -140,10 +140,34 @@ int main(int argc, char* argv[]) {
     /* Broadcast global matrix dimensions */
     if (global_rank != 0) {
         A_global = (csr_matrix *)malloc(sizeof(csr_matrix));
+        if (!A_global) {
+            fprintf(stderr, "Rank %d: Failed to allocate A_global\n", global_rank);
+            MPI_Finalize();
+            exit(1);
+        }
     }
+    
     MPI_Bcast(&A_global->rows, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&A_global->cols, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&A_global->nnz, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+
+    /* Non-zero ranks: allocate arrays to receive matrix data */
+    if (global_rank != 0) {
+        A_global->row_ptr = (int *)malloc((A_global->rows + 1) * sizeof(int));
+        A_global->col_ind = (int *)malloc(A_global->nnz * sizeof(int));
+        A_global->values = (float *)malloc(A_global->nnz * sizeof(float));
+        
+        if (!A_global->row_ptr || !A_global->col_ind || !A_global->values) {
+            fprintf(stderr, "Rank %d: Failed to allocate CSR arrays\n", global_rank);
+            MPI_Finalize();
+            exit(1);
+        }
+    }
+    
+    /* Broadcast CSR data from rank 0 to all ranks */
+    MPI_Bcast(A_global->row_ptr, A_global->rows + 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(A_global->col_ind, A_global->nnz, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(A_global->values, A_global->nnz, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     m_global = A_global->rows;
     n_global = A_global->cols;
