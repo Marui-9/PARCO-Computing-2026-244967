@@ -3,7 +3,7 @@
 # Benchmark MPI communication modes across 2 nodes
 # Tests various inter-node communication strategies
 # Usage: ./bench_mpi_2nodes.sh
-set -eu
+set -u
 
 EXE="./test_config_mpi"
 OUT_BASE="results/test_config_mpi_results"
@@ -91,6 +91,25 @@ total_runs=0
 failed_runs=0
 timeout_runs=0
 
+# Test mpirun connectivity before benchmarking
+echo ""
+echo "=== Testing MPI connectivity ==="
+echo "=== Testing MPI connectivity ===" >> "$OUT_LOG"
+if [ -n "$PBS_NODEFILE" ] && [ -f "$PBS_NODEFILE" ]; then
+    echo "PBS_NODEFILE: $PBS_NODEFILE" | tee -a "$OUT_LOG"
+    echo "Node file contents:" | tee -a "$OUT_LOG"
+    cat "$PBS_NODEFILE" | tee -a "$OUT_LOG"
+    
+    # Test mpirun with a simple hostname command
+    echo "Testing mpirun with hostname..." | tee -a "$OUT_LOG"
+    timeout 30 mpirun -np 2 -hostfile "$PBS_NODEFILE" hostname >> "$OUT_LOG" 2>&1 || {
+        echo "WARNING: mpirun hostname test failed with exit code $?" | tee -a "$OUT_LOG"
+    }
+else
+    echo "WARNING: PBS_NODEFILE not set, mpirun may not work correctly" | tee -a "$OUT_LOG"
+fi
+echo ""
+
 # Loop over node counts
 for num_nodes in $NODE_COUNTS; do
     OUT_CSV="${OUT_BASE}_${num_nodes}nodes.csv"
@@ -140,22 +159,31 @@ for num_nodes in $NODE_COUNTS; do
         # Use hostfile if PBS_NODEFILE exists, otherwise just specify -np
         if [ -n "$PBS_NODEFILE" ] && [ -f "$PBS_NODEFILE" ]; then
             echo "  Using PBS_NODEFILE: $PBS_NODEFILE" >> "$OUT_LOG"
+            echo "  Running: timeout $TIMEOUT_SECS mpirun -np $num_nodes -hostfile $PBS_NODEFILE $EXE $mtx_path $ITERATIONS" >> "$OUT_LOG"
             timeout "$TIMEOUT_SECS" mpirun -np "$num_nodes" -hostfile "$PBS_NODEFILE" "$EXE" "$mtx_path" "$ITERATIONS" \
                 > "$tmpout" 2> "$tmperr"
+            exitcode=$?
         else
             echo "  No PBS_NODEFILE, using -np only" >> "$OUT_LOG"
+            echo "  Running: timeout $TIMEOUT_SECS mpirun -np $num_nodes $EXE $mtx_path $ITERATIONS" >> "$OUT_LOG"
             timeout "$TIMEOUT_SECS" mpirun -np "$num_nodes" "$EXE" "$mtx_path" "$ITERATIONS" \
                 > "$tmpout" 2> "$tmperr"
+            exitcode=$?
         fi
-        exitcode=$?
         
-        echo "  End time: $(date)" >> "$OUT_LOG"
         echo "  Exit code: $exitcode" >> "$OUT_LOG"
+        echo "  End time: $(date)" >> "$OUT_LOG"
         
-        # Log stderr immediately if there were errors
-        if [ "$exitcode" -ne 0 ] && [ "$exitcode" -ne 124 ] && [ -s "$tmperr" ]; then
-            echo "  STDERR output:" >> "$OUT_LOG"
-            head -30 "$tmperr" | sed 's/^/    /' >> "$OUT_LOG"
+        # Log all output for debugging
+        if [ -s "$tmpout" ]; then
+            echo "  Stdout output (first 50 lines):" >> "$OUT_LOG"
+            head -50 "$tmpout" | sed 's/^/    /' >> "$OUT_LOG"
+        fi
+        
+        # Log stderr
+        if [ -s "$tmperr" ]; then
+            echo "  Stderr output (first 50 lines):" >> "$OUT_LOG"
+            head -50 "$tmperr" | sed 's/^/    /' >> "$OUT_LOG"
         fi
         
         # Check for timeout
