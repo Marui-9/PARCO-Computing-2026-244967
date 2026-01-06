@@ -15,29 +15,19 @@ ITERATIONS=10          # 10 iterations per configuration
 NODE_COUNTS="2 3 4 5 6"
 
 # Test matrices - comment/uncomment as needed
-# Small matrices: quick validation
 MATRICES_DIR="matrices"
 TEST_MATRICES=(
-    # === Small matrices (for quick testing) ===
-    "2k_0p22.mtx"      # 2K rows
-    "2k_0p52.mtx"      # 2K rows
-    "5k_9p37.mtx"      # 5K rows
-    "6k_6p3.mtx"       # 6K rows
-    "9k_0p77.mtx"      # 9K rows
-    "10k_1p5.mtx"      # 10K rows
-    "11k_0p35.mtx"     # 11K rows, sparse - quick baseline
-    "11k_0p38.mtx"     # 11K rows
-    "15k_0p41.mtx"     # 15K rows
-    
-    # === Medium matrices (moderate workload) ===
-    "20k_0p38.mtx"     # 20K rows - medium workload
-    "25k_0p03.mtx"     # 25K rows, very sparse
-    "30k_0p05.mtx"     # 30K rows, very sparse
-    "40k_0p02.mtx"     # 40K rows, very sparse
-    
-    # === Large matrices (heavy workload) ===
-    "50k_0p008.mtx"    # 50K rows, very sparse - large but light computation
-    "60k_0p005.mtx"    # 60K rows, very sparse
+    "36k_0p17.mtx"           # 36K rows
+    "98k_0p52.mtx"           # 98K rows
+    "262k_0p0011.mtx"        # 262K rows, very sparse
+    "326k_0p0030.mtx"        # 326K rows, very sparse
+    "916k_0p0006.mtx"        # 916K rows, very sparse
+    "1135k_0p0002.mtx"       # 1135K rows, ultra sparse
+    "1508k_0p0012.mtx"       # 1508K rows, ultra sparse
+    "1585k_0p0002.mtx"       # 1585K rows, ultra sparse
+    "3998k_0p0002.mtx"       # 3998K rows, ultra sparse
+    "4194k_0p0001.mtx"       # 4194K rows, ultra sparse
+    "5155k_0p0004.mtx"       # 5155K rows, ultra sparse
 )
 
 if [ ! -d "$MATRICES_DIR" ]; then

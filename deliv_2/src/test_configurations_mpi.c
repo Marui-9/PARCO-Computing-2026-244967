@@ -615,7 +615,7 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
     double baseline_time = modes[0].avg_time;
 
     printf("\n=== Communication Modes Results ===\n");
-    printf("%-25s | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency\n");
+    printf("%-25s | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency\n", "Configuration");
     printf("%-25s | --------------|----------|-----------|---------|------------\n", "Configuration");
 
     for (int i = 0; i < num_modes; i++) {

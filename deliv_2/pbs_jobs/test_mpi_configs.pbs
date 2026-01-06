@@ -41,7 +41,6 @@ echo "=== MPI Environment ==="
 which mpicc
 which mpirun
 mpicc --version
-ompi_info --version
 
 # Clean and recompile the MPI test executable
 echo ""
