@@ -278,12 +278,21 @@ int main(int argc, char* argv[]) {
     free(x_global);
     free(y_local);
     free(y_temp);
-    csr_free(A_local);
-    if (global_rank == 0) {
-        csr_free(A_global);
+    
+    /* Free CSR matrices */
+    if (A_local) {
+        if (A_local->row_ptr) free(A_local->row_ptr);
+        if (A_local->col_ind) free(A_local->col_ind);
+        if (A_local->values) free(A_local->values);
+        free(A_local);
     }
-    free(A_local);
-    if (global_rank == 0) free(A_global);
+    
+    if (A_global) {
+        if (A_global->row_ptr) free(A_global->row_ptr);
+        if (A_global->col_ind) free(A_global->col_ind);
+        if (A_global->values) free(A_global->values);
+        free(A_global);
+    }
 
     MPI_Finalize();
     return 0;
