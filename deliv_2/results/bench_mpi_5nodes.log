@@ -1,0 +1,965 @@
+========================================================================
+MPI COMMUNICATION MODES BENCHMARK LOG (5 NODES)
+========================================================================
+Started at: Wed Jan  7 11:40:33 CET 2026
+Executable: ./test_config_mpi
+Timeout per run: 3600s
+Iterations per mode: 10
+Node counts: 5
+Test matrices: 11
+  - 36k_0p17.mtx 98k_0p52.mtx 262k_0p0011.mtx 326k_0p0030.mtx 916k_0p0006.mtx 1135k_0p0002.mtx 1508k_0p0012.mtx 1585k_0p0002.mtx 3998k_0p0002.mtx 4194k_0p0001.mtx 5155k_0p0004.mtx
+========================================================================
+
+=== Testing MPI connectivity ===
+PBS_NODEFILE: /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it
+Node file contents:
+hpc-c03-node26.unitn.it
+hpc-c03-node19.unitn.it
+hpc-c03-node25.unitn.it
+hpc-c03-node18.unitn.it
+hpc-g04-node01.unitn.it
+Testing mpirun with hostname...
+hpc-c03-node26.unitn.it
+hpc-g04-node01.unitn.it
+hpc-c03-node19.unitn.it
+hpc-c03-node18.unitn.it
+hpc-c03-node25.unitn.it
+=== Testing with 5 MPI ranks ===
+Output CSV: results/test_config_mpi_results_5nodes.csv
+=== Matrix: 36k_0p17.mtx (nodes=5) ===
+  Start time: Wed Jan  7 11:40:34 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 5 -hostfile /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it ./test_config_mpi matrices/36k_0p17.mtx 10
+  Exit code: 255
+  End time: Wed Jan  7 11:40:40 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 36417 x 36417 with 2190591 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 4344765
+      CSR conversion complete: 4344765 non-zeros (0.3276% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/36k_0p17.mtx
+    Dimensions: 36417 × 36417, 4344765 NNZ (0.3276% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=36417, n_global=36417, nnz=4344765
+    DEBUG: Allocated x_global with 36417 floats (0.14 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    ===================================================================================
+    =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+    =   PID 40970 RUNNING AT hpc-c03-node26.unitn.it
+    =   EXIT CODE: 134
+    =   CLEANING UP REMAINING PROCESSES
+    =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+    ===================================================================================
+  Stderr output (first 50 lines):
+    *** Error in `./test_config_mpi': double free or corruption (out): 0x00000000020f2ba0 ***
+    ======= Backtrace: =========
+    /lib64/libc.so.6(+0x81299)[0x2b334db78299]
+    /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPID_Recv+0x46e)[0x2b334d359ede]
+    /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPIC_Recv+0x41)[0x2b334d309c71]
+    /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPIR_Gather_intra+0x596)[0x2b334d271db6]
+    /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPIR_Gather+0x27)[0x2b334d272f57]
+    /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPIR_Gather_impl+0x4d)[0x2b334d2726ed]
+    /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPI_Gather+0x470)[0x2b334d273450]
+    ./test_config_mpi[0x402409]
+    ./test_config_mpi[0x402dc4]
+    ./test_config_mpi[0x401898]
+    /lib64/libc.so.6(__libc_start_main+0xf5)[0x2b334db19555]
+    ./test_config_mpi[0x401ef5]
+    ======= Memory map: ========
+    00400000-00406000 r-xp 00000000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00605000-00606000 r--p 00005000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00606000-00607000 rw-p 00006000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    0209d000-02113000 rw-p 00000000 00:00 0                                  [heap]
+    2b334ccf5000-2b334cd17000 r-xp 00000000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2b334cd17000-2b334cd19000 rw-p 00000000 00:00 0 
+    2b334cd29000-2b334ceb9000 rw-p 00000000 00:00 0 
+    2b334cf16000-2b334cf17000 r--p 00021000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2b334cf17000-2b334cf18000 rw-p 00022000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2b334cf18000-2b334cf19000 rw-p 00000000 00:00 0 
+    2b334cf19000-2b334d01a000 r-xp 00000000 08:01 10491304                   /usr/lib64/libm-2.17.so
+    2b334d01a000-2b334d219000 ---p 00101000 08:01 10491304                   /usr/lib64/libm-2.17.so
+    2b334d219000-2b334d21a000 r--p 00100000 08:01 10491304                   /usr/lib64/libm-2.17.so
+    2b334d21a000-2b334d21b000 rw-p 00101000 08:01 10491304                   /usr/lib64/libm-2.17.so
+    2b334d21b000-2b334d45a000 r-xp 00000000 00:4e 9226492386434270407        /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12.1.1
+    2b334d45a000-2b334d659000 ---p 0023f000 00:4e 9226492386434270407        /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12.1.1
+    2b334d659000-2b334d667000 r--p 0023e000 00:4e 9226492386434270407        /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12.1.1
+    2b334d667000-2b334d66b000 rw-p 0024c000 00:4e 9226492386434270407        /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12.1.1
+    2b334d66b000-2b334d6a5000 rw-p 00000000 00:00 0 
+    2b334d6a5000-2b334d6d9000 r-xp 00000000 00:4e 9226492386429962024        /apps/gcc-9.1.0/local/lib64/libgomp.so.1.0.0
+    2b334d6d9000-2b334d8d9000 ---p 00034000 00:4e 9226492386429962024        /apps/gcc-9.1.0/local/lib64/libgomp.so.1.0.0
+    2b334d8d9000-2b334d8da000 r--p 00034000 00:4e 9226492386429962024        /apps/gcc-9.1.0/local/lib64/libgomp.so.1.0.0
+    2b334d8da000-2b334d8db000 rw-p 00035000 00:4e 9226492386429962024        /apps/gcc-9.1.0/local/lib64/libgomp.so.1.0.0
+    2b334d8db000-2b334d8f2000 r-xp 00000000 08:01 10491340                   /usr/lib64/libpthread-2.17.so
+    2b334d8f2000-2b334daf1000 ---p 00017000 08:01 10491340                   /usr/lib64/libpthread-2.17.so
+    2b334daf1000-2b334daf2000 r--p 00016000 08:01 10491340                   /usr/lib64/libpthread-2.17.so
+    2b334daf2000-2b334daf3000 rw-p 00017000 08:01 10491340                   /usr/lib64/libpthread-2.17.so
+    2b334daf3000-2b334daf7000 rw-p 00000000 00:00 0 
+    2b334daf7000-2b334dcba000 r-xp 00000000 08:01 10491288                   /usr/lib64/libc-2.17.so
+    2b334dcba000-2b334deba000 ---p 001c3000 08:01 10491288                   /usr/lib64/libc-2.17.so
+    2b334deba000-2b334debe000 r--p 001c3000 08:01 10491288                   /usr/lib64/libc-2.17.so
+    2b334debe000-2b334dec0000 rw-p 001c7000 08:01 10491288                   /usr/lib64/libc-2.17.so
+    2b334dec0000-2b334dec5000 rw-p 00000000 00:00 0 
+    2b334dec5000-2b334decc000 r-xp 00000000 08:01 10491348                   /usr/lib64/librt-2.17.so
+    2b334decc000-2b334e0cb000 ---p 00007000 08:01 10491348                   /usr/lib64/librt-2.17.so
+  ERROR: Test failed with exit code 255
+  stderr output:
+    *** Error in `./test_config_mpi': double free or corruption (out): 0x00000000020f2ba0 ***
+    ======= Backtrace: =========
+    /lib64/libc.so.6(+0x81299)[0x2b334db78299]
+    /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPID_Recv+0x46e)[0x2b334d359ede]
+    /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPIC_Recv+0x41)[0x2b334d309c71]
+    /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPIR_Gather_intra+0x596)[0x2b334d271db6]
+    /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPIR_Gather+0x27)[0x2b334d272f57]
+    /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPIR_Gather_impl+0x4d)[0x2b334d2726ed]
+    /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPI_Gather+0x470)[0x2b334d273450]
+    ./test_config_mpi[0x402409]
+    ./test_config_mpi[0x402dc4]
+    ./test_config_mpi[0x401898]
+    /lib64/libc.so.6(__libc_start_main+0xf5)[0x2b334db19555]
+    ./test_config_mpi[0x401ef5]
+    ======= Memory map: ========
+    00400000-00406000 r-xp 00000000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00605000-00606000 r--p 00005000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00606000-00607000 rw-p 00006000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    0209d000-02113000 rw-p 00000000 00:00 0                                  [heap]
+    2b334ccf5000-2b334cd17000 r-xp 00000000 08:01 10491754                   /usr/lib64/ld-2.17.so
+  stderr size: 14378 bytes
+*** Error in `./test_config_mpi': double free or corruption (out): 0x00000000020f2ba0 ***
+======= Backtrace: =========
+/lib64/libc.so.6(+0x81299)[0x2b334db78299]
+/apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPID_Recv+0x46e)[0x2b334d359ede]
+/apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPIC_Recv+0x41)[0x2b334d309c71]
+/apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPIR_Gather_intra+0x596)[0x2b334d271db6]
+/apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPIR_Gather+0x27)[0x2b334d272f57]
+/apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPIR_Gather_impl+0x4d)[0x2b334d2726ed]
+/apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12(MPI_Gather+0x470)[0x2b334d273450]
+./test_config_mpi[0x402409]
+=== Matrix: 98k_0p52.mtx (nodes=5) ===
+  Start time: Wed Jan  7 11:40:41 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 5 -hostfile /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it ./test_config_mpi matrices/98k_0p52.mtx 10
+  Exit code: 0
+  End time: Wed Jan  7 11:41:29 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 98303 x 98303 with 50122871 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 100245742
+      CSR conversion complete: 100245742 non-zeros (9.3378% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/98k_0p52.mtx
+    Dimensions: 98303 × 98303, 100245742 NNZ (9.3378% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=98303, n_global=98303, nnz=100245742
+    DEBUG: Allocated x_global with 98303 floats (0.37 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0446 |   0.0126 |    0.0342 |    1.00 |      20.00%
+    Isend/Irecv               |        0.0272 |   0.0035 |    0.0171 |    1.64 |      32.76%
+    Allgather                 |        0.0207 |   0.0022 |    0.0101 |    2.15 |      43.00%
+    Pipelined                 |        0.0152 |   0.0014 |    0.0047 |    2.93 |      58.70%
+    Ring_Reduce               |        0.0192 |   0.1435 |    0.0572 |    2.33 |      46.54%
+    Async_Collectives         |        0.0260 |   0.0002 |    0.0156 |    1.71 |      34.27%
+    
+    Results written to: results/test_config_mpi_results_5nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 98303 x 98303 with 50122871 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 100245742
+      CSR conversion complete: 100245742 non-zeros (9.3378% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/98k_0p52.mtx
+    Dimensions: 98303 × 98303, 100245742 NNZ (9.3378% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=98303, n_global=98303, nnz=100245742
+    DEBUG: Allocated x_global with 98303 floats (0.37 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0446 |   0.0126 |    0.0342 |    1.00 |      20.00%
+    Isend/Irecv               |        0.0272 |   0.0035 |    0.0171 |    1.64 |      32.76%
+    Allgather                 |        0.0207 |   0.0022 |    0.0101 |    2.15 |      43.00%
+    Pipelined                 |        0.0152 |   0.0014 |    0.0047 |    2.93 |      58.70%
+    Ring_Reduce               |        0.0192 |   0.1435 |    0.0572 |    2.33 |      46.54%
+    Async_Collectives         |        0.0260 |   0.0002 |    0.0156 |    1.71 |      34.27%
+    
+    Results written to: results/test_config_mpi_results_5nodes.csv
+=== Matrix: 262k_0p0011.mtx (nodes=5) ===
+  Start time: Wed Jan  7 11:41:30 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 5 -hostfile /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it ./test_config_mpi matrices/262k_0p0011.mtx 10
+  Exit code: 0
+  End time: Wed Jan  7 11:41:33 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 262144 x 262144 with 786396 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 1572792
+      CSR conversion complete: 1572792 non-zeros (inf% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/262k_0p0011.mtx
+    Dimensions: 262144 × 262144, 1572792 NNZ (inf% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=262144, n_global=262144, nnz=1572792
+    DEBUG: Allocated x_global with 262144 floats (1.00 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0260 |   0.0025 |    0.0031 |    1.00 |      20.00%
+    Isend/Irecv               |        0.0096 |   0.0036 |    0.0044 |    2.69 |      53.80%
+    Allgather                 |        0.0103 |   0.0000 |    0.0052 |    2.51 |      50.17%
+    Pipelined                 |        0.0104 |   0.0000 |    0.0051 |    2.51 |      50.13%
+    Ring_Reduce               |        0.0102 |   0.0000 |    0.0050 |    2.54 |      50.71%
+    Async_Collectives         |        0.0097 |   0.0001 |    0.0045 |    2.68 |      53.53%
+    
+    Results written to: results/test_config_mpi_results_5nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 262144 x 262144 with 786396 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 1572792
+      CSR conversion complete: 1572792 non-zeros (inf% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/262k_0p0011.mtx
+    Dimensions: 262144 × 262144, 1572792 NNZ (inf% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=262144, n_global=262144, nnz=1572792
+    DEBUG: Allocated x_global with 262144 floats (1.00 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0260 |   0.0025 |    0.0031 |    1.00 |      20.00%
+    Isend/Irecv               |        0.0096 |   0.0036 |    0.0044 |    2.69 |      53.80%
+    Allgather                 |        0.0103 |   0.0000 |    0.0052 |    2.51 |      50.17%
+    Pipelined                 |        0.0104 |   0.0000 |    0.0051 |    2.51 |      50.13%
+    Ring_Reduce               |        0.0102 |   0.0000 |    0.0050 |    2.54 |      50.71%
+    Async_Collectives         |        0.0097 |   0.0001 |    0.0045 |    2.68 |      53.53%
+    
+    Results written to: results/test_config_mpi_results_5nodes.csv
+=== Matrix: 326k_0p0030.mtx (nodes=5) ===
+  Start time: Wed Jan  7 11:41:34 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 5 -hostfile /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it ./test_config_mpi matrices/326k_0p0030.mtx 10
+  Exit code: 255
+  End time: Wed Jan  7 11:41:38 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 325557 x 325557 with 3216152 non-zeros from file
+      Total entries after expansion: 3216152
+      CSR conversion complete: 3216152 non-zeros (-0.2319% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/326k_0p0030.mtx
+    Dimensions: 325557 × 325557, 3216152 NNZ (-0.2319% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=325557, n_global=325557, nnz=3216152
+    DEBUG: Allocated x_global with 325557 floats (1.24 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    ===================================================================================
+    =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+    =   PID 41192 RUNNING AT hpc-c03-node26.unitn.it
+    =   EXIT CODE: 134
+    =   CLEANING UP REMAINING PROCESSES
+    =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+    ===================================================================================
+  Stderr output (first 50 lines):
+    *** Error in `./test_config_mpi': double free or corruption (!prev): 0x0000000000cedc10 ***
+    ======= Backtrace: =========
+    /lib64/libc.so.6(+0x81299)[0x2ba47dd03299]
+    ./test_config_mpi[0x40242f]
+    ./test_config_mpi[0x402dc4]
+    ./test_config_mpi[0x401898]
+    /lib64/libc.so.6(__libc_start_main+0xf5)[0x2ba47dca4555]
+    ./test_config_mpi[0x401ef5]
+    ======= Memory map: ========
+    00400000-00406000 r-xp 00000000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00605000-00606000 r--p 00005000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00606000-00607000 rw-p 00006000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00cd1000-00e4c000 rw-p 00000000 00:00 0                                  [heap]
+    2ba47ce80000-2ba47cea2000 r-xp 00000000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2ba47cea2000-2ba47cea4000 rw-p 00000000 00:00 0 
+    2ba47ceb4000-2ba47d07c000 rw-p 00000000 00:00 0 
+    2ba47d0a1000-2ba47d0a2000 r--p 00021000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2ba47d0a2000-2ba47d0a3000 rw-p 00022000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2ba47d0a3000-2ba47d0a4000 rw-p 00000000 00:00 0 
+    2ba47d0a4000-2ba47d1a5000 r-xp 00000000 08:01 10491304                   /usr/lib64/libm-2.17.so
+    2ba47d1a5000-2ba47d3a4000 ---p 00101000 08:01 10491304                   /usr/lib64/libm-2.17.so
+    2ba47d3a4000-2ba47d3a5000 r--p 00100000 08:01 10491304                   /usr/lib64/libm-2.17.so
+    2ba47d3a5000-2ba47d3a6000 rw-p 00101000 08:01 10491304                   /usr/lib64/libm-2.17.so
+    2ba47d3a6000-2ba47d5e5000 r-xp 00000000 00:4e 9226492386434270407        /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12.1.1
+    2ba47d5e5000-2ba47d7e4000 ---p 0023f000 00:4e 9226492386434270407        /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12.1.1
+    2ba47d7e4000-2ba47d7f2000 r--p 0023e000 00:4e 9226492386434270407        /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12.1.1
+    2ba47d7f2000-2ba47d7f6000 rw-p 0024c000 00:4e 9226492386434270407        /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12.1.1
+    2ba47d7f6000-2ba47d830000 rw-p 00000000 00:00 0 
+    2ba47d830000-2ba47d864000 r-xp 00000000 00:4e 9226492386429962024        /apps/gcc-9.1.0/local/lib64/libgomp.so.1.0.0
+    2ba47d864000-2ba47da64000 ---p 00034000 00:4e 9226492386429962024        /apps/gcc-9.1.0/local/lib64/libgomp.so.1.0.0
+    2ba47da64000-2ba47da65000 r--p 00034000 00:4e 9226492386429962024        /apps/gcc-9.1.0/local/lib64/libgomp.so.1.0.0
+    2ba47da65000-2ba47da66000 rw-p 00035000 00:4e 9226492386429962024        /apps/gcc-9.1.0/local/lib64/libgomp.so.1.0.0
+    2ba47da66000-2ba47da7d000 r-xp 00000000 08:01 10491340                   /usr/lib64/libpthread-2.17.so
+    2ba47da7d000-2ba47dc7c000 ---p 00017000 08:01 10491340                   /usr/lib64/libpthread-2.17.so
+    2ba47dc7c000-2ba47dc7d000 r--p 00016000 08:01 10491340                   /usr/lib64/libpthread-2.17.so
+    2ba47dc7d000-2ba47dc7e000 rw-p 00017000 08:01 10491340                   /usr/lib64/libpthread-2.17.so
+    2ba47dc7e000-2ba47dc82000 rw-p 00000000 00:00 0 
+    2ba47dc82000-2ba47de45000 r-xp 00000000 08:01 10491288                   /usr/lib64/libc-2.17.so
+    2ba47de45000-2ba47e045000 ---p 001c3000 08:01 10491288                   /usr/lib64/libc-2.17.so
+    2ba47e045000-2ba47e049000 r--p 001c3000 08:01 10491288                   /usr/lib64/libc-2.17.so
+    2ba47e049000-2ba47e04b000 rw-p 001c7000 08:01 10491288                   /usr/lib64/libc-2.17.so
+    2ba47e04b000-2ba47e050000 rw-p 00000000 00:00 0 
+    2ba47e050000-2ba47e057000 r-xp 00000000 08:01 10491348                   /usr/lib64/librt-2.17.so
+    2ba47e057000-2ba47e256000 ---p 00007000 08:01 10491348                   /usr/lib64/librt-2.17.so
+    2ba47e256000-2ba47e257000 r--p 00006000 08:01 10491348                   /usr/lib64/librt-2.17.so
+    2ba47e257000-2ba47e258000 rw-p 00007000 08:01 10491348                   /usr/lib64/librt-2.17.so
+    2ba47e258000-2ba47e4e0000 r-xp 00000000 00:4e 9226492386429962001        /apps/gcc-9.1.0/local/lib64/libgfortran.so.5.0.0
+    2ba47e4e0000-2ba47e6e0000 ---p 00288000 00:4e 9226492386429962001        /apps/gcc-9.1.0/local/lib64/libgfortran.so.5.0.0
+    2ba47e6e0000-2ba47e6e1000 r--p 00288000 00:4e 9226492386429962001        /apps/gcc-9.1.0/local/lib64/libgfortran.so.5.0.0
+    2ba47e6e1000-2ba47e6e3000 rw-p 00289000 00:4e 9226492386429962001        /apps/gcc-9.1.0/local/lib64/libgfortran.so.5.0.0
+  ERROR: Test failed with exit code 255
+  stderr output:
+    *** Error in `./test_config_mpi': double free or corruption (!prev): 0x0000000000cedc10 ***
+    ======= Backtrace: =========
+    /lib64/libc.so.6(+0x81299)[0x2ba47dd03299]
+    ./test_config_mpi[0x40242f]
+    ./test_config_mpi[0x402dc4]
+    ./test_config_mpi[0x401898]
+    /lib64/libc.so.6(__libc_start_main+0xf5)[0x2ba47dca4555]
+    ./test_config_mpi[0x401ef5]
+    ======= Memory map: ========
+    00400000-00406000 r-xp 00000000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00605000-00606000 r--p 00005000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00606000-00607000 rw-p 00006000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00cd1000-00e4c000 rw-p 00000000 00:00 0                                  [heap]
+    2ba47ce80000-2ba47cea2000 r-xp 00000000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2ba47cea2000-2ba47cea4000 rw-p 00000000 00:00 0 
+    2ba47ceb4000-2ba47d07c000 rw-p 00000000 00:00 0 
+    2ba47d0a1000-2ba47d0a2000 r--p 00021000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2ba47d0a2000-2ba47d0a3000 rw-p 00022000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2ba47d0a3000-2ba47d0a4000 rw-p 00000000 00:00 0 
+    2ba47d0a4000-2ba47d1a5000 r-xp 00000000 08:01 10491304                   /usr/lib64/libm-2.17.so
+  stderr size: 13891 bytes
+*** Error in `./test_config_mpi': double free or corruption (!prev): 0x0000000000cedc10 ***
+======= Backtrace: =========
+/lib64/libc.so.6(+0x81299)[0x2ba47dd03299]
+./test_config_mpi[0x40242f]
+./test_config_mpi[0x402dc4]
+./test_config_mpi[0x401898]
+/lib64/libc.so.6(__libc_start_main+0xf5)[0x2ba47dca4555]
+./test_config_mpi[0x401ef5]
+======= Memory map: ========
+00400000-00406000 r-xp 00000000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+=== Matrix: 916k_0p0006.mtx (nodes=5) ===
+  Start time: Wed Jan  7 11:41:39 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 5 -hostfile /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it ./test_config_mpi matrices/916k_0p0006.mtx 10
+  Exit code: 0
+  End time: Wed Jan  7 11:41:46 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 916428 x 916428 with 5105039 non-zeros from file
+      Total entries after expansion: 5105039
+      CSR conversion complete: 5105039 non-zeros (-0.2587% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/916k_0p0006.mtx
+    Dimensions: 916428 × 916428, 5105039 NNZ (-0.2587% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=916428, n_global=916428, nnz=5105039
+    DEBUG: Allocated x_global with 916428 floats (3.50 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0324 |   0.0044 |    0.0177 |    1.00 |      20.00%
+    Isend/Irecv               |        0.0316 |   0.0001 |    0.0156 |    1.03 |      20.52%
+    Allgather                 |        0.0322 |   0.0001 |    0.0163 |    1.01 |      20.11%
+    Pipelined                 |        0.0324 |   0.0053 |    0.0153 |    1.00 |      20.03%
+    Ring_Reduce               |        0.0324 |   0.0004 |    0.0166 |    1.00 |      19.99%
+    Async_Collectives         |        0.0319 |   0.0001 |    0.0158 |    1.02 |      20.35%
+    
+    Results written to: results/test_config_mpi_results_5nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 916428 x 916428 with 5105039 non-zeros from file
+      Total entries after expansion: 5105039
+      CSR conversion complete: 5105039 non-zeros (-0.2587% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/916k_0p0006.mtx
+    Dimensions: 916428 × 916428, 5105039 NNZ (-0.2587% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=916428, n_global=916428, nnz=5105039
+    DEBUG: Allocated x_global with 916428 floats (3.50 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0324 |   0.0044 |    0.0177 |    1.00 |      20.00%
+    Isend/Irecv               |        0.0316 |   0.0001 |    0.0156 |    1.03 |      20.52%
+    Allgather                 |        0.0322 |   0.0001 |    0.0163 |    1.01 |      20.11%
+    Pipelined                 |        0.0324 |   0.0053 |    0.0153 |    1.00 |      20.03%
+    Ring_Reduce               |        0.0324 |   0.0004 |    0.0166 |    1.00 |      19.99%
+    Async_Collectives         |        0.0319 |   0.0001 |    0.0158 |    1.02 |      20.35%
+    
+    Results written to: results/test_config_mpi_results_5nodes.csv
+=== Matrix: 1135k_0p0002.mtx (nodes=5) ===
+  Start time: Wed Jan  7 11:41:47 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 5 -hostfile /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it ./test_config_mpi matrices/1135k_0p0002.mtx 10
+  Exit code: 0
+  End time: Wed Jan  7 11:41:53 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 1134890 x 1134890 with 2987624 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 5975248
+      CSR conversion complete: 5975248 non-zeros (-1.1605% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/1135k_0p0002.mtx
+    Dimensions: 1134890 × 1134890, 5975248 NNZ (-1.1605% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=1134890, n_global=1134890, nnz=5975248
+    DEBUG: Allocated x_global with 1134890 floats (4.33 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0444 |   0.0011 |    0.0223 |    1.00 |      20.00%
+    Isend/Irecv               |        0.0399 |   0.0011 |    0.0199 |    1.11 |      22.27%
+    Allgather                 |        0.0443 |   0.0064 |    0.0191 |    1.00 |      20.05%
+    Pipelined                 |        0.0444 |   0.0003 |    0.0241 |    1.00 |      20.02%
+    Ring_Reduce               |        0.0449 |   0.0219 |    0.0371 |    0.99 |      19.76%
+    Async_Collectives         |        0.0398 |   0.0084 |    0.0238 |    1.11 |      22.28%
+    
+    Results written to: results/test_config_mpi_results_5nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 1134890 x 1134890 with 2987624 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 5975248
+      CSR conversion complete: 5975248 non-zeros (-1.1605% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/1135k_0p0002.mtx
+    Dimensions: 1134890 × 1134890, 5975248 NNZ (-1.1605% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=1134890, n_global=1134890, nnz=5975248
+    DEBUG: Allocated x_global with 1134890 floats (4.33 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0444 |   0.0011 |    0.0223 |    1.00 |      20.00%
+    Isend/Irecv               |        0.0399 |   0.0011 |    0.0199 |    1.11 |      22.27%
+    Allgather                 |        0.0443 |   0.0064 |    0.0191 |    1.00 |      20.05%
+    Pipelined                 |        0.0444 |   0.0003 |    0.0241 |    1.00 |      20.02%
+    Ring_Reduce               |        0.0449 |   0.0219 |    0.0371 |    0.99 |      19.76%
+    Async_Collectives         |        0.0398 |   0.0084 |    0.0238 |    1.11 |      22.28%
+    
+    Results written to: results/test_config_mpi_results_5nodes.csv
+=== Matrix: 1508k_0p0012.mtx (nodes=5) ===
+  Start time: Wed Jan  7 11:41:54 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 5 -hostfile /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it ./test_config_mpi matrices/1508k_0p0012.mtx 10
+  Exit code: 0
+  End time: Wed Jan  7 11:42:36 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 1508065 x 1508065 with 27090195 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 52672325
+      CSR conversion complete: 52672325 non-zeros (-2.5413% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/1508k_0p0012.mtx
+    Dimensions: 1508065 × 1508065, 52672325 NNZ (-2.5413% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=1508065, n_global=1508065, nnz=52672325
+    DEBUG: Allocated x_global with 1508065 floats (5.75 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0472 |   0.0051 |    0.0250 |    1.00 |      20.00%
+    Isend/Irecv               |        0.0497 |   0.0001 |    0.0260 |    0.95 |      18.99%
+    Allgather                 |        0.0472 |   0.0012 |    0.0240 |    1.00 |      20.02%
+    Pipelined                 |        0.0471 |   0.2188 |    0.1227 |    1.00 |      20.05%
+    Ring_Reduce               |        0.0472 |   0.0043 |    0.0251 |    1.00 |      20.01%
+    Async_Collectives         |        0.0499 |   0.0010 |    0.0260 |    0.95 |      18.92%
+    
+    Results written to: results/test_config_mpi_results_5nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 1508065 x 1508065 with 27090195 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 52672325
+      CSR conversion complete: 52672325 non-zeros (-2.5413% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/1508k_0p0012.mtx
+    Dimensions: 1508065 × 1508065, 52672325 NNZ (-2.5413% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=1508065, n_global=1508065, nnz=52672325
+    DEBUG: Allocated x_global with 1508065 floats (5.75 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0472 |   0.0051 |    0.0250 |    1.00 |      20.00%
+    Isend/Irecv               |        0.0497 |   0.0001 |    0.0260 |    0.95 |      18.99%
+    Allgather                 |        0.0472 |   0.0012 |    0.0240 |    1.00 |      20.02%
+    Pipelined                 |        0.0471 |   0.2188 |    0.1227 |    1.00 |      20.05%
+    Ring_Reduce               |        0.0472 |   0.0043 |    0.0251 |    1.00 |      20.01%
+    Async_Collectives         |        0.0499 |   0.0010 |    0.0260 |    0.95 |      18.92%
+    
+    Results written to: results/test_config_mpi_results_5nodes.csv
+=== Matrix: 1585k_0p0002.mtx (nodes=5) ===
+  Start time: Wed Jan  7 11:42:38 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 5 -hostfile /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it ./test_config_mpi matrices/1585k_0p0002.mtx 10
+  Exit code: 255
+  End time: Wed Jan  7 11:42:45 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 1585478 x 1585478 with 4623152 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 7660826
+      CSR conversion complete: 7660826 non-zeros (0.6467% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/1585k_0p0002.mtx
+    Dimensions: 1585478 × 1585478, 7660826 NNZ (0.6467% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=1585478, n_global=1585478, nnz=7660826
+    DEBUG: Allocated x_global with 1585478 floats (6.05 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    ===================================================================================
+    =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+    =   PID 41486 RUNNING AT hpc-c03-node26.unitn.it
+    =   EXIT CODE: 134
+    =   CLEANING UP REMAINING PROCESSES
+    =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+    ===================================================================================
+  Stderr output (first 50 lines):
+    *** Error in `./test_config_mpi': double free or corruption (!prev): 0x0000000000ebec10 ***
+    ======= Backtrace: =========
+    /lib64/libc.so.6(+0x81299)[0x2ac01e9ac299]
+    ./test_config_mpi[0x40242f]
+    ./test_config_mpi[0x402dc4]
+    ./test_config_mpi[0x401898]
+    /lib64/libc.so.6(__libc_start_main+0xf5)[0x2ac01e94d555]
+    ./test_config_mpi[0x401ef5]
+    ======= Memory map: ========
+    00400000-00406000 r-xp 00000000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00605000-00606000 r--p 00005000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00606000-00607000 rw-p 00006000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00ea2000-014ec000 rw-p 00000000 00:00 0                                  [heap]
+    2ac01db29000-2ac01db4b000 r-xp 00000000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2ac01db4b000-2ac01db4d000 rw-p 00000000 00:00 0 
+    2ac01db5d000-2ac01dca5000 rw-p 00000000 00:00 0 
+    2ac01dd4a000-2ac01dd4b000 r--p 00021000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2ac01dd4b000-2ac01dd4c000 rw-p 00022000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2ac01dd4c000-2ac01dd4d000 rw-p 00000000 00:00 0 
+    2ac01dd4d000-2ac01de4e000 r-xp 00000000 08:01 10491304                   /usr/lib64/libm-2.17.so
+    2ac01de4e000-2ac01e04d000 ---p 00101000 08:01 10491304                   /usr/lib64/libm-2.17.so
+    2ac01e04d000-2ac01e04e000 r--p 00100000 08:01 10491304                   /usr/lib64/libm-2.17.so
+    2ac01e04e000-2ac01e04f000 rw-p 00101000 08:01 10491304                   /usr/lib64/libm-2.17.so
+    2ac01e04f000-2ac01e28e000 r-xp 00000000 00:4e 9226492386434270407        /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12.1.1
+    2ac01e28e000-2ac01e48d000 ---p 0023f000 00:4e 9226492386434270407        /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12.1.1
+    2ac01e48d000-2ac01e49b000 r--p 0023e000 00:4e 9226492386434270407        /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12.1.1
+    2ac01e49b000-2ac01e49f000 rw-p 0024c000 00:4e 9226492386434270407        /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12.1.1
+    2ac01e49f000-2ac01e4d9000 rw-p 00000000 00:00 0 
+    2ac01e4d9000-2ac01e50d000 r-xp 00000000 00:4e 9226492386429962024        /apps/gcc-9.1.0/local/lib64/libgomp.so.1.0.0
+    2ac01e50d000-2ac01e70d000 ---p 00034000 00:4e 9226492386429962024        /apps/gcc-9.1.0/local/lib64/libgomp.so.1.0.0
+    2ac01e70d000-2ac01e70e000 r--p 00034000 00:4e 9226492386429962024        /apps/gcc-9.1.0/local/lib64/libgomp.so.1.0.0
+    2ac01e70e000-2ac01e70f000 rw-p 00035000 00:4e 9226492386429962024        /apps/gcc-9.1.0/local/lib64/libgomp.so.1.0.0
+    2ac01e70f000-2ac01e726000 r-xp 00000000 08:01 10491340                   /usr/lib64/libpthread-2.17.so
+    2ac01e726000-2ac01e925000 ---p 00017000 08:01 10491340                   /usr/lib64/libpthread-2.17.so
+    2ac01e925000-2ac01e926000 r--p 00016000 08:01 10491340                   /usr/lib64/libpthread-2.17.so
+    2ac01e926000-2ac01e927000 rw-p 00017000 08:01 10491340                   /usr/lib64/libpthread-2.17.so
+    2ac01e927000-2ac01e92b000 rw-p 00000000 00:00 0 
+    2ac01e92b000-2ac01eaee000 r-xp 00000000 08:01 10491288                   /usr/lib64/libc-2.17.so
+    2ac01eaee000-2ac01ecee000 ---p 001c3000 08:01 10491288                   /usr/lib64/libc-2.17.so
+    2ac01ecee000-2ac01ecf2000 r--p 001c3000 08:01 10491288                   /usr/lib64/libc-2.17.so
+    2ac01ecf2000-2ac01ecf4000 rw-p 001c7000 08:01 10491288                   /usr/lib64/libc-2.17.so
+    2ac01ecf4000-2ac01ecf9000 rw-p 00000000 00:00 0 
+    2ac01ecf9000-2ac01ed00000 r-xp 00000000 08:01 10491348                   /usr/lib64/librt-2.17.so
+    2ac01ed00000-2ac01eeff000 ---p 00007000 08:01 10491348                   /usr/lib64/librt-2.17.so
+    2ac01eeff000-2ac01ef00000 r--p 00006000 08:01 10491348                   /usr/lib64/librt-2.17.so
+    2ac01ef00000-2ac01ef01000 rw-p 00007000 08:01 10491348                   /usr/lib64/librt-2.17.so
+    2ac01ef01000-2ac01f189000 r-xp 00000000 00:4e 9226492386429962001        /apps/gcc-9.1.0/local/lib64/libgfortran.so.5.0.0
+    2ac01f189000-2ac01f389000 ---p 00288000 00:4e 9226492386429962001        /apps/gcc-9.1.0/local/lib64/libgfortran.so.5.0.0
+    2ac01f389000-2ac01f38a000 r--p 00288000 00:4e 9226492386429962001        /apps/gcc-9.1.0/local/lib64/libgfortran.so.5.0.0
+    2ac01f38a000-2ac01f38c000 rw-p 00289000 00:4e 9226492386429962001        /apps/gcc-9.1.0/local/lib64/libgfortran.so.5.0.0
+  ERROR: Test failed with exit code 255
+  stderr output:
+    *** Error in `./test_config_mpi': double free or corruption (!prev): 0x0000000000ebec10 ***
+    ======= Backtrace: =========
+    /lib64/libc.so.6(+0x81299)[0x2ac01e9ac299]
+    ./test_config_mpi[0x40242f]
+    ./test_config_mpi[0x402dc4]
+    ./test_config_mpi[0x401898]
+    /lib64/libc.so.6(__libc_start_main+0xf5)[0x2ac01e94d555]
+    ./test_config_mpi[0x401ef5]
+    ======= Memory map: ========
+    00400000-00406000 r-xp 00000000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00605000-00606000 r--p 00005000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00606000-00607000 rw-p 00006000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00ea2000-014ec000 rw-p 00000000 00:00 0                                  [heap]
+    2ac01db29000-2ac01db4b000 r-xp 00000000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2ac01db4b000-2ac01db4d000 rw-p 00000000 00:00 0 
+    2ac01db5d000-2ac01dca5000 rw-p 00000000 00:00 0 
+    2ac01dd4a000-2ac01dd4b000 r--p 00021000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2ac01dd4b000-2ac01dd4c000 rw-p 00022000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2ac01dd4c000-2ac01dd4d000 rw-p 00000000 00:00 0 
+    2ac01dd4d000-2ac01de4e000 r-xp 00000000 08:01 10491304                   /usr/lib64/libm-2.17.so
+  stderr size: 13891 bytes
+*** Error in `./test_config_mpi': double free or corruption (!prev): 0x0000000000ebec10 ***
+======= Backtrace: =========
+/lib64/libc.so.6(+0x81299)[0x2ac01e9ac299]
+./test_config_mpi[0x40242f]
+./test_config_mpi[0x402dc4]
+./test_config_mpi[0x401898]
+/lib64/libc.so.6(__libc_start_main+0xf5)[0x2ac01e94d555]
+./test_config_mpi[0x401ef5]
+======= Memory map: ========
+00400000-00406000 r-xp 00000000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+=== Matrix: 3998k_0p0002.mtx (nodes=5) ===
+  Start time: Wed Jan  7 11:42:46 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 5 -hostfile /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it ./test_config_mpi matrices/3998k_0p0002.mtx 10
+  Exit code: 255
+  End time: Wed Jan  7 11:43:30 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 3997962 x 3997962 with 34681189 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 69362378
+      CSR conversion complete: 69362378 non-zeros (3.2613% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/3998k_0p0002.mtx
+    Dimensions: 3997962 × 3997962, 69362378 NNZ (3.2613% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=3997962, n_global=3997962, nnz=69362378
+    DEBUG: Allocated x_global with 3997962 floats (15.25 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    ===================================================================================
+    =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+    =   PID 41566 RUNNING AT hpc-c03-node26.unitn.it
+    =   EXIT CODE: 134
+    =   CLEANING UP REMAINING PROCESSES
+    =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+    ===================================================================================
+  Stderr output (first 50 lines):
+    *** Error in `./test_config_mpi': double free or corruption (!prev): 0x0000000001da8c10 ***
+    ======= Backtrace: =========
+    /lib64/libc.so.6(+0x81299)[0x2b9065845299]
+    ./test_config_mpi[0x40242f]
+    ./test_config_mpi[0x402dc4]
+    ./test_config_mpi[0x401898]
+    /lib64/libc.so.6(__libc_start_main+0xf5)[0x2b90657e6555]
+    ./test_config_mpi[0x401ef5]
+    ======= Memory map: ========
+    00400000-00406000 r-xp 00000000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00605000-00606000 r--p 00005000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00606000-00607000 rw-p 00006000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    01d8c000-02d0a000 rw-p 00000000 00:00 0                                  [heap]
+    2b90649c2000-2b90649e4000 r-xp 00000000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2b90649e4000-2b90649e6000 rw-p 00000000 00:00 0 
+    2b90649f6000-2b9064b3e000 rw-p 00000000 00:00 0 
+    2b9064be3000-2b9064be4000 r--p 00021000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2b9064be4000-2b9064be5000 rw-p 00022000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2b9064be5000-2b9064be6000 rw-p 00000000 00:00 0 
+    2b9064be6000-2b9064ce7000 r-xp 00000000 08:01 10491304                   /usr/lib64/libm-2.17.so
+    2b9064ce7000-2b9064ee6000 ---p 00101000 08:01 10491304                   /usr/lib64/libm-2.17.so
+    2b9064ee6000-2b9064ee7000 r--p 00100000 08:01 10491304                   /usr/lib64/libm-2.17.so
+    2b9064ee7000-2b9064ee8000 rw-p 00101000 08:01 10491304                   /usr/lib64/libm-2.17.so
+    2b9064ee8000-2b9065127000 r-xp 00000000 00:4e 9226492386434270407        /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12.1.1
+    2b9065127000-2b9065326000 ---p 0023f000 00:4e 9226492386434270407        /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12.1.1
+    2b9065326000-2b9065334000 r--p 0023e000 00:4e 9226492386434270407        /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12.1.1
+    2b9065334000-2b9065338000 rw-p 0024c000 00:4e 9226492386434270407        /apps/mpich-3.2.1--gcc-9.1.0/lib/libmpi.so.12.1.1
+    2b9065338000-2b9065372000 rw-p 00000000 00:00 0 
+    2b9065372000-2b90653a6000 r-xp 00000000 00:4e 9226492386429962024        /apps/gcc-9.1.0/local/lib64/libgomp.so.1.0.0
+    2b90653a6000-2b90655a6000 ---p 00034000 00:4e 9226492386429962024        /apps/gcc-9.1.0/local/lib64/libgomp.so.1.0.0
+    2b90655a6000-2b90655a7000 r--p 00034000 00:4e 9226492386429962024        /apps/gcc-9.1.0/local/lib64/libgomp.so.1.0.0
+    2b90655a7000-2b90655a8000 rw-p 00035000 00:4e 9226492386429962024        /apps/gcc-9.1.0/local/lib64/libgomp.so.1.0.0
+    2b90655a8000-2b90655bf000 r-xp 00000000 08:01 10491340                   /usr/lib64/libpthread-2.17.so
+    2b90655bf000-2b90657be000 ---p 00017000 08:01 10491340                   /usr/lib64/libpthread-2.17.so
+    2b90657be000-2b90657bf000 r--p 00016000 08:01 10491340                   /usr/lib64/libpthread-2.17.so
+    2b90657bf000-2b90657c0000 rw-p 00017000 08:01 10491340                   /usr/lib64/libpthread-2.17.so
+    2b90657c0000-2b90657c4000 rw-p 00000000 00:00 0 
+    2b90657c4000-2b9065987000 r-xp 00000000 08:01 10491288                   /usr/lib64/libc-2.17.so
+    2b9065987000-2b9065b87000 ---p 001c3000 08:01 10491288                   /usr/lib64/libc-2.17.so
+    2b9065b87000-2b9065b8b000 r--p 001c3000 08:01 10491288                   /usr/lib64/libc-2.17.so
+    2b9065b8b000-2b9065b8d000 rw-p 001c7000 08:01 10491288                   /usr/lib64/libc-2.17.so
+    2b9065b8d000-2b9065b92000 rw-p 00000000 00:00 0 
+    2b9065b92000-2b9065b99000 r-xp 00000000 08:01 10491348                   /usr/lib64/librt-2.17.so
+    2b9065b99000-2b9065d98000 ---p 00007000 08:01 10491348                   /usr/lib64/librt-2.17.so
+    2b9065d98000-2b9065d99000 r--p 00006000 08:01 10491348                   /usr/lib64/librt-2.17.so
+    2b9065d99000-2b9065d9a000 rw-p 00007000 08:01 10491348                   /usr/lib64/librt-2.17.so
+    2b9065d9a000-2b9066022000 r-xp 00000000 00:4e 9226492386429962001        /apps/gcc-9.1.0/local/lib64/libgfortran.so.5.0.0
+    2b9066022000-2b9066222000 ---p 00288000 00:4e 9226492386429962001        /apps/gcc-9.1.0/local/lib64/libgfortran.so.5.0.0
+    2b9066222000-2b9066223000 r--p 00288000 00:4e 9226492386429962001        /apps/gcc-9.1.0/local/lib64/libgfortran.so.5.0.0
+    2b9066223000-2b9066225000 rw-p 00289000 00:4e 9226492386429962001        /apps/gcc-9.1.0/local/lib64/libgfortran.so.5.0.0
+  ERROR: Test failed with exit code 255
+  stderr output:
+    *** Error in `./test_config_mpi': double free or corruption (!prev): 0x0000000001da8c10 ***
+    ======= Backtrace: =========
+    /lib64/libc.so.6(+0x81299)[0x2b9065845299]
+    ./test_config_mpi[0x40242f]
+    ./test_config_mpi[0x402dc4]
+    ./test_config_mpi[0x401898]
+    /lib64/libc.so.6(__libc_start_main+0xf5)[0x2b90657e6555]
+    ./test_config_mpi[0x401ef5]
+    ======= Memory map: ========
+    00400000-00406000 r-xp 00000000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00605000-00606000 r--p 00005000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    00606000-00607000 rw-p 00006000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+    01d8c000-02d0a000 rw-p 00000000 00:00 0                                  [heap]
+    2b90649c2000-2b90649e4000 r-xp 00000000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2b90649e4000-2b90649e6000 rw-p 00000000 00:00 0 
+    2b90649f6000-2b9064b3e000 rw-p 00000000 00:00 0 
+    2b9064be3000-2b9064be4000 r--p 00021000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2b9064be4000-2b9064be5000 rw-p 00022000 08:01 10491754                   /usr/lib64/ld-2.17.so
+    2b9064be5000-2b9064be6000 rw-p 00000000 00:00 0 
+    2b9064be6000-2b9064ce7000 r-xp 00000000 08:01 10491304                   /usr/lib64/libm-2.17.so
+  stderr size: 13891 bytes
+*** Error in `./test_config_mpi': double free or corruption (!prev): 0x0000000001da8c10 ***
+======= Backtrace: =========
+/lib64/libc.so.6(+0x81299)[0x2b9065845299]
+./test_config_mpi[0x40242f]
+./test_config_mpi[0x402dc4]
+./test_config_mpi[0x401898]
+/lib64/libc.so.6(__libc_start_main+0xf5)[0x2b90657e6555]
+./test_config_mpi[0x401ef5]
+======= Memory map: ========
+00400000-00406000 r-xp 00000000 00:53 9226493095102356221                /home/jacopo.marchesin/PARCO-Computing-2026-244967/deliv_2/test_config_mpi
+=== Matrix: 4194k_0p0001.mtx (nodes=5) ===
+  Start time: Wed Jan  7 11:43:31 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 5 -hostfile /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it ./test_config_mpi matrices/4194k_0p0001.mtx 10
+  Exit code: 0
+  End time: Wed Jan  7 11:43:54 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 4194304 x 4194304 with 12582869 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 25165738
+      CSR conversion complete: 25165738 non-zeros (inf% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/4194k_0p0001.mtx
+    Dimensions: 4194304 × 4194304, 25165738 NNZ (inf% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=4194304, n_global=4194304, nnz=25165738
+    DEBUG: Allocated x_global with 4194304 floats (16.00 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.1641 |   0.0070 |    0.0739 |    1.00 |      20.00%
+    Isend/Irecv               |        0.1554 |   0.0557 |    0.0857 |    1.06 |      21.11%
+    Allgather                 |        0.1625 |   0.0054 |    0.0788 |    1.01 |      20.20%
+    Pipelined                 |        0.1630 |   0.0190 |    0.0822 |    1.01 |      20.13%
+    Ring_Reduce               |        0.1619 |   0.0182 |    0.0795 |    1.01 |      20.26%
+    Async_Collectives         |        0.1550 |   0.0028 |    0.0683 |    1.06 |      21.17%
+    
+    Results written to: results/test_config_mpi_results_5nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 4194304 x 4194304 with 12582869 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 25165738
+      CSR conversion complete: 25165738 non-zeros (inf% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/4194k_0p0001.mtx
+    Dimensions: 4194304 × 4194304, 25165738 NNZ (inf% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=4194304, n_global=4194304, nnz=25165738
+    DEBUG: Allocated x_global with 4194304 floats (16.00 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.1641 |   0.0070 |    0.0739 |    1.00 |      20.00%
+    Isend/Irecv               |        0.1554 |   0.0557 |    0.0857 |    1.06 |      21.11%
+    Allgather                 |        0.1625 |   0.0054 |    0.0788 |    1.01 |      20.20%
+    Pipelined                 |        0.1630 |   0.0190 |    0.0822 |    1.01 |      20.13%
+    Ring_Reduce               |        0.1619 |   0.0182 |    0.0795 |    1.01 |      20.26%
+    Async_Collectives         |        0.1550 |   0.0028 |    0.0683 |    1.06 |      21.17%
+    
+    Results written to: results/test_config_mpi_results_5nodes.csv
+=== Matrix: 5155k_0p0004.mtx (nodes=5) ===
+  Start time: Wed Jan  7 11:43:55 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 5 -hostfile /var/spool/pbs/aux/4908693.hpc-head-n1.unitn.it ./test_config_mpi matrices/5155k_0p0004.mtx 10
+  Exit code: 0
+  End time: Wed Jan  7 11:46:32 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 5154859 x 5154859 with 99199551 non-zeros from file
+      Total entries after expansion: 99199551
+      CSR conversion complete: 99199551 non-zeros (-25.3480% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/5155k_0p0004.mtx
+    Dimensions: 5154859 × 5154859, 99199551 NNZ (-25.3480% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=5154859, n_global=5154859, nnz=99199551
+    DEBUG: Allocated x_global with 5154859 floats (19.66 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.1685 |   0.0036 |    0.0792 |    1.00 |      20.00%
+    Isend/Irecv               |        0.1775 |   0.2924 |    0.2163 |    0.95 |      18.98%
+    Allgather                 |        0.1791 |   0.2299 |    0.2128 |    0.94 |      18.82%
+    Pipelined                 |        0.2036 |   0.2313 |    0.2319 |    0.83 |      16.55%
+    Ring_Reduce               |        0.2004 |   0.2330 |    0.2119 |    0.84 |      16.82%
+    Async_Collectives         |        0.2640 |   0.1725 |    0.2296 |    0.64 |      12.76%
+    
+    Results written to: results/test_config_mpi_results_5nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 5154859 x 5154859 with 99199551 non-zeros from file
+      Total entries after expansion: 99199551
+      CSR conversion complete: 99199551 non-zeros (-25.3480% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/5155k_0p0004.mtx
+    Dimensions: 5154859 × 5154859, 99199551 NNZ (-25.3480% density)
+    
+    MPI Ranks: 5, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=5154859, n_global=5154859, nnz=99199551
+    DEBUG: Allocated x_global with 5154859 floats (19.66 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.1685 |   0.0036 |    0.0792 |    1.00 |      20.00%
+    Isend/Irecv               |        0.1775 |   0.2924 |    0.2163 |    0.95 |      18.98%
+    Allgather                 |        0.1791 |   0.2299 |    0.2128 |    0.94 |      18.82%
+    Pipelined                 |        0.2036 |   0.2313 |    0.2319 |    0.83 |      16.55%
+    Ring_Reduce               |        0.2004 |   0.2330 |    0.2119 |    0.84 |      16.82%
+    Async_Collectives         |        0.2640 |   0.1725 |    0.2296 |    0.64 |      12.76%
+    
+    Results written to: results/test_config_mpi_results_5nodes.csv
+
+========================================================================
+BENCHMARK SUMMARY
+========================================================================
+Total runs: 11
+Successful: 7
+Failed: 4
+Timeouts: 0
+Completed at: Wed Jan  7 11:46:33 CET 2026
