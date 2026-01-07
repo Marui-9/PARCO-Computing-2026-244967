@@ -401,13 +401,30 @@ void comm_bcast_reduce(int rank, int size, csr_matrix *A_local,
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
 
-    /* Reduce y results to rank 0 */
+    /* Reduce y results to rank 0 with proper handling of uneven rows */
     t_start = MPI_Wtime();
+    int *send_counts = (rank == 0) ? (int *)malloc(size * sizeof(int)) : NULL;
+    int *displs = (rank == 0) ? (int *)malloc(size * sizeof(int)) : NULL;
+    
+    /* Gather local row counts */
+    MPI_Gather(&m_local, 1, MPI_INT, send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    
+    if (rank == 0) {
+        displs[0] = 0;
+        for (int i = 1; i < size; i++) {
+            displs[i] = displs[i-1] + send_counts[i-1];
+        }
+    }
+    
     float *y_global = (rank == 0) ? (float *)malloc(m_global * sizeof(float)) : NULL;
-    MPI_Gather(y, m_local, MPI_FLOAT, y_global, m_local, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(y, m_local, MPI_FLOAT, y_global, send_counts, displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
     t_comm += MPI_Wtime() - t_start;
 
     if (rank == 0 && y_global) free(y_global);
+    if (rank == 0) {
+        free(send_counts);
+        free(displs);
+    }
 
     *comm_time = t_comm;
     *compute_time = t_comp;
@@ -436,13 +453,30 @@ void comm_isend_irecv(int rank, int size, csr_matrix *A_local,
     MPI_Wait(&req, MPI_STATUS_IGNORE);
     t_comm += MPI_Wtime() - t_start;
 
-    /* Gather results */
+    /* Gather results with proper handling of uneven rows */
     t_start = MPI_Wtime();
+    int *send_counts = (rank == 0) ? (int *)malloc(size * sizeof(int)) : NULL;
+    int *displs = (rank == 0) ? (int *)malloc(size * sizeof(int)) : NULL;
+    
+    /* Gather local row counts */
+    MPI_Gather(&m_local, 1, MPI_INT, send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    
+    if (rank == 0) {
+        displs[0] = 0;
+        for (int i = 1; i < size; i++) {
+            displs[i] = displs[i-1] + send_counts[i-1];
+        }
+    }
+    
     float *y_global = (rank == 0) ? (float *)malloc(m_global * sizeof(float)) : NULL;
-    MPI_Gather(y, m_local, MPI_FLOAT, y_global, m_local, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(y, m_local, MPI_FLOAT, y_global, send_counts, displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
     t_comm += MPI_Wtime() - t_start;
 
     if (rank == 0 && y_global) free(y_global);
+    if (rank == 0) {
+        free(send_counts);
+        free(displs);
+    }
 
     *comm_time = t_comm;
     *compute_time = t_comp;
@@ -465,13 +499,30 @@ void comm_allgather(int rank, int size, csr_matrix *A_local,
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
 
-    /* Gather results to rank 0 */
+    /* Gather results to rank 0 with proper handling of uneven rows */
     t_start = MPI_Wtime();
+    int *send_counts = (rank == 0) ? (int *)malloc(size * sizeof(int)) : NULL;
+    int *displs = (rank == 0) ? (int *)malloc(size * sizeof(int)) : NULL;
+    
+    /* Gather local row counts */
+    MPI_Gather(&m_local, 1, MPI_INT, send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    
+    if (rank == 0) {
+        displs[0] = 0;
+        for (int i = 1; i < size; i++) {
+            displs[i] = displs[i-1] + send_counts[i-1];
+        }
+    }
+    
     float *y_global = (rank == 0) ? (float *)malloc(m_global * sizeof(float)) : NULL;
-    MPI_Gather(y, m_local, MPI_FLOAT, y_global, m_local, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(y, m_local, MPI_FLOAT, y_global, send_counts, displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
     t_comm += MPI_Wtime() - t_start;
 
     if (rank == 0 && y_global) free(y_global);
+    if (rank == 0) {
+        free(send_counts);
+        free(displs);
+    }
 
     *comm_time = t_comm;
     *compute_time = t_comp;
@@ -494,13 +545,30 @@ void comm_pipelined(int rank, int size, csr_matrix *A_local,
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
 
-    /* Gather results */
+    /* Gather results with proper handling of uneven rows */
     t_start = MPI_Wtime();
+    int *send_counts = (rank == 0) ? (int *)malloc(size * sizeof(int)) : NULL;
+    int *displs = (rank == 0) ? (int *)malloc(size * sizeof(int)) : NULL;
+    
+    /* Gather local row counts */
+    MPI_Gather(&m_local, 1, MPI_INT, send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    
+    if (rank == 0) {
+        displs[0] = 0;
+        for (int i = 1; i < size; i++) {
+            displs[i] = displs[i-1] + send_counts[i-1];
+        }
+    }
+    
     float *y_global = (rank == 0) ? (float *)malloc(m_global * sizeof(float)) : NULL;
-    MPI_Gather(y, m_local, MPI_FLOAT, y_global, m_local, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(y, m_local, MPI_FLOAT, y_global, send_counts, displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
     t_comm += MPI_Wtime() - t_start;
 
     if (rank == 0 && y_global) free(y_global);
+    if (rank == 0) {
+        free(send_counts);
+        free(displs);
+    }
 
     *comm_time = t_comm;
     *compute_time = t_comp;
@@ -575,18 +643,32 @@ void comm_async_collectives(int rank, int size, csr_matrix *A_local,
     MPI_Wait(&req_bcast, MPI_STATUS_IGNORE);
     t_comm += MPI_Wtime() - t_start;
 
-    /* Non-blocking gather with reduction */
+    /* Non-blocking gather with proper handling of uneven rows */
     t_start = MPI_Wtime();
-    float *y_global = (rank == 0) ? (float *)malloc(m_global * sizeof(float)) : NULL;
+    int *send_counts = (rank == 0) ? (int *)malloc(size * sizeof(int)) : NULL;
+    int *displs = (rank == 0) ? (int *)malloc(size * sizeof(int)) : NULL;
+    MPI_Request req_gather;
+    
+    /* Gather local row counts */
+    MPI_Gather(&m_local, 1, MPI_INT, send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    
     if (rank == 0) {
-        MPI_Igather(y, m_local, MPI_FLOAT, y_global, m_local, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_reduce);
-    } else {
-        MPI_Igather(y, m_local, MPI_FLOAT, NULL, 0, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_reduce);
+        displs[0] = 0;
+        for (int i = 1; i < size; i++) {
+            displs[i] = displs[i-1] + send_counts[i-1];
+        }
     }
-    MPI_Wait(&req_reduce, MPI_STATUS_IGNORE);
+    
+    float *y_global = (rank == 0) ? (float *)malloc(m_global * sizeof(float)) : NULL;
+    MPI_Igatherv(y, m_local, MPI_FLOAT, y_global, send_counts, displs, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_gather);
+    MPI_Wait(&req_gather, MPI_STATUS_IGNORE);
     t_comm += MPI_Wtime() - t_start;
 
     if (rank == 0 && y_global) free(y_global);
+    if (rank == 0) {
+        free(send_counts);
+        free(displs);
+    }
 
     *comm_time = t_comm;
     *compute_time = t_comp;
