@@ -1,0 +1,42 @@
+Starting benchmark run at Wed Jan  7 23:40:53 CET 2026
+[1/11] Processing: 1135k_0p0002.mtx
+  ERROR: Failed to parse matrix dimensions
+  rows='', cols='', nnz='nnz=5975248', density=''
+[2/11] Processing: 1508k_0p0012.mtx
+  ERROR: Failed to parse matrix dimensions
+  rows='', cols='', nnz='nnz=52672325', density=''
+[3/11] Processing: 1585k_0p0002.mtx
+  ERROR: Failed to parse matrix dimensions
+  rows='', cols='', nnz='nnz=7660826', density=''
+[4/11] Processing: 262k_0p0011.mtx
+  ERROR: Failed to parse matrix dimensions
+  rows='', cols='', nnz='nnz=1572792', density=''
+[5/11] Processing: 326k_0p0030.mtx
+  ERROR: Failed to parse matrix dimensions
+  rows='', cols='', nnz='nnz=3216152', density=''
+[6/11] Processing: 36k_0p17.mtx
+  ERROR: Failed to parse matrix dimensions
+  rows='', cols='', nnz='nnz=4344765', density=''
+[7/11] Processing: 3998k_0p0002.mtx
+  ERROR: Failed to parse matrix dimensions
+  rows='', cols='', nnz='nnz=69362378', density=''
+[8/11] Processing: 4194k_0p0001.mtx
+  ERROR: Failed to parse matrix dimensions
+  rows='', cols='', nnz='nnz=25165738', density=''
+[9/11] Processing: 5155k_0p0004.mtx
+  ERROR: Failed to parse matrix dimensions
+  rows='', cols='', nnz='nnz=99199551', density=''
+[10/11] Processing: 916k_0p0006.mtx
+  ERROR: Failed to parse matrix dimensions
+  rows='', cols='', nnz='nnz=5105039', density=''
+[11/11] Processing: 98k_0p52.mtx
+  ERROR: Failed to parse matrix dimensions
+  rows='', cols='', nnz='nnz=100245742', density=''
+=== Benchmark Complete ===
+Results written to: results/mpi_baseline_kernel_results.csv
+Log written to: results/bench_mpi_baseline_kernel.log
+Summary:
+1 results/mpi_baseline_kernel_results.csv
+
+First few results:
+num_nodes,matrix,rows,cols,nnz,density_pct,config_name,avg_time_ms,std_dev_ms,min_time_ms,max_time_ms,comm_time_ms,compute_time_ms,speedup,efficiency_pct,iterations,notes

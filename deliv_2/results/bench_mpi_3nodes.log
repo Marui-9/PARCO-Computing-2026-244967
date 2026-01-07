@@ -1,33 +1,33 @@
 ========================================================================
 MPI COMMUNICATION MODES BENCHMARK LOG (3 NODES)
 ========================================================================
-Started at: Wed Jan  7 21:26:50 CET 2026
+Started at: Wed Jan  7 22:57:05 CET 2026
 Executable: ./test_config_mpi
 Timeout per run: 3600s
-Iterations per mode: 10
+Iterations per mode: 30
 Node counts: 3
 Test matrices: 11
   - 36k_0p17.mtx 98k_0p52.mtx 262k_0p0011.mtx 326k_0p0030.mtx 916k_0p0006.mtx 1135k_0p0002.mtx 1508k_0p0012.mtx 1585k_0p0002.mtx 3998k_0p0002.mtx 4194k_0p0001.mtx 5155k_0p0004.mtx
 ========================================================================
 
 === Testing MPI connectivity ===
-PBS_NODEFILE: /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it
+PBS_NODEFILE: /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it
 Node file contents:
-hpc-c11-node25.unitn.it
-hpc-c04-node01.unitn.it
-hpc-c03-node18.unitn.it
+hpc-g04-node02.unitn.it
+hpc-c03-node15.unitn.it
+hpc-c03-node25.unitn.it
 Testing mpirun with hostname...
-hpc-c11-node25.maas.icts.unitn.it
-hpc-c04-node01.unitn.it
-hpc-c03-node18.unitn.it
+hpc-g04-node02.unitn.it
+hpc-c03-node15.unitn.it
+hpc-c03-node25.unitn.it
 === Testing with 3 MPI ranks ===
 Output CSV: results/test_config_mpi_results_3nodes.csv
 === Matrix: 36k_0p17.mtx (nodes=3) ===
-  Start time: Wed Jan  7 21:26:50 CET 2026
-  Using PBS_NODEFILE: /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it
-  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it ./test_config_mpi matrices/36k_0p17.mtx 10
+  Start time: Wed Jan  7 22:57:06 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it ./test_config_mpi matrices/36k_0p17.mtx 30
   Exit code: 0
-  End time: Wed Jan  7 21:26:53 CET 2026
+  End time: Wed Jan  7 22:57:08 CET 2026
   Stdout output (first 50 lines):
     Reading matrix: 36417 x 36417 with 2190591 non-zeros from file
       Matrix is symmetric (will expand to full storage)
@@ -39,7 +39,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 36417 × 36417, 4344765 NNZ (0.3276% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=36417, n_global=36417, nnz=4344765
     DEBUG: Allocated x_global with 36417 floats (0.14 MB)
@@ -50,12 +50,12 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.0260 |   0.0035 |    0.0238 |    1.00 |      33.33%
-    Isend/Irecv               |        0.0260 |   0.0014 |    0.0248 |    1.00 |      33.31%
-    Allgather                 |        0.0014 |   0.0124 |    0.0073 |   18.02 |     600.58%
-    Pipelined                 |        0.0014 |   0.0000 |    0.0005 |   18.39 |     613.04%
-    Ring_Reduce               |        0.0014 |   0.0000 |    0.0005 |   18.53 |     617.57%
-    Async_Collectives         |        0.0013 |   0.0000 |    0.0005 |   19.73 |     657.63%
+    MPI_Bcast+Reduce          |        0.0014 |   0.0069 |    0.0018 |    1.00 |      33.33%
+    Isend/Irecv               |        0.0014 |   0.0000 |    0.0005 |    1.06 |      35.20%
+    Allgather                 |        0.0014 |   0.0000 |    0.0005 |    1.00 |      33.49%
+    Pipelined                 |        0.0014 |   0.0000 |    0.0005 |    1.00 |      33.45%
+    Ring_Reduce               |        0.0014 |   0.0000 |    0.0005 |    1.01 |      33.52%
+    Async_Collectives         |        0.0013 |   0.0000 |    0.0004 |    1.10 |      36.77%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
   SUCCESS: Test completed
@@ -70,7 +70,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 36417 × 36417, 4344765 NNZ (0.3276% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=36417, n_global=36417, nnz=4344765
     DEBUG: Allocated x_global with 36417 floats (0.14 MB)
@@ -81,20 +81,20 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.0260 |   0.0035 |    0.0238 |    1.00 |      33.33%
-    Isend/Irecv               |        0.0260 |   0.0014 |    0.0248 |    1.00 |      33.31%
-    Allgather                 |        0.0014 |   0.0124 |    0.0073 |   18.02 |     600.58%
-    Pipelined                 |        0.0014 |   0.0000 |    0.0005 |   18.39 |     613.04%
-    Ring_Reduce               |        0.0014 |   0.0000 |    0.0005 |   18.53 |     617.57%
-    Async_Collectives         |        0.0013 |   0.0000 |    0.0005 |   19.73 |     657.63%
+    MPI_Bcast+Reduce          |        0.0014 |   0.0069 |    0.0018 |    1.00 |      33.33%
+    Isend/Irecv               |        0.0014 |   0.0000 |    0.0005 |    1.06 |      35.20%
+    Allgather                 |        0.0014 |   0.0000 |    0.0005 |    1.00 |      33.49%
+    Pipelined                 |        0.0014 |   0.0000 |    0.0005 |    1.00 |      33.45%
+    Ring_Reduce               |        0.0014 |   0.0000 |    0.0005 |    1.01 |      33.52%
+    Async_Collectives         |        0.0013 |   0.0000 |    0.0004 |    1.10 |      36.77%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
 === Matrix: 98k_0p52.mtx (nodes=3) ===
-  Start time: Wed Jan  7 21:26:54 CET 2026
-  Using PBS_NODEFILE: /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it
-  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it ./test_config_mpi matrices/98k_0p52.mtx 10
+  Start time: Wed Jan  7 22:57:09 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it ./test_config_mpi matrices/98k_0p52.mtx 30
   Exit code: 0
-  End time: Wed Jan  7 21:27:26 CET 2026
+  End time: Wed Jan  7 22:57:55 CET 2026
   Stdout output (first 50 lines):
     Reading matrix: 98303 x 98303 with 50122871 non-zeros from file
       Matrix is symmetric (will expand to full storage)
@@ -106,7 +106,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 98303 × 98303, 100245742 NNZ (9.3378% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=98303, n_global=98303, nnz=100245742
     DEBUG: Allocated x_global with 98303 floats (0.37 MB)
@@ -117,12 +117,12 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.1023 |   0.0362 |    0.0029 |    1.00 |      33.33%
-    Isend/Irecv               |        0.0869 |   0.0045 |    0.0024 |    1.18 |      39.22%
-    Allgather                 |        0.0847 |   0.0196 |    0.0057 |    1.21 |      40.27%
-    Pipelined                 |        0.0887 |   0.0071 |    0.0101 |    1.15 |      38.43%
-    Ring_Reduce               |        0.0883 |   0.0098 |    0.0102 |    1.16 |      38.63%
-    Async_Collectives         |        0.0787 |   0.0060 |    0.0024 |    1.30 |      43.33%
+    MPI_Bcast+Reduce          |        0.1276 |   0.1004 |    0.0265 |    1.00 |      33.33%
+    Isend/Irecv               |        0.1108 |   0.0123 |    0.0017 |    1.15 |      38.41%
+    Allgather                 |        0.1067 |   0.0137 |    0.0049 |    1.20 |      39.85%
+    Pipelined                 |        0.1043 |   0.0111 |    0.0061 |    1.22 |      40.81%
+    Ring_Reduce               |        0.0947 |   0.0099 |    0.0059 |    1.35 |      44.92%
+    Async_Collectives         |        0.0898 |   0.0103 |    0.0016 |    1.42 |      47.36%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
   SUCCESS: Test completed
@@ -137,7 +137,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 98303 × 98303, 100245742 NNZ (9.3378% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=98303, n_global=98303, nnz=100245742
     DEBUG: Allocated x_global with 98303 floats (0.37 MB)
@@ -148,20 +148,20 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.1023 |   0.0362 |    0.0029 |    1.00 |      33.33%
-    Isend/Irecv               |        0.0869 |   0.0045 |    0.0024 |    1.18 |      39.22%
-    Allgather                 |        0.0847 |   0.0196 |    0.0057 |    1.21 |      40.27%
-    Pipelined                 |        0.0887 |   0.0071 |    0.0101 |    1.15 |      38.43%
-    Ring_Reduce               |        0.0883 |   0.0098 |    0.0102 |    1.16 |      38.63%
-    Async_Collectives         |        0.0787 |   0.0060 |    0.0024 |    1.30 |      43.33%
+    MPI_Bcast+Reduce          |        0.1276 |   0.1004 |    0.0265 |    1.00 |      33.33%
+    Isend/Irecv               |        0.1108 |   0.0123 |    0.0017 |    1.15 |      38.41%
+    Allgather                 |        0.1067 |   0.0137 |    0.0049 |    1.20 |      39.85%
+    Pipelined                 |        0.1043 |   0.0111 |    0.0061 |    1.22 |      40.81%
+    Ring_Reduce               |        0.0947 |   0.0099 |    0.0059 |    1.35 |      44.92%
+    Async_Collectives         |        0.0898 |   0.0103 |    0.0016 |    1.42 |      47.36%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
 === Matrix: 262k_0p0011.mtx (nodes=3) ===
-  Start time: Wed Jan  7 21:27:27 CET 2026
-  Using PBS_NODEFILE: /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it
-  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it ./test_config_mpi matrices/262k_0p0011.mtx 10
+  Start time: Wed Jan  7 22:57:56 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it ./test_config_mpi matrices/262k_0p0011.mtx 30
   Exit code: 0
-  End time: Wed Jan  7 21:27:28 CET 2026
+  End time: Wed Jan  7 22:57:58 CET 2026
   Stdout output (first 50 lines):
     Reading matrix: 262144 x 262144 with 786396 non-zeros from file
       Matrix is symmetric (will expand to full storage)
@@ -173,7 +173,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 262144 × 262144, 1572792 NNZ (inf% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=262144, n_global=262144, nnz=1572792
     DEBUG: Allocated x_global with 262144 floats (1.00 MB)
@@ -184,12 +184,12 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.0094 |   0.0017 |    0.0039 |    1.00 |      33.33%
-    Isend/Irecv               |        0.0087 |   0.0001 |    0.0027 |    1.08 |      36.09%
-    Allgather                 |        0.0091 |   0.0000 |    0.0031 |    1.03 |      34.40%
-    Pipelined                 |        0.0091 |   0.0000 |    0.0031 |    1.03 |      34.29%
-    Ring_Reduce               |        0.0091 |   0.0000 |    0.0031 |    1.03 |      34.34%
-    Async_Collectives         |        0.0086 |   0.0001 |    0.0027 |    1.09 |      36.19%
+    MPI_Bcast+Reduce          |        0.0096 |   0.0052 |    0.0049 |    1.00 |      33.33%
+    Isend/Irecv               |        0.0090 |   0.0001 |    0.0028 |    1.07 |      35.65%
+    Allgather                 |        0.0098 |   0.0000 |    0.0036 |    0.98 |      32.81%
+    Pipelined                 |        0.0098 |   0.0041 |    0.0039 |    0.98 |      32.59%
+    Ring_Reduce               |        0.0098 |   0.0000 |    0.0037 |    0.98 |      32.57%
+    Async_Collectives         |        0.0090 |   0.0001 |    0.0029 |    1.06 |      35.40%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
   SUCCESS: Test completed
@@ -204,7 +204,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 262144 × 262144, 1572792 NNZ (inf% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=262144, n_global=262144, nnz=1572792
     DEBUG: Allocated x_global with 262144 floats (1.00 MB)
@@ -215,20 +215,20 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.0094 |   0.0017 |    0.0039 |    1.00 |      33.33%
-    Isend/Irecv               |        0.0087 |   0.0001 |    0.0027 |    1.08 |      36.09%
-    Allgather                 |        0.0091 |   0.0000 |    0.0031 |    1.03 |      34.40%
-    Pipelined                 |        0.0091 |   0.0000 |    0.0031 |    1.03 |      34.29%
-    Ring_Reduce               |        0.0091 |   0.0000 |    0.0031 |    1.03 |      34.34%
-    Async_Collectives         |        0.0086 |   0.0001 |    0.0027 |    1.09 |      36.19%
+    MPI_Bcast+Reduce          |        0.0096 |   0.0052 |    0.0049 |    1.00 |      33.33%
+    Isend/Irecv               |        0.0090 |   0.0001 |    0.0028 |    1.07 |      35.65%
+    Allgather                 |        0.0098 |   0.0000 |    0.0036 |    0.98 |      32.81%
+    Pipelined                 |        0.0098 |   0.0041 |    0.0039 |    0.98 |      32.59%
+    Ring_Reduce               |        0.0098 |   0.0000 |    0.0037 |    0.98 |      32.57%
+    Async_Collectives         |        0.0090 |   0.0001 |    0.0029 |    1.06 |      35.40%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
 === Matrix: 326k_0p0030.mtx (nodes=3) ===
-  Start time: Wed Jan  7 21:27:29 CET 2026
-  Using PBS_NODEFILE: /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it
-  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it ./test_config_mpi matrices/326k_0p0030.mtx 10
+  Start time: Wed Jan  7 22:57:59 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it ./test_config_mpi matrices/326k_0p0030.mtx 30
   Exit code: 0
-  End time: Wed Jan  7 21:27:31 CET 2026
+  End time: Wed Jan  7 22:58:03 CET 2026
   Stdout output (first 50 lines):
     Reading matrix: 325557 x 325557 with 3216152 non-zeros from file
       Total entries after expansion: 3216152
@@ -239,7 +239,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 325557 × 325557, 3216152 NNZ (-0.2319% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=325557, n_global=325557, nnz=3216152
     DEBUG: Allocated x_global with 325557 floats (1.24 MB)
@@ -250,12 +250,12 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.0111 |   0.0061 |    0.0061 |    1.00 |      33.33%
-    Isend/Irecv               |        0.0108 |   0.0001 |    0.0033 |    1.03 |      34.17%
-    Allgather                 |        0.0111 |   0.0001 |    0.0035 |    1.00 |      33.26%
-    Pipelined                 |        0.0112 |   0.0000 |    0.0036 |    0.99 |      33.08%
-    Ring_Reduce               |        0.0113 |   0.0000 |    0.0037 |    0.98 |      32.82%
-    Async_Collectives         |        0.0108 |   0.0002 |    0.0033 |    1.02 |      34.10%
+    MPI_Bcast+Reduce          |        0.0116 |   0.0081 |    0.0083 |    1.00 |      33.33%
+    Isend/Irecv               |        0.0109 |   0.0003 |    0.0033 |    1.07 |      35.58%
+    Allgather                 |        0.0116 |   0.0029 |    0.0041 |    1.00 |      33.29%
+    Pipelined                 |        0.0116 |   0.0001 |    0.0037 |    1.00 |      33.30%
+    Ring_Reduce               |        0.0117 |   0.0001 |    0.0037 |    0.99 |      33.14%
+    Async_Collectives         |        0.0113 |   0.0088 |    0.0053 |    1.03 |      34.42%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
   SUCCESS: Test completed
@@ -269,7 +269,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 325557 × 325557, 3216152 NNZ (-0.2319% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=325557, n_global=325557, nnz=3216152
     DEBUG: Allocated x_global with 325557 floats (1.24 MB)
@@ -280,20 +280,20 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.0111 |   0.0061 |    0.0061 |    1.00 |      33.33%
-    Isend/Irecv               |        0.0108 |   0.0001 |    0.0033 |    1.03 |      34.17%
-    Allgather                 |        0.0111 |   0.0001 |    0.0035 |    1.00 |      33.26%
-    Pipelined                 |        0.0112 |   0.0000 |    0.0036 |    0.99 |      33.08%
-    Ring_Reduce               |        0.0113 |   0.0000 |    0.0037 |    0.98 |      32.82%
-    Async_Collectives         |        0.0108 |   0.0002 |    0.0033 |    1.02 |      34.10%
+    MPI_Bcast+Reduce          |        0.0116 |   0.0081 |    0.0083 |    1.00 |      33.33%
+    Isend/Irecv               |        0.0109 |   0.0003 |    0.0033 |    1.07 |      35.58%
+    Allgather                 |        0.0116 |   0.0029 |    0.0041 |    1.00 |      33.29%
+    Pipelined                 |        0.0116 |   0.0001 |    0.0037 |    1.00 |      33.30%
+    Ring_Reduce               |        0.0117 |   0.0001 |    0.0037 |    0.99 |      33.14%
+    Async_Collectives         |        0.0113 |   0.0088 |    0.0053 |    1.03 |      34.42%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
 === Matrix: 916k_0p0006.mtx (nodes=3) ===
-  Start time: Wed Jan  7 21:27:32 CET 2026
-  Using PBS_NODEFILE: /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it
-  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it ./test_config_mpi matrices/916k_0p0006.mtx 10
+  Start time: Wed Jan  7 22:58:04 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it ./test_config_mpi matrices/916k_0p0006.mtx 30
   Exit code: 0
-  End time: Wed Jan  7 21:27:37 CET 2026
+  End time: Wed Jan  7 22:58:13 CET 2026
   Stdout output (first 50 lines):
     Reading matrix: 916428 x 916428 with 5105039 non-zeros from file
       Total entries after expansion: 5105039
@@ -304,7 +304,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 916428 × 916428, 5105039 NNZ (-0.2587% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=916428, n_global=916428, nnz=5105039
     DEBUG: Allocated x_global with 916428 floats (3.50 MB)
@@ -315,12 +315,12 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.0322 |   0.0005 |    0.0106 |    1.00 |      33.33%
-    Isend/Irecv               |        0.0305 |   0.0001 |    0.0089 |    1.05 |      35.14%
-    Allgather                 |        0.0322 |   0.0001 |    0.0105 |    1.00 |      33.34%
-    Pipelined                 |        0.0323 |   0.0036 |    0.0098 |    1.00 |      33.24%
-    Ring_Reduce               |        0.0323 |   0.0001 |    0.0107 |    1.00 |      33.24%
-    Async_Collectives         |        0.0306 |   0.0001 |    0.0090 |    1.05 |      35.10%
+    MPI_Bcast+Reduce          |        0.0339 |   0.0059 |    0.0119 |    1.00 |      33.33%
+    Isend/Irecv               |        0.0306 |   0.0160 |    0.0130 |    1.11 |      36.92%
+    Allgather                 |        0.0339 |   0.0042 |    0.0140 |    1.00 |      33.33%
+    Pipelined                 |        0.0339 |   0.0000 |    0.0123 |    1.00 |      33.34%
+    Ring_Reduce               |        0.0339 |   0.0002 |    0.0120 |    1.00 |      33.33%
+    Async_Collectives         |        0.0309 |   0.0033 |    0.0101 |    1.10 |      36.63%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
   SUCCESS: Test completed
@@ -334,7 +334,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 916428 × 916428, 5105039 NNZ (-0.2587% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=916428, n_global=916428, nnz=5105039
     DEBUG: Allocated x_global with 916428 floats (3.50 MB)
@@ -345,20 +345,20 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.0322 |   0.0005 |    0.0106 |    1.00 |      33.33%
-    Isend/Irecv               |        0.0305 |   0.0001 |    0.0089 |    1.05 |      35.14%
-    Allgather                 |        0.0322 |   0.0001 |    0.0105 |    1.00 |      33.34%
-    Pipelined                 |        0.0323 |   0.0036 |    0.0098 |    1.00 |      33.24%
-    Ring_Reduce               |        0.0323 |   0.0001 |    0.0107 |    1.00 |      33.24%
-    Async_Collectives         |        0.0306 |   0.0001 |    0.0090 |    1.05 |      35.10%
+    MPI_Bcast+Reduce          |        0.0339 |   0.0059 |    0.0119 |    1.00 |      33.33%
+    Isend/Irecv               |        0.0306 |   0.0160 |    0.0130 |    1.11 |      36.92%
+    Allgather                 |        0.0339 |   0.0042 |    0.0140 |    1.00 |      33.33%
+    Pipelined                 |        0.0339 |   0.0000 |    0.0123 |    1.00 |      33.34%
+    Ring_Reduce               |        0.0339 |   0.0002 |    0.0120 |    1.00 |      33.33%
+    Async_Collectives         |        0.0309 |   0.0033 |    0.0101 |    1.10 |      36.63%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
 === Matrix: 1135k_0p0002.mtx (nodes=3) ===
-  Start time: Wed Jan  7 21:27:38 CET 2026
-  Using PBS_NODEFILE: /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it
-  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it ./test_config_mpi matrices/1135k_0p0002.mtx 10
+  Start time: Wed Jan  7 22:58:14 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it ./test_config_mpi matrices/1135k_0p0002.mtx 30
   Exit code: 0
-  End time: Wed Jan  7 21:27:42 CET 2026
+  End time: Wed Jan  7 22:58:24 CET 2026
   Stdout output (first 50 lines):
     Reading matrix: 1134890 x 1134890 with 2987624 non-zeros from file
       Matrix is symmetric (will expand to full storage)
@@ -370,7 +370,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 1134890 × 1134890, 5975248 NNZ (-1.1605% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=1134890, n_global=1134890, nnz=5975248
     DEBUG: Allocated x_global with 1134890 floats (4.33 MB)
@@ -381,12 +381,12 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.0373 |   0.0086 |    0.0149 |    1.00 |      33.33%
-    Isend/Irecv               |        0.0372 |   0.0001 |    0.0111 |    1.00 |      33.44%
-    Allgather                 |        0.0377 |   0.0035 |    0.0128 |    0.99 |      33.03%
-    Pipelined                 |        0.0375 |   0.0047 |    0.0110 |    0.99 |      33.13%
-    Ring_Reduce               |        0.0379 |   0.0001 |    0.0119 |    0.99 |      32.87%
-    Async_Collectives         |        0.0371 |   0.0143 |    0.0184 |    1.01 |      33.56%
+    MPI_Bcast+Reduce          |        0.0400 |   0.0090 |    0.0148 |    1.00 |      33.33%
+    Isend/Irecv               |        0.0380 |   0.0122 |    0.0140 |    1.05 |      35.14%
+    Allgather                 |        0.0414 |   0.0001 |    0.0143 |    0.97 |      32.26%
+    Pipelined                 |        0.0414 |   0.0001 |    0.0143 |    0.97 |      32.25%
+    Ring_Reduce               |        0.0414 |   0.0017 |    0.0148 |    0.97 |      32.24%
+    Async_Collectives         |        0.0392 |   0.0007 |    0.0124 |    1.02 |      34.04%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
   SUCCESS: Test completed
@@ -401,7 +401,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 1134890 × 1134890, 5975248 NNZ (-1.1605% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=1134890, n_global=1134890, nnz=5975248
     DEBUG: Allocated x_global with 1134890 floats (4.33 MB)
@@ -412,20 +412,20 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.0373 |   0.0086 |    0.0149 |    1.00 |      33.33%
-    Isend/Irecv               |        0.0372 |   0.0001 |    0.0111 |    1.00 |      33.44%
-    Allgather                 |        0.0377 |   0.0035 |    0.0128 |    0.99 |      33.03%
-    Pipelined                 |        0.0375 |   0.0047 |    0.0110 |    0.99 |      33.13%
-    Ring_Reduce               |        0.0379 |   0.0001 |    0.0119 |    0.99 |      32.87%
-    Async_Collectives         |        0.0371 |   0.0143 |    0.0184 |    1.01 |      33.56%
+    MPI_Bcast+Reduce          |        0.0400 |   0.0090 |    0.0148 |    1.00 |      33.33%
+    Isend/Irecv               |        0.0380 |   0.0122 |    0.0140 |    1.05 |      35.14%
+    Allgather                 |        0.0414 |   0.0001 |    0.0143 |    0.97 |      32.26%
+    Pipelined                 |        0.0414 |   0.0001 |    0.0143 |    0.97 |      32.25%
+    Ring_Reduce               |        0.0414 |   0.0017 |    0.0148 |    0.97 |      32.24%
+    Async_Collectives         |        0.0392 |   0.0007 |    0.0124 |    1.02 |      34.04%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
 === Matrix: 1508k_0p0012.mtx (nodes=3) ===
-  Start time: Wed Jan  7 21:27:43 CET 2026
-  Using PBS_NODEFILE: /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it
-  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it ./test_config_mpi matrices/1508k_0p0012.mtx 10
+  Start time: Wed Jan  7 22:58:25 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it ./test_config_mpi matrices/1508k_0p0012.mtx 30
   Exit code: 0
-  End time: Wed Jan  7 21:28:05 CET 2026
+  End time: Wed Jan  7 22:58:57 CET 2026
   Stdout output (first 50 lines):
     Reading matrix: 1508065 x 1508065 with 27090195 non-zeros from file
       Matrix is symmetric (will expand to full storage)
@@ -437,7 +437,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 1508065 × 1508065, 52672325 NNZ (-2.5413% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=1508065, n_global=1508065, nnz=52672325
     DEBUG: Allocated x_global with 1508065 floats (5.75 MB)
@@ -448,12 +448,12 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.0504 |   0.0012 |    0.0157 |    1.00 |      33.33%
-    Isend/Irecv               |        0.0492 |   0.0001 |    0.0145 |    1.02 |      34.12%
-    Allgather                 |        0.0505 |   0.0190 |    0.0259 |    1.00 |      33.23%
-    Pipelined                 |        0.0501 |   0.0057 |    0.0182 |    1.00 |      33.47%
-    Ring_Reduce               |        0.0503 |   0.0059 |    0.0156 |    1.00 |      33.35%
-    Async_Collectives         |        0.0491 |   0.0040 |    0.0153 |    1.03 |      34.19%
+    MPI_Bcast+Reduce          |        0.0539 |   0.1298 |    0.0509 |    1.00 |      33.33%
+    Isend/Irecv               |        0.0505 |   0.0874 |    0.0406 |    1.07 |      35.54%
+    Allgather                 |        0.0527 |   0.0576 |    0.0320 |    1.02 |      34.07%
+    Pipelined                 |        0.0528 |   0.0730 |    0.0308 |    1.02 |      33.98%
+    Ring_Reduce               |        0.0526 |   0.0821 |    0.0410 |    1.02 |      34.15%
+    Async_Collectives         |        0.0512 |   0.0552 |    0.0277 |    1.05 |      35.06%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
   SUCCESS: Test completed
@@ -468,7 +468,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 1508065 × 1508065, 52672325 NNZ (-2.5413% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=1508065, n_global=1508065, nnz=52672325
     DEBUG: Allocated x_global with 1508065 floats (5.75 MB)
@@ -479,20 +479,20 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.0504 |   0.0012 |    0.0157 |    1.00 |      33.33%
-    Isend/Irecv               |        0.0492 |   0.0001 |    0.0145 |    1.02 |      34.12%
-    Allgather                 |        0.0505 |   0.0190 |    0.0259 |    1.00 |      33.23%
-    Pipelined                 |        0.0501 |   0.0057 |    0.0182 |    1.00 |      33.47%
-    Ring_Reduce               |        0.0503 |   0.0059 |    0.0156 |    1.00 |      33.35%
-    Async_Collectives         |        0.0491 |   0.0040 |    0.0153 |    1.03 |      34.19%
+    MPI_Bcast+Reduce          |        0.0539 |   0.1298 |    0.0509 |    1.00 |      33.33%
+    Isend/Irecv               |        0.0505 |   0.0874 |    0.0406 |    1.07 |      35.54%
+    Allgather                 |        0.0527 |   0.0576 |    0.0320 |    1.02 |      34.07%
+    Pipelined                 |        0.0528 |   0.0730 |    0.0308 |    1.02 |      33.98%
+    Ring_Reduce               |        0.0526 |   0.0821 |    0.0410 |    1.02 |      34.15%
+    Async_Collectives         |        0.0512 |   0.0552 |    0.0277 |    1.05 |      35.06%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
 === Matrix: 1585k_0p0002.mtx (nodes=3) ===
-  Start time: Wed Jan  7 21:28:06 CET 2026
-  Using PBS_NODEFILE: /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it
-  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it ./test_config_mpi matrices/1585k_0p0002.mtx 10
+  Start time: Wed Jan  7 22:58:58 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it ./test_config_mpi matrices/1585k_0p0002.mtx 30
   Exit code: 0
-  End time: Wed Jan  7 21:28:13 CET 2026
+  End time: Wed Jan  7 22:59:13 CET 2026
   Stdout output (first 50 lines):
     Reading matrix: 1585478 x 1585478 with 4623152 non-zeros from file
       Matrix is symmetric (will expand to full storage)
@@ -504,7 +504,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 1585478 × 1585478, 7660826 NNZ (0.6467% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=1585478, n_global=1585478, nnz=7660826
     DEBUG: Allocated x_global with 1585478 floats (6.05 MB)
@@ -515,12 +515,12 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.0535 |   0.0074 |    0.0235 |    1.00 |      33.33%
-    Isend/Irecv               |        0.0544 |   0.0021 |    0.0209 |    0.98 |      32.80%
-    Allgather                 |        0.0534 |   0.0040 |    0.0201 |    1.00 |      33.39%
-    Pipelined                 |        0.0557 |   0.0408 |    0.0419 |    0.96 |      31.99%
-    Ring_Reduce               |        0.0575 |   0.0001 |    0.0242 |    0.93 |      31.03%
-    Async_Collectives         |        0.0551 |   0.0015 |    0.0213 |    0.97 |      32.35%
+    MPI_Bcast+Reduce          |        0.0591 |   0.0046 |    0.0221 |    1.00 |      33.33%
+    Isend/Irecv               |        0.0578 |   0.0329 |    0.0292 |    1.02 |      34.04%
+    Allgather                 |        0.0610 |   0.0035 |    0.0256 |    0.97 |      32.27%
+    Pipelined                 |        0.0610 |   0.0004 |    0.0249 |    0.97 |      32.27%
+    Ring_Reduce               |        0.0608 |   0.0006 |    0.0245 |    0.97 |      32.38%
+    Async_Collectives         |        0.0578 |   0.0096 |    0.0236 |    1.02 |      34.06%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
   SUCCESS: Test completed
@@ -535,7 +535,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 1585478 × 1585478, 7660826 NNZ (0.6467% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=1585478, n_global=1585478, nnz=7660826
     DEBUG: Allocated x_global with 1585478 floats (6.05 MB)
@@ -546,20 +546,20 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.0535 |   0.0074 |    0.0235 |    1.00 |      33.33%
-    Isend/Irecv               |        0.0544 |   0.0021 |    0.0209 |    0.98 |      32.80%
-    Allgather                 |        0.0534 |   0.0040 |    0.0201 |    1.00 |      33.39%
-    Pipelined                 |        0.0557 |   0.0408 |    0.0419 |    0.96 |      31.99%
-    Ring_Reduce               |        0.0575 |   0.0001 |    0.0242 |    0.93 |      31.03%
-    Async_Collectives         |        0.0551 |   0.0015 |    0.0213 |    0.97 |      32.35%
+    MPI_Bcast+Reduce          |        0.0591 |   0.0046 |    0.0221 |    1.00 |      33.33%
+    Isend/Irecv               |        0.0578 |   0.0329 |    0.0292 |    1.02 |      34.04%
+    Allgather                 |        0.0610 |   0.0035 |    0.0256 |    0.97 |      32.27%
+    Pipelined                 |        0.0610 |   0.0004 |    0.0249 |    0.97 |      32.27%
+    Ring_Reduce               |        0.0608 |   0.0006 |    0.0245 |    0.97 |      32.38%
+    Async_Collectives         |        0.0578 |   0.0096 |    0.0236 |    1.02 |      34.06%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
 === Matrix: 3998k_0p0002.mtx (nodes=3) ===
-  Start time: Wed Jan  7 21:28:14 CET 2026
-  Using PBS_NODEFILE: /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it
-  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it ./test_config_mpi matrices/3998k_0p0002.mtx 10
+  Start time: Wed Jan  7 22:59:14 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it ./test_config_mpi matrices/3998k_0p0002.mtx 30
   Exit code: 0
-  End time: Wed Jan  7 21:28:44 CET 2026
+  End time: Wed Jan  7 23:00:09 CET 2026
   Stdout output (first 50 lines):
     Reading matrix: 3997962 x 3997962 with 34681189 non-zeros from file
       Matrix is symmetric (will expand to full storage)
@@ -571,7 +571,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 3997962 × 3997962, 69362378 NNZ (3.2613% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=3997962, n_global=3997962, nnz=69362378
     DEBUG: Allocated x_global with 3997962 floats (15.25 MB)
@@ -582,12 +582,12 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.1356 |   0.0021 |    0.0393 |    1.00 |      33.33%
-    Isend/Irecv               |        0.1475 |   0.0311 |    0.0479 |    0.92 |      30.65%
-    Allgather                 |        0.1428 |   0.0054 |    0.0414 |    0.95 |      31.67%
-    Pipelined                 |        0.1347 |   0.0034 |    0.0376 |    1.01 |      33.56%
-    Ring_Reduce               |        0.1373 |   0.0064 |    0.0381 |    0.99 |      32.92%
-    Async_Collectives         |        0.1383 |   0.0036 |    0.0387 |    0.98 |      32.71%
+    MPI_Bcast+Reduce          |        0.1477 |   0.1504 |    0.1021 |    1.00 |      33.33%
+    Isend/Irecv               |        0.1413 |   0.0947 |    0.0782 |    1.05 |      34.84%
+    Allgather                 |        0.1486 |   0.0928 |    0.0843 |    0.99 |      33.13%
+    Pipelined                 |        0.1484 |   0.0950 |    0.0935 |    1.00 |      33.17%
+    Ring_Reduce               |        0.1480 |   0.1156 |    0.0935 |    1.00 |      33.27%
+    Async_Collectives         |        0.1413 |   0.1012 |    0.0821 |    1.04 |      34.83%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
   SUCCESS: Test completed
@@ -602,7 +602,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 3997962 × 3997962, 69362378 NNZ (3.2613% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=3997962, n_global=3997962, nnz=69362378
     DEBUG: Allocated x_global with 3997962 floats (15.25 MB)
@@ -613,20 +613,20 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.1356 |   0.0021 |    0.0393 |    1.00 |      33.33%
-    Isend/Irecv               |        0.1475 |   0.0311 |    0.0479 |    0.92 |      30.65%
-    Allgather                 |        0.1428 |   0.0054 |    0.0414 |    0.95 |      31.67%
-    Pipelined                 |        0.1347 |   0.0034 |    0.0376 |    1.01 |      33.56%
-    Ring_Reduce               |        0.1373 |   0.0064 |    0.0381 |    0.99 |      32.92%
-    Async_Collectives         |        0.1383 |   0.0036 |    0.0387 |    0.98 |      32.71%
+    MPI_Bcast+Reduce          |        0.1477 |   0.1504 |    0.1021 |    1.00 |      33.33%
+    Isend/Irecv               |        0.1413 |   0.0947 |    0.0782 |    1.05 |      34.84%
+    Allgather                 |        0.1486 |   0.0928 |    0.0843 |    0.99 |      33.13%
+    Pipelined                 |        0.1484 |   0.0950 |    0.0935 |    1.00 |      33.17%
+    Ring_Reduce               |        0.1480 |   0.1156 |    0.0935 |    1.00 |      33.27%
+    Async_Collectives         |        0.1413 |   0.1012 |    0.0821 |    1.04 |      34.83%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
 === Matrix: 4194k_0p0001.mtx (nodes=3) ===
-  Start time: Wed Jan  7 21:28:45 CET 2026
-  Using PBS_NODEFILE: /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it
-  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it ./test_config_mpi matrices/4194k_0p0001.mtx 10
+  Start time: Wed Jan  7 23:00:10 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it ./test_config_mpi matrices/4194k_0p0001.mtx 30
   Exit code: 0
-  End time: Wed Jan  7 21:29:02 CET 2026
+  End time: Wed Jan  7 23:00:49 CET 2026
   Stdout output (first 50 lines):
     Reading matrix: 4194304 x 4194304 with 12582869 non-zeros from file
       Matrix is symmetric (will expand to full storage)
@@ -638,7 +638,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 4194304 × 4194304, 25165738 NNZ (inf% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=4194304, n_global=4194304, nnz=25165738
     DEBUG: Allocated x_global with 4194304 floats (16.00 MB)
@@ -649,12 +649,12 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.1460 |   0.0026 |    0.0405 |    1.00 |      33.33%
-    Isend/Irecv               |        0.1582 |   0.0104 |    0.0453 |    0.92 |      30.77%
-    Allgather                 |        0.1520 |   0.0039 |    0.0377 |    0.96 |      32.02%
-    Pipelined                 |        0.1504 |   0.0067 |    0.0387 |    0.97 |      32.35%
-    Ring_Reduce               |        0.1493 |   0.0032 |    0.0408 |    0.98 |      32.60%
-    Async_Collectives         |        0.1508 |   0.0041 |    0.0406 |    0.97 |      32.28%
+    MPI_Bcast+Reduce          |        0.1545 |   0.0760 |    0.0707 |    1.00 |      33.33%
+    Isend/Irecv               |        0.1487 |   0.0541 |    0.0641 |    1.04 |      34.64%
+    Allgather                 |        0.1559 |   0.0464 |    0.0639 |    0.99 |      33.04%
+    Pipelined                 |        0.1561 |   0.0513 |    0.0689 |    0.99 |      32.99%
+    Ring_Reduce               |        0.1555 |   0.0471 |    0.0645 |    0.99 |      33.12%
+    Async_Collectives         |        0.1524 |   0.0297 |    0.0538 |    1.01 |      33.79%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
   SUCCESS: Test completed
@@ -669,7 +669,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 4194304 × 4194304, 25165738 NNZ (inf% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=4194304, n_global=4194304, nnz=25165738
     DEBUG: Allocated x_global with 4194304 floats (16.00 MB)
@@ -680,20 +680,20 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.1460 |   0.0026 |    0.0405 |    1.00 |      33.33%
-    Isend/Irecv               |        0.1582 |   0.0104 |    0.0453 |    0.92 |      30.77%
-    Allgather                 |        0.1520 |   0.0039 |    0.0377 |    0.96 |      32.02%
-    Pipelined                 |        0.1504 |   0.0067 |    0.0387 |    0.97 |      32.35%
-    Ring_Reduce               |        0.1493 |   0.0032 |    0.0408 |    0.98 |      32.60%
-    Async_Collectives         |        0.1508 |   0.0041 |    0.0406 |    0.97 |      32.28%
+    MPI_Bcast+Reduce          |        0.1545 |   0.0760 |    0.0707 |    1.00 |      33.33%
+    Isend/Irecv               |        0.1487 |   0.0541 |    0.0641 |    1.04 |      34.64%
+    Allgather                 |        0.1559 |   0.0464 |    0.0639 |    0.99 |      33.04%
+    Pipelined                 |        0.1561 |   0.0513 |    0.0689 |    0.99 |      32.99%
+    Ring_Reduce               |        0.1555 |   0.0471 |    0.0645 |    0.99 |      33.12%
+    Async_Collectives         |        0.1524 |   0.0297 |    0.0538 |    1.01 |      33.79%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
 === Matrix: 5155k_0p0004.mtx (nodes=3) ===
-  Start time: Wed Jan  7 21:29:03 CET 2026
-  Using PBS_NODEFILE: /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it
-  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4925390.hpc-head-n1.unitn.it ./test_config_mpi matrices/5155k_0p0004.mtx 10
+  Start time: Wed Jan  7 23:00:50 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 3 -hostfile /var/spool/pbs/aux/4927196.hpc-head-n1.unitn.it ./test_config_mpi matrices/5155k_0p0004.mtx 30
   Exit code: 0
-  End time: Wed Jan  7 21:30:17 CET 2026
+  End time: Wed Jan  7 23:03:48 CET 2026
   Stdout output (first 50 lines):
     Reading matrix: 5154859 x 5154859 with 99199551 non-zeros from file
       Total entries after expansion: 99199551
@@ -704,7 +704,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 5154859 × 5154859, 99199551 NNZ (-25.3480% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=5154859, n_global=5154859, nnz=99199551
     DEBUG: Allocated x_global with 5154859 floats (19.66 MB)
@@ -715,12 +715,12 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.1801 |   0.0271 |    0.0640 |    1.00 |      33.33%
-    Isend/Irecv               |        0.1782 |   0.0072 |    0.0495 |    1.01 |      33.69%
-    Allgather                 |        0.1748 |   0.0029 |    0.0499 |    1.03 |      34.33%
-    Pipelined                 |        0.1750 |   0.0034 |    0.0552 |    1.03 |      34.29%
-    Ring_Reduce               |        0.1747 |   0.0008 |    0.0524 |    1.03 |      34.36%
-    Async_Collectives         |        0.1728 |   0.0029 |    0.0496 |    1.04 |      34.73%
+    MPI_Bcast+Reduce          |        1.0620 |   0.5247 |    0.6651 |    1.00 |      33.33%
+    Isend/Irecv               |        0.2892 |   0.5245 |    0.4592 |    3.67 |     122.39%
+    Allgather                 |        0.1861 |   0.0029 |    0.0577 |    5.71 |     190.23%
+    Pipelined                 |        0.1888 |   0.5980 |    0.4532 |    5.62 |     187.49%
+    Ring_Reduce               |        1.1064 |   0.1972 |    0.9145 |    0.96 |      31.99%
+    Async_Collectives         |        1.0728 |   0.4433 |    0.7063 |    0.99 |      33.00%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
   SUCCESS: Test completed
@@ -734,7 +734,7 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     Dimensions: 5154859 × 5154859, 99199551 NNZ (-25.3480% density)
     
     MPI Ranks: 3, Threads/rank: 48
-    Iterations: 10
+    Iterations: 30
     
     DEBUG: m_global=5154859, n_global=5154859, nnz=99199551
     DEBUG: Allocated x_global with 5154859 floats (19.66 MB)
@@ -745,12 +745,12 @@ Output CSV: results/test_config_mpi_results_3nodes.csv
     === Communication Modes Results ===
     Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
     Configuration             | --------------|----------|-----------|---------|------------
-    MPI_Bcast+Reduce          |        0.1801 |   0.0271 |    0.0640 |    1.00 |      33.33%
-    Isend/Irecv               |        0.1782 |   0.0072 |    0.0495 |    1.01 |      33.69%
-    Allgather                 |        0.1748 |   0.0029 |    0.0499 |    1.03 |      34.33%
-    Pipelined                 |        0.1750 |   0.0034 |    0.0552 |    1.03 |      34.29%
-    Ring_Reduce               |        0.1747 |   0.0008 |    0.0524 |    1.03 |      34.36%
-    Async_Collectives         |        0.1728 |   0.0029 |    0.0496 |    1.04 |      34.73%
+    MPI_Bcast+Reduce          |        1.0620 |   0.5247 |    0.6651 |    1.00 |      33.33%
+    Isend/Irecv               |        0.2892 |   0.5245 |    0.4592 |    3.67 |     122.39%
+    Allgather                 |        0.1861 |   0.0029 |    0.0577 |    5.71 |     190.23%
+    Pipelined                 |        0.1888 |   0.5980 |    0.4532 |    5.62 |     187.49%
+    Ring_Reduce               |        1.1064 |   0.1972 |    0.9145 |    0.96 |      31.99%
+    Async_Collectives         |        1.0728 |   0.4433 |    0.7063 |    0.99 |      33.00%
     
     Results written to: results/test_config_mpi_results_3nodes.csv
 
@@ -761,4 +761,4 @@ Total runs: 11
 Successful: 11
 Failed: 0
 Timeouts: 0
-Completed at: Wed Jan  7 21:30:18 CET 2026
+Completed at: Wed Jan  7 23:03:49 CET 2026
