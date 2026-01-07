@@ -224,9 +224,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="Analyze MPI configuration results and plot efficiency vs node count."
     )
-    parser.add_argument("--results-dir", default="deliv_2/results",
+    parser.add_argument("--results-dir", default="results",
                         help="Directory containing *nodes.csv files.")
-    parser.add_argument("--output", default="deliv_2/plots/mpi_efficiency.png",
+    parser.add_argument("--output", default="plots/mpi_efficiency.png",
                         help="Path to save the efficiency plot.")
     parser.add_argument("--per-matrix", action="store_true",
                         help="Plot separate lines per matrix (default averages across matrices).")
