@@ -1,0 +1,766 @@
+========================================================================
+MPI COMMUNICATION MODES BENCHMARK LOG (4 NODES)
+========================================================================
+Started at: Tue Jan  6 23:57:13 CET 2026
+Executable: ./test_config_mpi
+Timeout per run: 3600s
+Iterations per mode: 10
+Node counts: 4
+Test matrices: 11
+  - 36k_0p17.mtx 98k_0p52.mtx 262k_0p0011.mtx 326k_0p0030.mtx 916k_0p0006.mtx 1135k_0p0002.mtx 1508k_0p0012.mtx 1585k_0p0002.mtx 3998k_0p0002.mtx 4194k_0p0001.mtx 5155k_0p0004.mtx
+========================================================================
+
+=== Testing MPI connectivity ===
+PBS_NODEFILE: /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it
+Node file contents:
+hpc-c07-node01.unitn.it
+hpc-c07-node12.unitn.it
+hpc-c07-node08.unitn.it
+hpc-c09-node14.unitn.it
+Testing mpirun with hostname...
+hpc-c07-node01.unitn.it
+hpc-c09-node14.maas.icts.unitn.it
+hpc-c07-node08.maas.icts.unitn.it
+hpc-c07-node12.unitn.it
+=== Testing with 4 MPI ranks ===
+Output CSV: results/test_config_mpi_results_4nodes.csv
+=== Matrix: 36k_0p17.mtx (nodes=4) ===
+  Start time: Tue Jan  6 23:57:15 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 4 -hostfile /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it ./test_config_mpi matrices/36k_0p17.mtx 10
+  Exit code: 0
+  End time: Tue Jan  6 23:57:19 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 36417 x 36417 with 2190591 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 4344765
+      CSR conversion complete: 4344765 non-zeros (0.3276% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/36k_0p17.mtx
+    Dimensions: 36417 × 36417, 4344765 NNZ (0.3276% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=36417, n_global=36417, nnz=4344765
+    DEBUG: Allocated x_global with 36417 floats (0.14 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0015 |   0.0005 |    0.0008 |    1.00 |      25.00%
+    Isend/Irecv               |        0.0015 |   0.0000 |    0.0008 |    1.02 |      25.55%
+    Allgather                 |        0.0015 |   0.0000 |    0.0008 |    1.01 |      25.36%
+    Pipelined                 |        0.0015 |   0.0000 |    0.0008 |    1.02 |      25.47%
+    Ring_Reduce               |        0.0013 |   0.0001 |    0.0007 |    1.10 |      27.55%
+    Async_Collectives         |        0.0014 |   0.0000 |    0.0008 |    1.03 |      25.67%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 36417 x 36417 with 2190591 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 4344765
+      CSR conversion complete: 4344765 non-zeros (0.3276% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/36k_0p17.mtx
+    Dimensions: 36417 × 36417, 4344765 NNZ (0.3276% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=36417, n_global=36417, nnz=4344765
+    DEBUG: Allocated x_global with 36417 floats (0.14 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0015 |   0.0005 |    0.0008 |    1.00 |      25.00%
+    Isend/Irecv               |        0.0015 |   0.0000 |    0.0008 |    1.02 |      25.55%
+    Allgather                 |        0.0015 |   0.0000 |    0.0008 |    1.01 |      25.36%
+    Pipelined                 |        0.0015 |   0.0000 |    0.0008 |    1.02 |      25.47%
+    Ring_Reduce               |        0.0013 |   0.0001 |    0.0007 |    1.10 |      27.55%
+    Async_Collectives         |        0.0014 |   0.0000 |    0.0008 |    1.03 |      25.67%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+=== Matrix: 98k_0p52.mtx (nodes=4) ===
+  Start time: Tue Jan  6 23:57:20 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 4 -hostfile /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it ./test_config_mpi matrices/98k_0p52.mtx 10
+  Exit code: 0
+  End time: Tue Jan  6 23:58:01 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 98303 x 98303 with 50122871 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 100245742
+      CSR conversion complete: 100245742 non-zeros (9.3378% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/98k_0p52.mtx
+    Dimensions: 98303 × 98303, 100245742 NNZ (9.3378% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=98303, n_global=98303, nnz=100245742
+    DEBUG: Allocated x_global with 98303 floats (0.37 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0978 |   0.0242 |    0.0008 |    1.00 |      25.00%
+    Isend/Irecv               |        0.0950 |   0.0048 |    0.0019 |    1.03 |      25.73%
+    Allgather                 |        0.0836 |   0.0389 |    0.0007 |    1.17 |      29.23%
+    Pipelined                 |        0.0585 |   0.0868 |    0.0213 |    1.67 |      41.79%
+    Ring_Reduce               |        0.0515 |   0.0061 |    0.0008 |    1.90 |      47.48%
+    Async_Collectives         |        0.0469 |   0.0186 |    0.0018 |    2.08 |      52.08%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 98303 x 98303 with 50122871 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 100245742
+      CSR conversion complete: 100245742 non-zeros (9.3378% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/98k_0p52.mtx
+    Dimensions: 98303 × 98303, 100245742 NNZ (9.3378% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=98303, n_global=98303, nnz=100245742
+    DEBUG: Allocated x_global with 98303 floats (0.37 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0978 |   0.0242 |    0.0008 |    1.00 |      25.00%
+    Isend/Irecv               |        0.0950 |   0.0048 |    0.0019 |    1.03 |      25.73%
+    Allgather                 |        0.0836 |   0.0389 |    0.0007 |    1.17 |      29.23%
+    Pipelined                 |        0.0585 |   0.0868 |    0.0213 |    1.67 |      41.79%
+    Ring_Reduce               |        0.0515 |   0.0061 |    0.0008 |    1.90 |      47.48%
+    Async_Collectives         |        0.0469 |   0.0186 |    0.0018 |    2.08 |      52.08%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+=== Matrix: 262k_0p0011.mtx (nodes=4) ===
+  Start time: Tue Jan  6 23:58:02 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 4 -hostfile /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it ./test_config_mpi matrices/262k_0p0011.mtx 10
+  Exit code: 0
+  End time: Tue Jan  6 23:58:05 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 262144 x 262144 with 786396 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 1572792
+      CSR conversion complete: 1572792 non-zeros (inf% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/262k_0p0011.mtx
+    Dimensions: 262144 × 262144, 1572792 NNZ (inf% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=262144, n_global=262144, nnz=1572792
+    DEBUG: Allocated x_global with 262144 floats (1.00 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0103 |   0.0006 |    0.0056 |    1.00 |      25.00%
+    Isend/Irecv               |        0.0087 |   0.0003 |    0.0040 |    1.18 |      29.53%
+    Allgather                 |        0.0101 |   0.0000 |    0.0054 |    1.02 |      25.42%
+    Pipelined                 |        0.0102 |   0.0001 |    0.0055 |    1.02 |      25.38%
+    Ring_Reduce               |        0.0102 |   0.0001 |    0.0055 |    1.01 |      25.18%
+    Async_Collectives         |        0.0088 |   0.0011 |    0.0044 |    1.17 |      29.32%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 262144 x 262144 with 786396 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 1572792
+      CSR conversion complete: 1572792 non-zeros (inf% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/262k_0p0011.mtx
+    Dimensions: 262144 × 262144, 1572792 NNZ (inf% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=262144, n_global=262144, nnz=1572792
+    DEBUG: Allocated x_global with 262144 floats (1.00 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0103 |   0.0006 |    0.0056 |    1.00 |      25.00%
+    Isend/Irecv               |        0.0087 |   0.0003 |    0.0040 |    1.18 |      29.53%
+    Allgather                 |        0.0101 |   0.0000 |    0.0054 |    1.02 |      25.42%
+    Pipelined                 |        0.0102 |   0.0001 |    0.0055 |    1.02 |      25.38%
+    Ring_Reduce               |        0.0102 |   0.0001 |    0.0055 |    1.01 |      25.18%
+    Async_Collectives         |        0.0088 |   0.0011 |    0.0044 |    1.17 |      29.32%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+=== Matrix: 326k_0p0030.mtx (nodes=4) ===
+  Start time: Tue Jan  6 23:58:06 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 4 -hostfile /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it ./test_config_mpi matrices/326k_0p0030.mtx 10
+  Exit code: 0
+  End time: Tue Jan  6 23:58:09 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 325557 x 325557 with 3216152 non-zeros from file
+      Total entries after expansion: 3216152
+      CSR conversion complete: 3216152 non-zeros (-0.2319% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/326k_0p0030.mtx
+    Dimensions: 325557 × 325557, 3216152 NNZ (-0.2319% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=325557, n_global=325557, nnz=3216152
+    DEBUG: Allocated x_global with 325557 floats (1.24 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0115 |   0.0005 |    0.0046 |    1.00 |      25.00%
+    Isend/Irecv               |        0.0113 |   0.0001 |    0.0043 |    1.01 |      25.37%
+    Allgather                 |        0.0115 |   0.0001 |    0.0045 |    1.00 |      25.00%
+    Pipelined                 |        0.0115 |   0.0001 |    0.0045 |    0.99 |      24.80%
+    Ring_Reduce               |        0.0118 |   0.0002 |    0.0048 |    0.97 |      24.29%
+    Async_Collectives         |        0.0114 |   0.0001 |    0.0045 |    1.00 |      25.12%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 325557 x 325557 with 3216152 non-zeros from file
+      Total entries after expansion: 3216152
+      CSR conversion complete: 3216152 non-zeros (-0.2319% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/326k_0p0030.mtx
+    Dimensions: 325557 × 325557, 3216152 NNZ (-0.2319% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=325557, n_global=325557, nnz=3216152
+    DEBUG: Allocated x_global with 325557 floats (1.24 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0115 |   0.0005 |    0.0046 |    1.00 |      25.00%
+    Isend/Irecv               |        0.0113 |   0.0001 |    0.0043 |    1.01 |      25.37%
+    Allgather                 |        0.0115 |   0.0001 |    0.0045 |    1.00 |      25.00%
+    Pipelined                 |        0.0115 |   0.0001 |    0.0045 |    0.99 |      24.80%
+    Ring_Reduce               |        0.0118 |   0.0002 |    0.0048 |    0.97 |      24.29%
+    Async_Collectives         |        0.0114 |   0.0001 |    0.0045 |    1.00 |      25.12%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+=== Matrix: 916k_0p0006.mtx (nodes=4) ===
+  Start time: Tue Jan  6 23:58:10 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 4 -hostfile /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it ./test_config_mpi matrices/916k_0p0006.mtx 10
+  Exit code: 0
+  End time: Tue Jan  6 23:58:17 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 916428 x 916428 with 5105039 non-zeros from file
+      Total entries after expansion: 5105039
+      CSR conversion complete: 5105039 non-zeros (-0.2587% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/916k_0p0006.mtx
+    Dimensions: 916428 × 916428, 5105039 NNZ (-0.2587% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=916428, n_global=916428, nnz=5105039
+    DEBUG: Allocated x_global with 916428 floats (3.50 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0323 |   0.0015 |    0.0133 |    1.00 |      25.00%
+    Isend/Irecv               |        0.0315 |   0.0003 |    0.0119 |    1.03 |      25.64%
+    Allgather                 |        0.0336 |   0.0001 |    0.0141 |    0.96 |      23.97%
+    Pipelined                 |        0.0359 |   0.0105 |    0.0074 |    0.90 |      22.48%
+    Ring_Reduce               |        0.0312 |   0.0002 |    0.0117 |    1.03 |      25.82%
+    Async_Collectives         |        0.0318 |   0.0030 |    0.0121 |    1.01 |      25.32%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 916428 x 916428 with 5105039 non-zeros from file
+      Total entries after expansion: 5105039
+      CSR conversion complete: 5105039 non-zeros (-0.2587% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/916k_0p0006.mtx
+    Dimensions: 916428 × 916428, 5105039 NNZ (-0.2587% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=916428, n_global=916428, nnz=5105039
+    DEBUG: Allocated x_global with 916428 floats (3.50 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0323 |   0.0015 |    0.0133 |    1.00 |      25.00%
+    Isend/Irecv               |        0.0315 |   0.0003 |    0.0119 |    1.03 |      25.64%
+    Allgather                 |        0.0336 |   0.0001 |    0.0141 |    0.96 |      23.97%
+    Pipelined                 |        0.0359 |   0.0105 |    0.0074 |    0.90 |      22.48%
+    Ring_Reduce               |        0.0312 |   0.0002 |    0.0117 |    1.03 |      25.82%
+    Async_Collectives         |        0.0318 |   0.0030 |    0.0121 |    1.01 |      25.32%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+=== Matrix: 1135k_0p0002.mtx (nodes=4) ===
+  Start time: Tue Jan  6 23:58:18 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 4 -hostfile /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it ./test_config_mpi matrices/1135k_0p0002.mtx 10
+  Exit code: 0
+  End time: Tue Jan  6 23:58:27 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 1134890 x 1134890 with 2987624 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 5975248
+      CSR conversion complete: 5975248 non-zeros (-1.1605% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/1135k_0p0002.mtx
+    Dimensions: 1134890 × 1134890, 5975248 NNZ (-1.1605% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=1134890, n_global=1134890, nnz=5975248
+    DEBUG: Allocated x_global with 1134890 floats (4.33 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0475 |   0.0025 |    0.0203 |    1.00 |      25.00%
+    Isend/Irecv               |        0.0411 |   0.0009 |    0.0156 |    1.15 |      28.85%
+    Allgather                 |        0.0438 |   0.0412 |    0.0183 |    1.08 |      27.12%
+    Pipelined                 |        0.0436 |   0.0004 |    0.0185 |    1.09 |      27.23%
+    Ring_Reduce               |        0.0439 |   0.0079 |    0.0218 |    1.08 |      27.05%
+    Async_Collectives         |        0.0416 |   0.0083 |    0.0207 |    1.14 |      28.51%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 1134890 x 1134890 with 2987624 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 5975248
+      CSR conversion complete: 5975248 non-zeros (-1.1605% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/1135k_0p0002.mtx
+    Dimensions: 1134890 × 1134890, 5975248 NNZ (-1.1605% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=1134890, n_global=1134890, nnz=5975248
+    DEBUG: Allocated x_global with 1134890 floats (4.33 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0475 |   0.0025 |    0.0203 |    1.00 |      25.00%
+    Isend/Irecv               |        0.0411 |   0.0009 |    0.0156 |    1.15 |      28.85%
+    Allgather                 |        0.0438 |   0.0412 |    0.0183 |    1.08 |      27.12%
+    Pipelined                 |        0.0436 |   0.0004 |    0.0185 |    1.09 |      27.23%
+    Ring_Reduce               |        0.0439 |   0.0079 |    0.0218 |    1.08 |      27.05%
+    Async_Collectives         |        0.0416 |   0.0083 |    0.0207 |    1.14 |      28.51%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+=== Matrix: 1508k_0p0012.mtx (nodes=4) ===
+  Start time: Tue Jan  6 23:58:28 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 4 -hostfile /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it ./test_config_mpi matrices/1508k_0p0012.mtx 10
+  Exit code: 0
+  End time: Tue Jan  6 23:59:05 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 1508065 x 1508065 with 27090195 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 52672325
+      CSR conversion complete: 52672325 non-zeros (-2.5413% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/1508k_0p0012.mtx
+    Dimensions: 1508065 × 1508065, 52672325 NNZ (-2.5413% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=1508065, n_global=1508065, nnz=52672325
+    DEBUG: Allocated x_global with 1508065 floats (5.75 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0494 |   0.0008 |    0.0205 |    1.00 |      25.00%
+    Isend/Irecv               |        0.0480 |   0.0007 |    0.0196 |    1.03 |      25.68%
+    Allgather                 |        0.0469 |   0.1449 |    0.0192 |    1.05 |      26.31%
+    Pipelined                 |        0.0541 |   0.1938 |    0.1119 |    0.91 |      22.82%
+    Ring_Reduce               |        0.0472 |   0.0034 |    0.0201 |    1.05 |      26.15%
+    Async_Collectives         |        0.1717 |   0.0978 |    0.0428 |    0.29 |       7.19%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 1508065 x 1508065 with 27090195 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 52672325
+      CSR conversion complete: 52672325 non-zeros (-2.5413% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/1508k_0p0012.mtx
+    Dimensions: 1508065 × 1508065, 52672325 NNZ (-2.5413% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=1508065, n_global=1508065, nnz=52672325
+    DEBUG: Allocated x_global with 1508065 floats (5.75 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0494 |   0.0008 |    0.0205 |    1.00 |      25.00%
+    Isend/Irecv               |        0.0480 |   0.0007 |    0.0196 |    1.03 |      25.68%
+    Allgather                 |        0.0469 |   0.1449 |    0.0192 |    1.05 |      26.31%
+    Pipelined                 |        0.0541 |   0.1938 |    0.1119 |    0.91 |      22.82%
+    Ring_Reduce               |        0.0472 |   0.0034 |    0.0201 |    1.05 |      26.15%
+    Async_Collectives         |        0.1717 |   0.0978 |    0.0428 |    0.29 |       7.19%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+=== Matrix: 1585k_0p0002.mtx (nodes=4) ===
+  Start time: Tue Jan  6 23:59:06 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 4 -hostfile /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it ./test_config_mpi matrices/1585k_0p0002.mtx 10
+  Exit code: 0
+  End time: Tue Jan  6 23:59:14 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 1585478 x 1585478 with 4623152 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 7660826
+      CSR conversion complete: 7660826 non-zeros (0.6467% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/1585k_0p0002.mtx
+    Dimensions: 1585478 × 1585478, 7660826 NNZ (0.6467% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=1585478, n_global=1585478, nnz=7660826
+    DEBUG: Allocated x_global with 1585478 floats (6.05 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0598 |   0.0015 |    0.0236 |    1.00 |      25.00%
+    Isend/Irecv               |        0.0578 |   0.0293 |    0.0225 |    1.03 |      25.87%
+    Allgather                 |        0.0613 |   0.0002 |    0.0241 |    0.98 |      24.38%
+    Pipelined                 |        0.0574 |   0.0016 |    0.0216 |    1.04 |      26.01%
+    Ring_Reduce               |        0.0635 |   0.0227 |    0.0380 |    0.94 |      23.54%
+    Async_Collectives         |        0.0583 |   0.0036 |    0.0205 |    1.03 |      25.63%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 1585478 x 1585478 with 4623152 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 7660826
+      CSR conversion complete: 7660826 non-zeros (0.6467% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/1585k_0p0002.mtx
+    Dimensions: 1585478 × 1585478, 7660826 NNZ (0.6467% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=1585478, n_global=1585478, nnz=7660826
+    DEBUG: Allocated x_global with 1585478 floats (6.05 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.0598 |   0.0015 |    0.0236 |    1.00 |      25.00%
+    Isend/Irecv               |        0.0578 |   0.0293 |    0.0225 |    1.03 |      25.87%
+    Allgather                 |        0.0613 |   0.0002 |    0.0241 |    0.98 |      24.38%
+    Pipelined                 |        0.0574 |   0.0016 |    0.0216 |    1.04 |      26.01%
+    Ring_Reduce               |        0.0635 |   0.0227 |    0.0380 |    0.94 |      23.54%
+    Async_Collectives         |        0.0583 |   0.0036 |    0.0205 |    1.03 |      25.63%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+=== Matrix: 3998k_0p0002.mtx (nodes=4) ===
+  Start time: Tue Jan  6 23:59:15 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 4 -hostfile /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it ./test_config_mpi matrices/3998k_0p0002.mtx 10
+  Exit code: 0
+  End time: Wed Jan  7 00:00:18 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 3997962 x 3997962 with 34681189 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 69362378
+      CSR conversion complete: 69362378 non-zeros (3.2613% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/3998k_0p0002.mtx
+    Dimensions: 3997962 × 3997962, 69362378 NNZ (3.2613% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=3997962, n_global=3997962, nnz=69362378
+    DEBUG: Allocated x_global with 3997962 floats (15.25 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.1478 |   0.0027 |    0.0710 |    1.00 |      25.00%
+    Isend/Irecv               |        0.7201 |   0.1405 |    0.0553 |    0.21 |       5.13%
+    Allgather                 |        0.6485 |   0.0306 |    0.0419 |    0.23 |       5.70%
+    Pipelined                 |        0.6267 |   0.0114 |    0.0421 |    0.24 |       5.90%
+    Ring_Reduce               |        0.6313 |   0.1494 |    0.0533 |    0.23 |       5.85%
+    Async_Collectives         |        0.6376 |   0.0080 |    0.0555 |    0.23 |       5.80%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 3997962 x 3997962 with 34681189 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 69362378
+      CSR conversion complete: 69362378 non-zeros (3.2613% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/3998k_0p0002.mtx
+    Dimensions: 3997962 × 3997962, 69362378 NNZ (3.2613% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=3997962, n_global=3997962, nnz=69362378
+    DEBUG: Allocated x_global with 3997962 floats (15.25 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.1478 |   0.0027 |    0.0710 |    1.00 |      25.00%
+    Isend/Irecv               |        0.7201 |   0.1405 |    0.0553 |    0.21 |       5.13%
+    Allgather                 |        0.6485 |   0.0306 |    0.0419 |    0.23 |       5.70%
+    Pipelined                 |        0.6267 |   0.0114 |    0.0421 |    0.24 |       5.90%
+    Ring_Reduce               |        0.6313 |   0.1494 |    0.0533 |    0.23 |       5.85%
+    Async_Collectives         |        0.6376 |   0.0080 |    0.0555 |    0.23 |       5.80%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+=== Matrix: 4194k_0p0001.mtx (nodes=4) ===
+  Start time: Wed Jan  7 00:00:19 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 4 -hostfile /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it ./test_config_mpi matrices/4194k_0p0001.mtx 10
+  Exit code: 0
+  End time: Wed Jan  7 00:00:42 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 4194304 x 4194304 with 12582869 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 25165738
+      CSR conversion complete: 25165738 non-zeros (inf% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/4194k_0p0001.mtx
+    Dimensions: 4194304 × 4194304, 25165738 NNZ (inf% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=4194304, n_global=4194304, nnz=25165738
+    DEBUG: Allocated x_global with 4194304 floats (16.00 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.1501 |   0.0166 |    0.0458 |    1.00 |      25.00%
+    Isend/Irecv               |        0.1603 |   0.0688 |    0.0822 |    0.94 |      23.41%
+    Allgather                 |        0.1534 |   0.0063 |    0.0518 |    0.98 |      24.46%
+    Pipelined                 |        0.1520 |   0.0006 |    0.0498 |    0.99 |      24.69%
+    Ring_Reduce               |        0.1554 |   0.0129 |    0.0569 |    0.97 |      24.14%
+    Async_Collectives         |        0.1591 |   0.0149 |    0.0590 |    0.94 |      23.57%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 4194304 x 4194304 with 12582869 non-zeros from file
+      Matrix is symmetric (will expand to full storage)
+      Total entries after expansion: 25165738
+      CSR conversion complete: 25165738 non-zeros (inf% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/4194k_0p0001.mtx
+    Dimensions: 4194304 × 4194304, 25165738 NNZ (inf% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=4194304, n_global=4194304, nnz=25165738
+    DEBUG: Allocated x_global with 4194304 floats (16.00 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.1501 |   0.0166 |    0.0458 |    1.00 |      25.00%
+    Isend/Irecv               |        0.1603 |   0.0688 |    0.0822 |    0.94 |      23.41%
+    Allgather                 |        0.1534 |   0.0063 |    0.0518 |    0.98 |      24.46%
+    Pipelined                 |        0.1520 |   0.0006 |    0.0498 |    0.99 |      24.69%
+    Ring_Reduce               |        0.1554 |   0.0129 |    0.0569 |    0.97 |      24.14%
+    Async_Collectives         |        0.1591 |   0.0149 |    0.0590 |    0.94 |      23.57%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+=== Matrix: 5155k_0p0004.mtx (nodes=4) ===
+  Start time: Wed Jan  7 00:00:43 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it
+  Running: timeout 3600 mpirun -np 4 -hostfile /var/spool/pbs/aux/4907564.hpc-head-n1.unitn.it ./test_config_mpi matrices/5155k_0p0004.mtx 10
+  Exit code: 0
+  End time: Wed Jan  7 00:02:47 CET 2026
+  Stdout output (first 50 lines):
+    Reading matrix: 5154859 x 5154859 with 99199551 non-zeros from file
+      Total entries after expansion: 99199551
+      CSR conversion complete: 99199551 non-zeros (-25.3480% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/5155k_0p0004.mtx
+    Dimensions: 5154859 × 5154859, 99199551 NNZ (-25.3480% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=5154859, n_global=5154859, nnz=99199551
+    DEBUG: Allocated x_global with 5154859 floats (19.66 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.1600 |   0.0354 |    0.0547 |    1.00 |      25.00%
+    Isend/Irecv               |        0.7191 |   0.2097 |    0.4067 |    0.22 |       5.56%
+    Allgather                 |        0.7068 |   0.1059 |    0.1791 |    0.23 |       5.66%
+    Pipelined                 |        0.5555 |   0.1983 |    0.1271 |    0.29 |       7.20%
+    Ring_Reduce               |        0.5535 |   0.1714 |    0.2431 |    0.29 |       7.23%
+    Async_Collectives         |        0.6517 |   0.0577 |    0.1931 |    0.25 |       6.14%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+  SUCCESS: Test completed
+  Test output:
+    Reading matrix: 5154859 x 5154859 with 99199551 non-zeros from file
+      Total entries after expansion: 99199551
+      CSR conversion complete: 99199551 non-zeros (-25.3480% density)
+    
+    === MPI Communication Modes Benchmark ===
+    Matrix: matrices/5155k_0p0004.mtx
+    Dimensions: 5154859 × 5154859, 99199551 NNZ (-25.3480% density)
+    
+    MPI Ranks: 4, Threads/rank: 48
+    Iterations: 10
+    
+    DEBUG: m_global=5154859, n_global=5154859, nnz=99199551
+    DEBUG: Allocated x_global with 5154859 floats (19.66 MB)
+    Performing first-touch initialization...
+    Testing 6 MPI communication modes...
+    
+    
+    === Communication Modes Results ===
+    Configuration             | Avg Time (ms) | Std Dev  | Comm (ms) | Speedup | Efficiency
+    Configuration             | --------------|----------|-----------|---------|------------
+    MPI_Bcast+Reduce          |        0.1600 |   0.0354 |    0.0547 |    1.00 |      25.00%
+    Isend/Irecv               |        0.7191 |   0.2097 |    0.4067 |    0.22 |       5.56%
+    Allgather                 |        0.7068 |   0.1059 |    0.1791 |    0.23 |       5.66%
+    Pipelined                 |        0.5555 |   0.1983 |    0.1271 |    0.29 |       7.20%
+    Ring_Reduce               |        0.5535 |   0.1714 |    0.2431 |    0.29 |       7.23%
+    Async_Collectives         |        0.6517 |   0.0577 |    0.1931 |    0.25 |       6.14%
+    
+    Results written to: results/test_config_mpi_results_4nodes.csv
+
+========================================================================
+BENCHMARK SUMMARY
+========================================================================
+Total runs: 11
+Successful: 11
+Failed: 0
+Timeouts: 0
+Completed at: Wed Jan  7 00:02:48 CET 2026

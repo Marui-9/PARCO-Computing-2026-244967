@@ -1,11 +1,11 @@
 ========================================================================
 MPI COMMUNICATION MODES BENCHMARK LOG
 ========================================================================
-Started at: Tue Jan  6 19:40:52 CET 2026
+Started at: Tue Jan  6 21:53:43 CET 2026
 Executable: ./test_config_mpi
 Timeout per run: 3600s
 Iterations per mode: 10
-Node counts: 2 3 4
+Node counts: 2
 Test matrices: 11
   - 36k_0p17.mtx 98k_0p52.mtx 262k_0p0011.mtx 326k_0p0030.mtx 916k_0p0006.mtx 1135k_0p0002.mtx 1508k_0p0012.mtx 1585k_0p0002.mtx 3998k_0p0002.mtx 4194k_0p0001.mtx 5155k_0p0004.mtx
 ========================================================================
@@ -13,4 +13,5 @@ Test matrices: 11
 === Testing with 2 MPI ranks ===
 Output CSV: results/test_config_mpi_results_2nodes.csv
 === Matrix: 36k_0p17.mtx (nodes=2) ===
-  Start time: Tue Jan  6 19:40:52 CET 2026
+  Start time: Tue Jan  6 21:53:43 CET 2026
+  Using PBS_NODEFILE: /var/spool/pbs/aux/4907498.hpc-head-n1.unitn.it
