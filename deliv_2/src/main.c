@@ -126,12 +126,18 @@ int main(int argc, char* argv[]) {
    int num_iterations = 40;
    double *omp_times = malloc(num_iterations * sizeof(double));
    double *mpi_times = malloc(num_iterations * sizeof(double));
+   double *mpi_compute_times = malloc(num_iterations * sizeof(double));
+   double *mpi_comm_times = malloc(num_iterations * sizeof(double));
    
-   if (!omp_times || !mpi_times) {
+   if (!omp_times || !mpi_times || !mpi_compute_times || !mpi_comm_times) {
       fprintf(stderr, "Failed to allocate timing arrays\n");
       if (csr_A) csr_free(csr_A);
       free(x);
       free(y);
+      free(omp_times);
+      free(mpi_times);
+      free(mpi_compute_times);
+      free(mpi_comm_times);
       MPI_Finalize();
       return 1;
    }
@@ -306,10 +312,14 @@ int main(int argc, char* argv[]) {
       // Synchronize before timing
       MPI_Barrier(MPI_COMM_WORLD);
 
-      start_time = MPI_Wtime();
-      Mpi_Omp_mat_vect(thread_count, rank, num_ranks, m, n, local_csr_A, x, local_y, local_m);
+      double t_comp_start, t_comm_start;
       
-      // Gather results from all ranks to rank 0
+      /* Compute phase */
+      t_comp_start = MPI_Wtime();
+      Mpi_Omp_mat_vect(thread_count, rank, num_ranks, m, n, local_csr_A, x, local_y, local_m);
+      mpi_compute_times[iter] = MPI_Wtime() - t_comp_start;
+      
+      /* Communication phase */
       // Prepare receive counts and displacements for rank 0
       int *recvcounts = NULL;
       int *displs = NULL;
@@ -330,14 +340,17 @@ int main(int argc, char* argv[]) {
          }
       }
       
+      t_comm_start = MPI_Wtime();
       // Gather local_y from all ranks into y on rank 0
       MPI_Gatherv(local_y, local_m, MPI_FLOAT,
                   y, recvcounts, displs, MPI_FLOAT,
                   0, MPI_COMM_WORLD);
       
       MPI_Barrier(MPI_COMM_WORLD);
-      end_time = MPI_Wtime();
-      mpi_times[iter] = end_time - start_time;
+      mpi_comm_times[iter] = MPI_Wtime() - t_comm_start;
+      
+      /* Total time is compute + communication */
+      mpi_times[iter] = mpi_compute_times[iter] + mpi_comm_times[iter];
       
       // Cleanup per-iteration temporary allocations
       if (rank == 0) {
@@ -386,22 +399,32 @@ int main(int argc, char* argv[]) {
       double avg_omp_time = sum_omp / percentile_count;
 
       double sum_mpi = 0.0;
+      double sum_compute = 0.0;
+      double sum_comm = 0.0;
       for (int i = 0; i < percentile_count; i++) {
          sum_mpi += mpi_times[i];
+         sum_compute += mpi_compute_times[i];
+         sum_comm += mpi_comm_times[i];
       }
       double avg_mpi_time = sum_mpi / percentile_count;
+      double avg_compute_time = sum_compute / percentile_count;
+      double avg_comm_time = sum_comm / percentile_count;
       double avg_speedup = avg_omp_time / avg_mpi_time;
 
       printf("\n=== Results (90th percentile of %d runs, using best %d) ===\n", 
              num_iterations, percentile_count);
       printf("Average OpenMP execution time:      %.6f milliseconds\n", avg_omp_time * 1000);
       printf("Average MPI+OpenMP execution time:  %.6f milliseconds\n", avg_mpi_time * 1000);
+      printf("  - Compute time:                   %.6f milliseconds\n", avg_compute_time * 1000);
+      printf("  - Communication time:             %.6f milliseconds\n", avg_comm_time * 1000);
       printf("Speedup (OpenMP vs MPI+OpenMP):     %.2fx\n", avg_speedup);
    }
 
    // Cleanup
    free(omp_times);
    free(mpi_times);
+   free(mpi_compute_times);
+   free(mpi_comm_times);
    if (csr_A) csr_free(csr_A);
    free(x);
    free(y);

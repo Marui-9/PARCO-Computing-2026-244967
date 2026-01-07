@@ -1,0 +1,168 @@
+#!/bin/bash
+#PBS -N mpi_baseline_kernel
+#PBS -o ./mpi_baseline_kernel.out
+#PBS -e ./mpi_baseline_kernel.err
+#PBS -q short_cpuQ
+#PBS -l walltime=06:00:00
+#PBS -l select=1:ncpus=48:mem=32gb
+
+# MPI Baseline Benchmarking: Kernel time only (1 MPI rank, 48 threads)
+# Uses test_configurations_mpi.c with 1 MPI rank to measure kernel execution time only
+# Output: results/mpi_baseline_kernel_results.csv
+
+echo "=== MPI Baseline Benchmark (Kernel Time Only) ==="
+echo "Initial directory: $(pwd)"
+cd PARCO-Computing-2026-244967/deliv_2/
+
+# Navigate to deliv_2 directory (PBS starts in submission directory or home)
+if [ -d "deliv_2" ]; then
+    cd deliv_2
+    echo "Changed to deliv_2/"
+elif [ -d "../deliv_2" ]; then
+    cd ../deliv_2
+    echo "Changed to ../deliv_2/"
+elif [ -d "." ] && [ -f "Makefile" ] && grep -q "test_config_mpi" Makefile; then
+    echo "Already in deliv_2 directory"
+else
+    echo "ERROR: Cannot find deliv_2 directory!"
+    echo "Current directory: $(pwd)"
+    ls -la
+    exit 1
+fi
+
+echo "Working directory: $(pwd)"
+
+# Load necessary modules
+echo "Loading modules..."
+module load gcc91
+module load mpich-3.2.1--gcc-9.1.0
+
+# Verify MPI installation
+echo "Verifying MPI installation..."
+mpicc --version || { echo "mpicc not found!"; exit 1; }
+mpirun --version || { echo "mpirun not found!"; exit 1; }
+
+# Set up environment for make
+export CC=mpicc
+export CFLAGS="-O3 -Wall -Wextra -march=native -fopenmp"
+
+# Print the name of the file that contains the list of the nodes assigned to the job and list all the nodes
+NODES=$(cat $PBS_NODEFILE)
+echo "The running nodes are $NODES"
+
+# Get the list of unique nodes assigned to the job
+NODES=$(sort -u $PBS_NODEFILE)
+echo "The running nodes are $NODES"
+
+# Compile the MPI code
+echo "Compiling MPI code..."
+make clean > /dev/null 2>&1
+make > compile.log 2>&1
+if [ ! -f "test_config_mpi" ]; then
+    echo "ERROR: Compilation failed!"
+    cat compile.log
+    exit 1
+fi
+echo "Compilation successful: test_config_mpi executable created"
+
+# Setup output files
+OUTPUT_CSV="results/mpi_baseline_kernel_results.csv"
+LOG_FILE="results/bench_mpi_baseline_kernel.log"
+echo "DEBUG: Creating results directory..."
+mkdir -p results
+
+# Write CSV header (same format as multi-node results for consistency)
+echo "DEBUG: Writing CSV header to $OUTPUT_CSV..."
+echo "num_nodes,matrix,rows,cols,nnz,density_pct,config_name,avg_time_ms,std_dev_ms,min_time_ms,max_time_ms,comm_time_ms,compute_time_ms,speedup,efficiency_pct,iterations,notes" > "$OUTPUT_CSV"
+echo "DEBUG: CSV header written"
+
+# Configuration
+NUM_NODES=1
+NUM_RANKS=1
+THREADS_PER_RANK=48
+ITERATIONS=30
+
+echo ""
+echo "=== Benchmark Configuration ==="
+echo "Number of MPI ranks: $NUM_RANKS"
+echo "Threads per rank: $THREADS_PER_RANK"
+echo "Iterations: $ITERATIONS"
+echo ""
+
+# Check matrices directory
+echo "DEBUG: Checking matrices directory..."
+ls -la matrices/ | head -5
+MATRIX_COUNT=$(ls matrices/*.mtx 2>/dev/null | wc -l)
+echo "Matrices: $MATRIX_COUNT files found"
+echo ""
+
+# Counter for progress
+TOTAL_MATRICES=$(ls matrices/*.mtx 2>/dev/null | wc -l)
+CURRENT=0
+
+echo "DEBUG: Starting matrix loop"
+echo "Starting benchmark run at $(date)" > "$LOG_FILE"
+
+# Loop through all matrices
+for matrix_file in matrices/*.mtx; do
+    CURRENT=$((CURRENT + 1))
+    matrix_basename=$(basename "$matrix_file")
+    
+    echo "[$CURRENT/$TOTAL_MATRICES] Processing: $matrix_basename" | tee -a "$LOG_FILE"
+    
+    # Run the benchmark with test_config_mpi (1 MPI rank for baseline)
+    # This measures kernel time only, consistent with multi-node tests
+    echo "DEBUG: Running: mpirun -np $NUM_RANKS ./test_config_mpi $matrix_file $ITERATIONS"
+    output=$(mpirun -np $NUM_RANKS ./test_config_mpi "$matrix_file" $ITERATIONS 2>&1)
+    mpirun_exit=$?
+    echo "DEBUG: mpirun exit code: $mpirun_exit"
+    
+    if [ $mpirun_exit -ne 0 ]; then
+        echo "ERROR: mpirun failed with exit code $mpirun_exit" | tee -a "$LOG_FILE"
+        echo "Full output:" | tee -a "$LOG_FILE"
+        echo "$output" | tee -a "$LOG_FILE"
+        continue
+    fi
+    
+    # Extract matrix details from output
+    rows=$(echo "$output" | grep "Matrix dimensions:" | awk '{print $3}')
+    cols=$(echo "$output" | grep "Matrix dimensions:" | awk '{print $6}')
+    nnz=$(echo "$output" | grep "nnz" | head -1 | awk '{print $NF}' | tr -d ',')
+    density=$(echo "$output" | grep "Matrix dimensions:" | awk '{print $8}' | sed 's/%//')
+    
+    # Validate extracted values
+    if [ -z "$rows" ] || [ -z "$cols" ] || [ -z "$nnz" ]; then
+        echo "  ERROR: Failed to parse matrix dimensions" | tee -a "$LOG_FILE"
+        echo "  rows='$rows', cols='$cols', nnz='$nnz', density='$density'" | tee -a "$LOG_FILE"
+        continue
+    fi
+    
+    # Extract the CSV line from test_config_mpi output
+    # The program outputs a line like:
+    # 1,matrices/36k_0p17.mtx,36417,36417,4344765,0.3276,MPI_Bcast+Reduce,0.0017,0.0002,0.0016,0.0024,0.0004,0.0013,1.0000,50.00,30,""
+    
+    csv_lines=$(echo "$output" | grep "^$NUM_NODES," | head -6)
+    
+    if [ -z "$csv_lines" ]; then
+        echo "  ERROR: No CSV output found in program output" | tee -a "$LOG_FILE"
+        echo "  First 30 lines of output:" | tee -a "$LOG_FILE"
+        echo "$output" | head -30 | tee -a "$LOG_FILE"
+        continue
+    fi
+    
+    # Append all CSV lines (one for each communication mode)
+    echo "$csv_lines" >> "$OUTPUT_CSV"
+    
+    line_count=$(echo "$csv_lines" | wc -l)
+    echo "  [OK] Added $line_count configuration results for $matrix_basename" | tee -a "$LOG_FILE"
+done
+
+echo ""
+echo "=== Benchmark Complete ===" | tee -a "$LOG_FILE"
+echo "Results written to: $OUTPUT_CSV" | tee -a "$LOG_FILE"
+echo "Log written to: $LOG_FILE" | tee -a "$LOG_FILE"
+echo "Summary:" | tee -a "$LOG_FILE"
+wc -l "$OUTPUT_CSV" | tee -a "$LOG_FILE"
+echo "" | tee -a "$LOG_FILE"
+echo "First few results:" | tee -a "$LOG_FILE"
+head -7 "$OUTPUT_CSV" | tee -a "$LOG_FILE"
