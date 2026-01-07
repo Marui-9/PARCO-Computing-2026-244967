@@ -1,4 +1,4 @@
-Starting benchmark run at Wed Jan  7 23:40:53 CET 2026
+Starting benchmark run at Thu Jan  8 00:05:32 CET 2026
 [1/11] Processing: 1135k_0p0002.mtx
   ERROR: Failed to parse matrix dimensions
   rows='', cols='', nnz='nnz=5975248', density=''
