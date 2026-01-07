@@ -694,21 +694,16 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
     /* Write header if file is empty */
     fseek(csv, 0, SEEK_END);
     if (ftell(csv) == 0) {
-        fprintf(csv, "num_nodes,matrix,rows,cols,nnz,density_pct,config_name,");
-        fprintf(csv, "avg_time_ms,std_dev_ms,min_time_ms,max_time_ms,");
-        fprintf(csv, "comm_time_ms,compute_time_ms,speedup,efficiency_pct,iterations,notes\n");
+        fprintf(csv, "num_nodes,matrix,rows,cols,nnz,density_pct,config_name,avg_time_ms,std_dev_ms,min_time_ms,max_time_ms,comm_time_ms,compute_time_ms,speedup,efficiency_pct,iterations,notes\n");
     }
 
     /* Write data rows */
     for (int i = 0; i < num_modes; i++) {
         double density = (nnz_global / (double)(m_global * n_global)) * 100.0;
-        fprintf(csv, "%d,%s,%d,%d,%lld,%.4f,%s,",
+        fprintf(csv, "%d,%s,%d,%d,%lld,%.4f,%s,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.2f,%d,\"\"\n",
                 size, matrix_file, m_global, n_global, nnz_global, 
-                density,
-                modes[i].name);
-        fprintf(csv, "%.4f,%.4f,%.4f,%.4f,",
-                modes[i].avg_time, modes[i].std_dev, modes[i].min_time, modes[i].max_time);
-        fprintf(csv, "%.4f,%.4f,%.4f,%.2f,%d,\"\"\n",
+                density, modes[i].name,
+                modes[i].avg_time, modes[i].std_dev, modes[i].min_time, modes[i].max_time,
                 modes[i].comm_time, modes[i].compute_time, modes[i].speedup, 
                 modes[i].efficiency_pct, iterations);
     }
