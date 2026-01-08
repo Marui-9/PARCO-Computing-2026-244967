@@ -341,11 +341,24 @@ int import_matrix_rows_to_csr(
     
     int local_rows = row_end - row_start;
     
-    /* Count entries in our row range */
+    /* First pass: count NNZ in our row range */
+    int nnz_local = 0;
+    while (fgets(line, sizeof(line), fp)) {
+        int r, c;
+        float val;
+        if (sscanf(line, "%d %d %f", &r, &c, &val) == 3) {
+            r--;  /* Convert from 1-indexed to 0-indexed */
+            if (r >= row_start && r < row_end) {
+                nnz_local++;
+            }
+        }
+    }
+    
+    /* Pre-allocate exact amount needed for local rows only */
     int *row_counts = (int *)calloc(local_rows, sizeof(int));
-    int *row_indices = (int *)malloc(total_nnz * sizeof(int));
-    int *col_indices = (int *)malloc(total_nnz * sizeof(int));
-    float *values = (float *)malloc(total_nnz * sizeof(float));
+    int *row_indices = (int *)malloc(nnz_local * sizeof(int));
+    int *col_indices = (int *)malloc(nnz_local * sizeof(int));
+    float *values = (float *)malloc(nnz_local * sizeof(float));
     
     if (!row_counts || !row_indices || !col_indices || !values) {
         free(row_counts);
@@ -356,8 +369,15 @@ int import_matrix_rows_to_csr(
         return ENOMEM;
     }
     
-    /* Read entries, keep only those in [row_start, row_end) */
-    int nnz_local = 0;
+    /* Second pass: read entries, keep only those in [row_start, row_end) */
+    rewind(fp);
+    while (fgets(line, sizeof(line), fp)) {
+        if (line[0] == '%') continue;
+        int test_rows, test_cols, test_nnz;
+        if (sscanf(line, "%d %d %d", &test_rows, &test_cols, &test_nnz) == 3) break;
+    }
+    
+    nnz_local = 0;
     while (fgets(line, sizeof(line), fp)) {
         int r, c;
         float val;
@@ -437,9 +457,6 @@ int import_matrix_rows_to_csr(
     csr->values = csr_values;
     
     *out_csr = csr;
-    
-    double density = (nnz_local / (double)(local_rows * global_cols)) * 100.0;
-    printf("  Rows [%d,%d): %d non-zeros (%.4f%% density)\n", row_start, row_end, nnz_local, density);
     
     return 0;
 }
