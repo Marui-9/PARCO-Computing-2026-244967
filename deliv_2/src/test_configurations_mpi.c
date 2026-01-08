@@ -229,9 +229,9 @@ int main(int argc, char* argv[]) {
 
     if (global_rank == 0) printf("Testing 6 MPI communication modes...\n\n");
 
-    /* Mode 1: Standard MPI_Bcast + MPI_Reduce (baseline) */
-    strcpy(modes[num_modes].name, "MPI_Bcast+Reduce");
-    strcpy(modes[num_modes].description, "Standard broadcast x, local SpMV, reduce y");
+    /* Mode 1: Standard MPI_Bcast + MPI_Gatherv (baseline) */
+    strcpy(modes[num_modes].name, "MPI_Bcast+Gatherv");
+    strcpy(modes[num_modes].description, "Standard broadcast x, local SpMV, gatherv y to rank 0");
     run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
                   comm_bcast_reduce, num_iterations, thread_count);
     num_modes++;
@@ -243,9 +243,9 @@ int main(int argc, char* argv[]) {
                   comm_isend_irecv, num_iterations, thread_count);
     num_modes++;
 
-    /* Mode 3: MPI_Allgather */
-    strcpy(modes[num_modes].name, "Allgather");
-    strcpy(modes[num_modes].description, "Gather full x on all ranks, local SpMV, reduce y");
+    /* Mode 3: MPI_Allgatherv */
+    strcpy(modes[num_modes].name, "Allgatherv");
+    strcpy(modes[num_modes].description, "Broadcast x, local SpMV, all ranks receive full y vector");
     run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
                   comm_allgather, num_iterations, thread_count);
     num_modes++;
@@ -264,9 +264,9 @@ int main(int argc, char* argv[]) {
                   comm_ring_reduce, num_iterations, thread_count);
     num_modes++;
 
-    /* Mode 6: Async Collectives (if available) */
+    /* Mode 6: Async Collectives (MPI_Ibcast + MPI_Igatherv) */
     strcpy(modes[num_modes].name, "Async_Collectives");
-    strcpy(modes[num_modes].description, "MPI_Ibcast and MPI_Iallreduce if available");
+    strcpy(modes[num_modes].description, "Non-blocking Ibcast x and Igatherv y with computation overlap");
     run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
                   comm_async_collectives, num_iterations, thread_count);
     num_modes++;
@@ -431,29 +431,29 @@ void comm_bcast_reduce(int rank, int size, csr_matrix *A_local,
 }
 
 /*------------------------------------------------------------------*/
-/* Communication Mode 2: Non-blocking Isend/Irecv */
+/* Communication Mode 2: Non-blocking Ibcast/Igatherv */
 void comm_isend_irecv(int rank, int size, csr_matrix *A_local, 
                       float *x, float *y, int thread_count,
                       double *comm_time, double *compute_time) {
     double t_comm = 0.0, t_comp = 0.0;
     
-    /* Non-blocking broadcast using Isend/Irecv (simulated with Ibcast) */
-    MPI_Request req;
+    /* Non-blocking broadcast using Ibcast */
+    MPI_Request req_bcast, req_gather;
     double t_start = MPI_Wtime();
-    MPI_Ibcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD, &req);
+    MPI_Ibcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_bcast);
     t_comm += MPI_Wtime() - t_start;
 
-    /* Local SpMV (partially overlapped) */
+    /* Local SpMV (partially overlapped with Ibcast) */
     t_start = MPI_Wtime();
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
 
     /* Wait for broadcast to complete */
     t_start = MPI_Wtime();
-    MPI_Wait(&req, MPI_STATUS_IGNORE);
+    MPI_Wait(&req_bcast, MPI_STATUS_IGNORE);
     t_comm += MPI_Wtime() - t_start;
 
-    /* Gather results with proper handling of uneven rows */
+    /* Non-blocking gather results with proper handling of uneven rows */
     t_start = MPI_Wtime();
     int *send_counts = (rank == 0) ? (int *)malloc(size * sizeof(int)) : NULL;
     int *displs = (rank == 0) ? (int *)malloc(size * sizeof(int)) : NULL;
@@ -468,8 +468,10 @@ void comm_isend_irecv(int rank, int size, csr_matrix *A_local,
         }
     }
     
+    /* Use non-blocking gather (Igatherv) */
     float *y_global = (rank == 0) ? (float *)malloc(m_global * sizeof(float)) : NULL;
-    MPI_Gatherv(y, m_local, MPI_FLOAT, y_global, send_counts, displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Igatherv(y, m_local, MPI_FLOAT, y_global, send_counts, displs, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_gather);
+    MPI_Wait(&req_gather, MPI_STATUS_IGNORE);
     t_comm += MPI_Wtime() - t_start;
 
     if (rank == 0 && y_global) free(y_global);
@@ -785,8 +787,10 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
     }
 
     /* Write CSV */
+    char csv_dir[256];
     char csv_filename[256];
-    snprintf(csv_filename, sizeof(csv_filename), "results/test_config_mpi_results_%dnodes.csv", size);
+    snprintf(csv_dir, sizeof(csv_dir), "results/test_results_%dnodes", size);
+    snprintf(csv_filename, sizeof(csv_filename), "%s/test_config_mpi_results_%dnodes.csv", csv_dir, size);
     
     FILE *csv = fopen(csv_filename, "a");
     if (!csv) {
