@@ -85,7 +85,7 @@ echo "Timestamp: $(date)"
 echo ""
 
 # Run the benchmark script for 8 nodes
-bash scripts/bench_mpi_8nodes.sh
+bash scripts/bench_configs_Xnodes/bench_mpi_8nodes.sh
 BENCH_EXIT=$?
 
 echo ""
