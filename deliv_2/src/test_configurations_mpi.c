@@ -130,6 +130,7 @@ int main(int argc, char* argv[]) {
     /* All ranks read global matrix dimensions first */
     int m_global_local = 0, n_global_local = 0;
     long long nnz_global_local = 0;
+    int bcast_result = 0;
     
     /* Try to open matrix file - check if path needs adjustment */
     char resolved_path[1024] = {0};
@@ -176,54 +177,70 @@ int main(int argc, char* argv[]) {
     
     char line[256];
     int header_found = 0;
-    while (fgets(line, sizeof(line), fp_test)) {
+    fprintf(stderr, "Rank %d: Starting to read header from file\n", global_rank);
+    fflush(stderr);
+    
+    int line_count = 0;
+    while (fgets(line, sizeof(line), fp_test) != NULL) {
+        line_count++;
+        if (line_count <= 5) {
+            fprintf(stderr, "Rank %d: Line %d: %.80s\n", global_rank, line_count, line);
+            fflush(stderr);
+        }
         if (line[0] == '%') continue;
-        if (sscanf(line, "%d %d %lld", &m_global_local, &n_global_local, &nnz_global_local) == 3) {
+        int parsed = sscanf(line, "%d %d %lld", &m_global_local, &n_global_local, &nnz_global_local);
+        if (parsed == 3) {
+            fprintf(stderr, "Rank %d: Found header! m=%d, n=%d, nnz=%lld\n", 
+                    global_rank, m_global_local, n_global_local, nnz_global_local);
+            fflush(stderr);
             header_found = 1;
             break;
         }
     }
     fclose(fp_test);
     
+    fprintf(stderr, "Rank %d: Finished reading file, header_found=%d\n", global_rank, header_found);
+    fflush(stderr);
+    
     if (!header_found) {
-        fprintf(stderr, "Rank %d: Failed to read matrix header from %s\n", global_rank, working_matrix_path);
+        fprintf(stderr, "Rank %d: FAILED to read matrix header from %s\n", global_rank, working_matrix_path);
         fflush(stderr);
         MPI_Finalize();
         exit(1);
     }
 
-    if (global_rank == 0) {
-        printf("Rank 0: Header read successfully. m=%d, n=%d, nnz=%lld\n", 
-               m_global_local, n_global_local, nnz_global_local);
-        fflush(stdout);
-    }
+    fprintf(stderr, "Rank %d: Header successfully read. m=%d, n=%d, nnz=%lld\n", 
+            global_rank, m_global_local, n_global_local, nnz_global_local);
+    fflush(stderr);
 
     /* Synchronize before broadcasts */
+    fprintf(stderr, "Rank %d: About to enter barrier\n", global_rank);
+    fflush(stderr);
     MPI_Barrier(MPI_COMM_WORLD);
+    fprintf(stderr, "Rank %d: Exited barrier\n", global_rank);
+    fflush(stderr);
 
     /* Broadcast dimensions to ensure all ranks agree */
-    if (global_rank == 0) {
-        printf("Rank 0: Broadcasting m_global_local=%d\n", m_global_local);
-        fflush(stdout);
-    }
-    MPI_Bcast(&m_global_local, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    fprintf(stderr, "Rank %d: About to Bcast m_global_local=%d\n", global_rank, m_global_local);
+    fflush(stderr);
+    int bcast_result = MPI_Bcast(&m_global_local, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    fprintf(stderr, "Rank %d: Bcast m_global_local completed with code %d\n", global_rank, bcast_result);
+    fflush(stderr);
     
-    if (global_rank == 0) {
-        printf("Rank 0: Broadcasting n_global_local=%d\n", n_global_local);
-        fflush(stdout);
-    }
-    MPI_Bcast(&n_global_local, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    fprintf(stderr, "Rank %d: About to Bcast n_global_local=%d\n", global_rank, n_global_local);
+    fflush(stderr);
+    bcast_result = MPI_Bcast(&n_global_local, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    fprintf(stderr, "Rank %d: Bcast n_global_local completed with code %d\n", global_rank, bcast_result);
+    fflush(stderr);
     
-    if (global_rank == 0) {
-        printf("Rank 0: Broadcasting nnz_global_local=%lld\n", nnz_global_local);
-        fflush(stdout);
-    }
-    MPI_Bcast(&nnz_global_local, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+    fprintf(stderr, "Rank %d: About to Bcast nnz_global_local=%lld\n", global_rank, nnz_global_local);
+    fflush(stderr);
+    bcast_result = MPI_Bcast(&nnz_global_local, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+    fprintf(stderr, "Rank %d: Bcast nnz_global_local completed with code %d\n", global_rank, bcast_result);
+    fflush(stderr);
     
-    if (global_rank == 0) {
-        printf("Rank 0: All broadcasts complete\n");
-        fflush(stdout);
-    }
+    fprintf(stderr, "Rank %d: All broadcasts complete\n", global_rank);
+    fflush(stderr);
     
     m_global = m_global_local;
     n_global = n_global_local;
