@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
     }
 
     const char *matrix_file = argv[1];
-    int num_iterations = (argc == 3) ? atoi(argv[2]) : 30;
+    int num_iterations = (argc == 3) ? atoi(argv[2]) : 50;
     const int thread_count = 48;  // Fixed optimal thread count per NUMA analysis
     
     fprintf(stderr, "Rank %d: Matrix file arg: %s\n", global_rank, matrix_file);

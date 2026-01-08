@@ -318,7 +318,7 @@ int import_matrix_rows_to_csr(
         return ENOENT;
     }
     
-    /* Skip comments and read matrix header */
+    /* Read matrix header */
     char line[256];
     int global_rows = 0, cols = 0, total_nnz = 0;
     
@@ -341,43 +341,27 @@ int import_matrix_rows_to_csr(
     
     int local_rows = row_end - row_start;
     
-    /* First pass: count NNZ in our row range */
-    int nnz_local = 0;
-    while (fgets(line, sizeof(line), fp)) {
-        int r, c;
-        float val;
-        if (sscanf(line, "%d %d %f", &r, &c, &val) == 3) {
-            r--;  /* Convert from 1-indexed to 0-indexed */
-            if (r >= row_start && r < row_end) {
-                nnz_local++;
-            }
-        }
-    }
+    /* Estimate buffer size based on overall matrix density */
+    int estimated_nnz = (int)((long long)total_nnz * local_rows / global_rows) + 100;
+    int capacity = estimated_nnz * 2;  /* Over-allocate to reduce reallocations */
     
-    /* Pre-allocate exact amount needed for local rows only */
+    /* Allocate temporary triplet storage */
+    int *row_indices = (int *)malloc(capacity * sizeof(int));
+    int *col_indices = (int *)malloc(capacity * sizeof(int));
+    float *values = (float *)malloc(capacity * sizeof(float));
     int *row_counts = (int *)calloc(local_rows, sizeof(int));
-    int *row_indices = (int *)malloc(nnz_local * sizeof(int));
-    int *col_indices = (int *)malloc(nnz_local * sizeof(int));
-    float *values = (float *)malloc(nnz_local * sizeof(float));
     
-    if (!row_counts || !row_indices || !col_indices || !values) {
-        free(row_counts);
+    if (!row_indices || !col_indices || !values || !row_counts) {
         free(row_indices);
         free(col_indices);
         free(values);
+        free(row_counts);
         fclose(fp);
         return ENOMEM;
     }
     
-    /* Second pass: read entries, keep only those in [row_start, row_end) */
-    rewind(fp);
-    while (fgets(line, sizeof(line), fp)) {
-        if (line[0] == '%') continue;
-        int test_rows, test_cols, test_nnz;
-        if (sscanf(line, "%d %d %d", &test_rows, &test_cols, &test_nnz) == 3) break;
-    }
-    
-    nnz_local = 0;
+    /* Single pass: read all entries and collect those in [row_start, row_end) */
+    int nnz_local = 0;
     while (fgets(line, sizeof(line), fp)) {
         int r, c;
         float val;
@@ -385,6 +369,28 @@ int import_matrix_rows_to_csr(
             r--;  /* Convert from 1-indexed to 0-indexed */
             c--;
             if (r >= row_start && r < row_end && c < cols) {
+                /* Resize if needed */
+                if (nnz_local >= capacity) {
+                    capacity *= 2;
+                    int *new_row = (int *)realloc(row_indices, capacity * sizeof(int));
+                    int *new_col = (int *)realloc(col_indices, capacity * sizeof(int));
+                    float *new_val = (float *)realloc(values, capacity * sizeof(float));
+                    if (!new_row || !new_col || !new_val) {
+                        free(new_row);
+                        free(new_col);
+                        free(new_val);
+                        free(row_indices);
+                        free(col_indices);
+                        free(values);
+                        free(row_counts);
+                        fclose(fp);
+                        return ENOMEM;
+                    }
+                    row_indices = new_row;
+                    col_indices = new_col;
+                    values = new_val;
+                }
+                
                 row_indices[nnz_local] = r - row_start;  /* Local row index */
                 col_indices[nnz_local] = c;
                 values[nnz_local] = val;
@@ -395,7 +401,17 @@ int import_matrix_rows_to_csr(
     }
     fclose(fp);
     
-    /* Build CSR row_ptr */
+    /* Trim buffers to exact size */
+    if (nnz_local < capacity) {
+        int *trimmed_row = (int *)realloc(row_indices, nnz_local * sizeof(int));
+        int *trimmed_col = (int *)realloc(col_indices, nnz_local * sizeof(int));
+        float *trimmed_val = (float *)realloc(values, nnz_local * sizeof(float));
+        if (trimmed_row) row_indices = trimmed_row;
+        if (trimmed_col) col_indices = trimmed_col;
+        if (trimmed_val) values = trimmed_val;
+    }
+    
+    /* Build CSR row_ptr from row counts */
     int *row_ptr = (int *)malloc((local_rows + 1) * sizeof(int));
     if (!row_ptr) {
         free(row_counts);
@@ -409,7 +425,6 @@ int import_matrix_rows_to_csr(
     for (int i = 0; i < local_rows; i++) {
         row_ptr[i + 1] = row_ptr[i] + row_counts[i];
     }
-    free(row_counts);
     
     /* Sort entries by row and fill CSR arrays */
     int *csr_col_ind = (int *)malloc(nnz_local * sizeof(int));
@@ -418,6 +433,7 @@ int import_matrix_rows_to_csr(
     
     if (!csr_col_ind || !csr_values || !entry_pos) {
         free(row_ptr);
+        free(row_counts);
         free(row_indices);
         free(col_indices);
         free(values);
@@ -427,6 +443,7 @@ int import_matrix_rows_to_csr(
         return ENOMEM;
     }
     
+    /* Place entries in CSR arrays */
     for (int i = 0; i < nnz_local; i++) {
         int r = row_indices[i];
         int pos = row_ptr[r] + entry_pos[r];
@@ -435,6 +452,8 @@ int import_matrix_rows_to_csr(
         entry_pos[r]++;
     }
     
+    /* Free temporary storage */
+    free(row_counts);
     free(row_indices);
     free(col_indices);
     free(values);
