@@ -111,97 +111,74 @@ int main(int argc, char* argv[]) {
     int num_iterations = (argc == 3) ? atoi(argv[2]) : 30;
     const int thread_count = 48;  // Fixed optimal thread count per NUMA analysis
     
-    /* Rank 0 loads and distributes the global matrix */
-    csr_matrix *A_global = NULL;
-    int result = 0;
+    /* All ranks read global matrix dimensions first */
+    int m_global_local = 0, n_global_local = 0;
+    long long nnz_global_local = 0;
     
-    if (global_rank == 0) {
-        result = import_matrix_to_csr(matrix_file, &A_global);
-        if (result != 0) {
-            fprintf(stderr, "Failed to import matrix from %s\n", matrix_file);
-            result = 1;
-        } else {
-            printf("\n=== MPI Communication Modes Benchmark ===\n");
-            printf("Matrix: %s\n", matrix_file);
-            printf("Dimensions: %d × %d, %lld NNZ (%.4f%% density)\n\n", 
-                   A_global->rows, A_global->cols, A_global->nnz,
-                   (A_global->nnz / (double)(A_global->rows * A_global->cols)) * 100.0);
-            printf("MPI Ranks: %d, Threads/rank: %d\n", global_size, thread_count);
-            printf("Iterations: %d\n\n", num_iterations);
-        }
-    }
-
-    /* Broadcast result status */
-    MPI_Bcast(&result, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    if (result != 0) {
-        MPI_Finalize();
-        exit(1);
-    }
-
-    /* Broadcast global matrix dimensions */
-    if (global_rank != 0) {
-        A_global = (csr_matrix *)malloc(sizeof(csr_matrix));
-        if (!A_global) {
-            fprintf(stderr, "Rank %d: Failed to allocate A_global\n", global_rank);
-            MPI_Finalize();
-            exit(1);
-        }
-    }
-    
-    MPI_Bcast(&A_global->rows, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&A_global->cols, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&A_global->nnz, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
-
-    /* Non-zero ranks: allocate arrays to receive matrix data */
-    if (global_rank != 0) {
-        A_global->row_ptr = (int *)malloc((A_global->rows + 1) * sizeof(int));
-        A_global->col_ind = (int *)malloc(A_global->nnz * sizeof(int));
-        A_global->values = (float *)malloc(A_global->nnz * sizeof(float));
-        
-        if (!A_global->row_ptr || !A_global->col_ind || !A_global->values) {
-            fprintf(stderr, "Rank %d: Failed to allocate CSR arrays\n", global_rank);
-            MPI_Finalize();
-            exit(1);
-        }
-    }
-    
-    /* Broadcast CSR data from rank 0 to all ranks */
-    MPI_Bcast(A_global->row_ptr, A_global->rows + 1, MPI_INT, 0, MPI_COMM_WORLD);
-    
-    /* For large matrices, nnz might exceed INT_MAX, so we need to cast carefully */
-    int nnz_count = (int)A_global->nnz;
-    if ((long long)nnz_count != A_global->nnz) {
-        fprintf(stderr, "ERROR: Matrix nnz (%lld) exceeds INT_MAX, cannot broadcast with MPI\n", A_global->nnz);
+    FILE *fp_test = fopen(matrix_file, "r");
+    if (!fp_test) {
+        fprintf(stderr, "Rank %d: Cannot open file %s\n", global_rank, matrix_file);
         MPI_Finalize();
         exit(1);
     }
     
-    MPI_Bcast(A_global->col_ind, nnz_count, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(A_global->values, nnz_count, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
-    m_global = A_global->rows;
-    n_global = A_global->cols;
-    nnz_global = A_global->nnz;
-
-    if (global_rank == 0) {
-        printf("DEBUG: m_global=%d, n_global=%d, nnz=%lld\n", m_global, n_global, nnz_global);
+    char line[256];
+    while (fgets(line, sizeof(line), fp_test)) {
+        if (line[0] == '%') continue;
+        if (sscanf(line, "%d %d %lld", &m_global_local, &n_global_local, &nnz_global_local) == 3) break;
     }
-
-    /* Distribute matrix by rows */
-    csr_matrix *A_local = (csr_matrix *)malloc(sizeof(csr_matrix));
-    distribute_matrix_by_rows(A_global, A_local);
-
-    m_local = A_local->rows;
+    fclose(fp_test);
+    
+    /* Broadcast dimensions to ensure all ranks agree */
+    MPI_Bcast(&m_global_local, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&n_global_local, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&nnz_global_local, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+    
+    m_global = m_global_local;
+    n_global = n_global_local;
+    nnz_global = nnz_global_local;
+    
+    if (global_rank == 0) {
+        printf("\n=== MPI Communication Modes Benchmark ===\n");
+        printf("Matrix: %s\n", matrix_file);
+        printf("Dimensions: %d × %d, %lld NNZ (%.4f%% density)\n\n", 
+               m_global, n_global, nnz_global,
+               (nnz_global / (double)(m_global * n_global)) * 100.0);
+        printf("MPI Ranks: %d, Threads/rank: %d\n", global_size, thread_count);
+        printf("Iterations: %d\n\n", num_iterations);
+        printf("Loading matrix with concurrent reads from all ranks...\n");
+    }
+    
+    /* Each rank reads its assigned rows directly from the shared filesystem */
     row_start = (m_global / global_size) * global_rank;
-    row_end = (global_rank == global_size - 1) ? m_global : row_start + m_local;
+    row_end = (global_rank == global_size - 1) ? m_global : row_start + (m_global / global_size);
+    
+    csr_matrix *A_local = NULL;
+    int result = import_matrix_rows_to_csr(matrix_file, row_start, row_end, n_global, &A_local);
+    
+    if (result != 0) {
+        fprintf(stderr, "Rank %d: Failed to import matrix rows [%d,%d)\n", global_rank, row_start, row_end);
+        MPI_Finalize();
+        exit(1);
+    }
+    
+    m_local = A_local->rows;
+    
+    if (global_rank == 0) {
+        printf("Matrix loading complete.\n\n");
+    }
 
-    /* Allocate vectors */
+    /* Allocate and generate x_global on all ranks */
     x_global = generate_vector_aligned(n_global);
     if (!x_global) {
         fprintf(stderr, "Rank %d: Failed to allocate x_global (size=%d)\n", global_rank, n_global);
         MPI_Finalize();
         exit(1);
     }
+    
+    /* Ensure all ranks have identical x_global - broadcast from rank 0 */
+    MPI_Bcast(x_global, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    
     if (global_rank == 0) {
         printf("DEBUG: Allocated x_global with %d floats (%.2f MB)\n", n_global, n_global * 4.0 / (1024*1024));
     }
