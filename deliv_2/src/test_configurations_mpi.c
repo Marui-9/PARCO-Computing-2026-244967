@@ -102,6 +102,15 @@ int main(int argc, char* argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &global_size);
     
+    /* Critical: flush to ensure output is seen even if program crashes */
+    fprintf(stderr, "=== Rank %d of %d initialized ===\n", global_rank, global_size);
+    fflush(stderr);
+    
+    /* Ensure all ranks have started */
+    MPI_Barrier(MPI_COMM_WORLD);
+    fprintf(stderr, "Rank %d: Passed initialization barrier\n", global_rank);
+    fflush(stderr);
+    
     if (argc < 2 || argc > 3) {
         if (global_rank == 0) {
             fprintf(stderr, "usage: mpirun -np <num_ranks> %s <matrix_file> [iterations]\n", argv[0]);
@@ -115,6 +124,9 @@ int main(int argc, char* argv[]) {
     int num_iterations = (argc == 3) ? atoi(argv[2]) : 30;
     const int thread_count = 48;  // Fixed optimal thread count per NUMA analysis
     
+    fprintf(stderr, "Rank %d: Matrix file arg: %s\n", global_rank, matrix_file);
+    fflush(stderr);
+    
     /* All ranks read global matrix dimensions first */
     int m_global_local = 0, n_global_local = 0;
     long long nnz_global_local = 0;
@@ -124,16 +136,23 @@ int main(int argc, char* argv[]) {
     FILE *fp_test = NULL;
     char working_matrix_path[1024];
     
+    fprintf(stderr, "Rank %d: Trying to open %s\n", global_rank, matrix_file);
+    fflush(stderr);
+    
     /* First try the provided path */
     fp_test = fopen(matrix_file, "r");
     
     /* If that fails and path is relative, try with ../matrices/ or ../../matrices/ */
     if (!fp_test && matrix_file[0] != '/') {
+        fprintf(stderr, "Rank %d: First attempt failed, trying ../%s\n", global_rank, matrix_file);
+        fflush(stderr);
         snprintf(resolved_path, sizeof(resolved_path), "../%s", matrix_file);
         fp_test = fopen(resolved_path, "r");
     }
     
     if (!fp_test && matrix_file[0] != '/') {
+        fprintf(stderr, "Rank %d: Second attempt failed, trying ../../%s\n", global_rank, matrix_file);
+        fflush(stderr);
         snprintf(resolved_path, sizeof(resolved_path), "../../%s", matrix_file);
         fp_test = fopen(resolved_path, "r");
     }
@@ -141,10 +160,14 @@ int main(int argc, char* argv[]) {
     /* Set working path for use by all ranks */
     if (fp_test && resolved_path[0] != '\0') {
         strcpy(working_matrix_path, resolved_path);
+        fprintf(stderr, "Rank %d: Successfully opened with resolved path: %s\n", global_rank, resolved_path);
+        fflush(stderr);
     } else if (fp_test) {
         strcpy(working_matrix_path, matrix_file);
+        fprintf(stderr, "Rank %d: Successfully opened with original path: %s\n", global_rank, matrix_file);
+        fflush(stderr);
     } else {
-        fprintf(stderr, "Rank %d: Cannot open matrix file %s (errno=%d)\n", 
+        fprintf(stderr, "Rank %d: FAILED to open matrix file %s (errno=%d)\n", 
                 global_rank, matrix_file, errno);
         fflush(stderr);
         MPI_Finalize();
@@ -164,14 +187,43 @@ int main(int argc, char* argv[]) {
     
     if (!header_found) {
         fprintf(stderr, "Rank %d: Failed to read matrix header from %s\n", global_rank, working_matrix_path);
+        fflush(stderr);
         MPI_Finalize();
         exit(1);
     }
 
+    if (global_rank == 0) {
+        printf("Rank 0: Header read successfully. m=%d, n=%d, nnz=%lld\n", 
+               m_global_local, n_global_local, nnz_global_local);
+        fflush(stdout);
+    }
+
+    /* Synchronize before broadcasts */
+    MPI_Barrier(MPI_COMM_WORLD);
+
     /* Broadcast dimensions to ensure all ranks agree */
+    if (global_rank == 0) {
+        printf("Rank 0: Broadcasting m_global_local=%d\n", m_global_local);
+        fflush(stdout);
+    }
     MPI_Bcast(&m_global_local, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    
+    if (global_rank == 0) {
+        printf("Rank 0: Broadcasting n_global_local=%d\n", n_global_local);
+        fflush(stdout);
+    }
     MPI_Bcast(&n_global_local, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    
+    if (global_rank == 0) {
+        printf("Rank 0: Broadcasting nnz_global_local=%lld\n", nnz_global_local);
+        fflush(stdout);
+    }
     MPI_Bcast(&nnz_global_local, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+    
+    if (global_rank == 0) {
+        printf("Rank 0: All broadcasts complete\n");
+        fflush(stdout);
+    }
     
     m_global = m_global_local;
     n_global = n_global_local;
