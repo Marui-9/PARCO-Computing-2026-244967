@@ -314,15 +314,19 @@ int main(int argc, char* argv[]) {
     MPI_Barrier(MPI_COMM_WORLD);
 
     /* Pre-allocate MPI communication buffers to avoid repeated allocations in benchmark loop */
-    mpi_send_counts = (global_rank == 0) ? (int *)malloc(global_size * sizeof(int)) : NULL;
-    mpi_displs = (global_rank == 0) ? (int *)malloc(global_size * sizeof(int)) : NULL;
-    mpi_y_global = (global_rank == 0) ? (float *)malloc(m_global * sizeof(float)) : NULL;
+    /* All ranks need these buffers allocated (though only rank 0 uses them actively) */
+    mpi_send_counts = (int *)malloc(global_size * sizeof(int));
+    mpi_displs = (int *)malloc(global_size * sizeof(int));
+    mpi_y_global = (float *)malloc(m_global * sizeof(float));
     
-    if (global_rank == 0 && (!mpi_send_counts || !mpi_displs || !mpi_y_global)) {
+    if (!mpi_send_counts || !mpi_displs || !mpi_y_global) {
         fprintf(stderr, "Rank %d: Failed to pre-allocate MPI buffers\n", global_rank);
         MPI_Finalize();
         exit(1);
     }
+    
+    fprintf(stderr, "Rank %d: Pre-allocated MPI buffers\n", global_rank);
+    fflush(stderr);
 
     /* Define communication modes to test */
     CommMode modes[6];
@@ -381,11 +385,9 @@ int main(int argc, char* argv[]) {
     free(x_global);
     free(y_local);
     free(y_temp);
-    if (global_rank == 0) {
-        free(mpi_send_counts);
-        free(mpi_displs);
-        free(mpi_y_global);
-    }
+    free(mpi_send_counts);
+    free(mpi_displs);
+    free(mpi_y_global);
     
     /* Free CSR matrices */
     if (A_local) {
