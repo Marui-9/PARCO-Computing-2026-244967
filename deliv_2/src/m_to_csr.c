@@ -342,8 +342,9 @@ int import_matrix_rows_to_csr(
     int local_rows = row_end - row_start;
     
     /* Estimate buffer size based on overall matrix density */
-    int estimated_nnz = (int)((long long)total_nnz * local_rows / global_rows) + 100;
-    int capacity = estimated_nnz * 2;  /* Over-allocate to reduce reallocations */
+    /* Use a more generous estimate to minimize reallocation */
+    int estimated_nnz = (int)((long long)total_nnz * local_rows / global_rows) + 1000;
+    int capacity = (estimated_nnz * 5) / 2;  /* 2.5x over-allocation for safety */
     
     /* Allocate temporary triplet storage */
     int *row_indices = (int *)malloc(capacity * sizeof(int));
@@ -371,7 +372,7 @@ int import_matrix_rows_to_csr(
             if (r >= row_start && r < row_end && c < cols) {
                 /* Resize if needed */
                 if (nnz_local >= capacity) {
-                    capacity *= 2;
+                    capacity = (capacity * 3) / 2;  /* 1.5x growth instead of 2x */
                     int *new_row = (int *)realloc(row_indices, capacity * sizeof(int));
                     int *new_col = (int *)realloc(col_indices, capacity * sizeof(int));
                     float *new_val = (float *)realloc(values, capacity * sizeof(float));
