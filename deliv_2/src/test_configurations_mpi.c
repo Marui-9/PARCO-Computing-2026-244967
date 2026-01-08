@@ -540,6 +540,14 @@ void comm_pipelined(int rank, int size, csr_matrix *A_local,
     int chunk_size = (n_global + size - 1) / size;
     double t_start = MPI_Wtime();
     
+    /* Pre-compute chunk sizes for all ranks to ensure consistency */
+    int *chunk_sizes = (int *)malloc(size * sizeof(int));
+    for (int r = 0; r < size; r++) {
+        int chunk_start = r * chunk_size;
+        int chunk_end = (r == size - 1) ? n_global : (r + 1) * chunk_size;
+        chunk_sizes[r] = chunk_end - chunk_start;
+    }
+    
     /* Pipeline x chunks through ring topology */
     for (int stage = 0; stage < size; stage++) {
         int src = (rank - stage + size) % size;
@@ -547,8 +555,7 @@ void comm_pipelined(int rank, int size, csr_matrix *A_local,
         int prev = (rank - 1 + size) % size;
         
         int chunk_start = src * chunk_size;
-        int chunk_end = (src == size - 1) ? n_global : (src + 1) * chunk_size;
-        int chunk_len = chunk_end - chunk_start;
+        int chunk_len = chunk_sizes[src];  /* Use pre-computed consistent size */
         
         /* Receive chunk from previous rank (except rank 0 on first stage) */
         if (rank != 0 || stage > 0) {
@@ -560,6 +567,8 @@ void comm_pipelined(int rank, int size, csr_matrix *A_local,
             MPI_Send(x + chunk_start, chunk_len, MPI_FLOAT, dst, stage, MPI_COMM_WORLD);
         }
     }
+    
+    free(chunk_sizes);
     t_comm += MPI_Wtime() - t_start;
 
     /* Local SpMV after pipelined receive completes */
