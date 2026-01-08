@@ -816,7 +816,7 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
     /* Write CSV */
     char csv_dir[256];
     char csv_filename[256];
-    snprintf(csv_dir, sizeof(csv_dir), "results/test_results_%dnodes", size);
+    snprintf(csv_dir, sizeof(csv_dir), "results/test_results_Xnodes", size);
     snprintf(csv_filename, sizeof(csv_filename), "%s/test_config_mpi_results_%dnodes.csv", csv_dir, size);
     
     FILE *csv = fopen(csv_filename, "a");
