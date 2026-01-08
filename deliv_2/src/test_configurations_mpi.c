@@ -553,22 +553,23 @@ void comm_pipelined(int rank, int size, csr_matrix *A_local,
     int req_count = 0;
     
     for (int stage = 0; stage < size; stage++) {
-        int src = (rank - stage + size) % size;
-        int dst = (rank + 1) % size;
-        int prev = (rank - 1 + size) % size;
+        int src = (rank - stage + size) % size;      /* Original source of this chunk */
+        int sender = (rank - 1 + size) % size;       /* Who sends to us (previous in ring) */
+        int dst = (rank + 1) % size;                 /* Who we send to (next in ring) */
         
         int chunk_start = src * chunk_size;
-        int chunk_len = chunk_sizes[src];  /* Use pre-computed consistent size */
+        int send_chunk_len = chunk_sizes[src];       /* Size of chunk we're passing */
+        int recv_chunk_len = chunk_sizes[sender];    /* Size of chunk being sent to us from previous rank */
         
-        /* Post receive first (if needed) to ensure buffer is ready */
-        if (rank != 0 || stage > 0) {
-            MPI_Irecv(x + chunk_start, chunk_len, MPI_FLOAT, prev, stage, MPI_COMM_WORLD, 
-                     &requests[req_count++]);
+        /* Post receive first (if this chunk didn't originate from us) */
+        if (rank != sender) {
+            MPI_Irecv(x + sender * chunk_size, recv_chunk_len, MPI_FLOAT, sender, stage, 
+                     MPI_COMM_WORLD, &requests[req_count++]);
         }
         
-        /* Send chunk to next rank (non-blocking) */
+        /* Send chunk to next rank (non-blocking) - send from src's position */
         if (rank != dst) {
-            MPI_Isend(x + chunk_start, chunk_len, MPI_FLOAT, dst, stage, MPI_COMM_WORLD,
+            MPI_Isend(x + chunk_start, send_chunk_len, MPI_FLOAT, dst, stage, MPI_COMM_WORLD,
                      &requests[req_count++]);
         }
         
