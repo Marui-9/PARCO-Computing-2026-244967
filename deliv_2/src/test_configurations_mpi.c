@@ -209,11 +209,12 @@ int main(int argc, char* argv[]) {
             global_rank, m_global_local, n_global_local, nnz_global_local);
     fflush(stderr);
 
-    /* Synchronize before broadcasts */
-    fprintf(stderr, "Rank %d: About to enter barrier\n", global_rank);
+    /* CRITICAL: Synchronize ALL ranks before any broadcasts */
+    /* This ensures all ranks have finished reading headers from file before proceeding */
+    fprintf(stderr, "Rank %d: About to enter sync barrier (all header reads must be done)\n", global_rank);
     fflush(stderr);
     MPI_Barrier(MPI_COMM_WORLD);
-    fprintf(stderr, "Rank %d: Exited barrier\n", global_rank);
+    fprintf(stderr, "Rank %d: Exited sync barrier\n", global_rank);
     fflush(stderr);
 
     /* Broadcast the working path from rank 0 to all ranks */
