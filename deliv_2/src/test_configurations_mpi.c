@@ -536,7 +536,7 @@ void comm_pipelined(int rank, int size, csr_matrix *A_local,
                     double *comm_time, double *compute_time) {
     double t_comm = 0.0, t_comp = 0.0;
     
-    /* Pipelined distribution: divide x into chunks and pass through ring */
+    /* Pipelined distribution: each rank sends its chunk to next rank in ring */
     int chunk_size = (n_global + size - 1) / size;
     double t_start = MPI_Wtime();
     
@@ -548,40 +548,45 @@ void comm_pipelined(int rank, int size, csr_matrix *A_local,
         chunk_sizes[r] = chunk_end - chunk_start;
     }
     
-    /* Pipeline x chunks through ring topology using non-blocking sends to avoid deadlock */
-    MPI_Request *requests = (MPI_Request *)malloc(2 * size * sizeof(MPI_Request));
-    int req_count = 0;
+    /* Ring-based distribution: rank i sends its chunk to rank (i+1)%size */
+    /* This is repeated size times to ensure all ranks eventually get all chunks */
+    MPI_Request req_send, req_recv;
     
-    for (int stage = 0; stage < size; stage++) {
-        int src = (rank - stage + size) % size;      /* Original source of this chunk */
-        int sender = (rank - 1 + size) % size;       /* Who sends to us (previous in ring) */
-        int dst = (rank + 1) % size;                 /* Who we send to (next in ring) */
+    for (int stage = 0; stage < size - 1; stage++) {
+        int next_rank = (rank + 1) % size;
+        int prev_rank = (rank - 1 + size) % size;
         
-        int chunk_start = src * chunk_size;
-        int send_chunk_len = chunk_sizes[src];       /* Size of chunk we're passing */
-        int recv_chunk_len = chunk_sizes[sender];    /* Size of chunk being sent to us from previous rank */
+        /* The chunk being passed in this stage comes from rank prev_rank */
+        int incoming_chunk_source = (rank - stage - 1 + size) % size;
+        int outgoing_chunk_source = (rank - stage + size) % size;
         
-        /* Post receive first (if this chunk didn't originate from us) */
-        if (rank != sender) {
-            MPI_Irecv(x + sender * chunk_size, recv_chunk_len, MPI_FLOAT, sender, stage, 
-                     MPI_COMM_WORLD, &requests[req_count++]);
+        int incoming_chunk_start = incoming_chunk_source * chunk_size;
+        int incoming_chunk_len = chunk_sizes[incoming_chunk_source];
+        
+        int outgoing_chunk_start = outgoing_chunk_source * chunk_size;
+        int outgoing_chunk_len = chunk_sizes[outgoing_chunk_source];
+        
+        /* Post non-blocking receive and send for this stage */
+        int send_issued = 0, recv_issued = 0;
+        
+        /* Receive from previous rank (if not our own chunk on first stage) */
+        if (stage > 0 || rank != 0) {
+            MPI_Irecv(x + incoming_chunk_start, incoming_chunk_len, MPI_FLOAT, 
+                     prev_rank, stage, MPI_COMM_WORLD, &req_recv);
+            recv_issued = 1;
         }
         
-        /* Send chunk to next rank (non-blocking) - send from src's position */
-        if (rank != dst) {
-            MPI_Isend(x + chunk_start, send_chunk_len, MPI_FLOAT, dst, stage, MPI_COMM_WORLD,
-                     &requests[req_count++]);
-        }
+        /* Send to next rank */
+        MPI_Isend(x + outgoing_chunk_start, outgoing_chunk_len, MPI_FLOAT, 
+                 next_rank, stage, MPI_COMM_WORLD, &req_send);
+        send_issued = 1;
         
-        /* Wait for posted operations to complete before next stage */
-        if (req_count > 0) {
-            MPI_Waitall(req_count, requests, MPI_STATUSES_IGNORE);
-            req_count = 0;
-        }
+        /* Wait for both operations */
+        if (recv_issued) MPI_Wait(&req_recv, MPI_STATUS_IGNORE);
+        if (send_issued) MPI_Wait(&req_send, MPI_STATUS_IGNORE);
     }
     
     free(chunk_sizes);
-    free(requests);
     t_comm += MPI_Wtime() - t_start;
 
     /* Local SpMV after pipelined receive completes */
