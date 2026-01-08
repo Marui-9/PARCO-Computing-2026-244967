@@ -286,6 +286,10 @@ int main(int argc, char* argv[]) {
     }
 
     /* Allocate and generate x_global on all ranks */
+    fprintf(stderr, "Rank %d: About to allocate x_global (n_global=%d, size=%zu bytes)\n", 
+            global_rank, n_global, (size_t)n_global * sizeof(float));
+    fflush(stderr);
+    
     x_global = generate_vector_aligned(n_global);
     if (!x_global) {
         fprintf(stderr, "Rank %d: Failed to allocate x_global (size=%d)\n", global_rank, n_global);
@@ -293,8 +297,18 @@ int main(int argc, char* argv[]) {
         exit(1);
     }
     
+    fprintf(stderr, "Rank %d: Successfully allocated x_global at %p\n", global_rank, (void *)x_global);
+    fflush(stderr);
+    
     /* Ensure all ranks have identical x_global - broadcast from rank 0 */
+    fprintf(stderr, "Rank %d: About to Bcast x_global (n_global=%d, ptr=%p)\n", 
+            global_rank, n_global, (void *)x_global);
+    fflush(stderr);
+    
     MPI_Bcast(x_global, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    
+    fprintf(stderr, "Rank %d: Bcast x_global completed\n", global_rank);
+    fflush(stderr);
 
     if (posix_memalign((void**)&y_local, 64, (size_t)m_local * sizeof(float)) != 0) {
         fprintf(stderr, "Rank %d: Failed to allocate y_local\n", global_rank);
@@ -589,6 +603,11 @@ void comm_allgather(int rank, int size, csr_matrix *A_local,
     
     /* Gather local row counts to all ranks */
     MPI_Gather(&m_local, 1, MPI_INT, mpi_send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    
+    fprintf(stderr, "Rank %d: Before Bcast mpi_send_counts, ptr=%p, size=%d\n", 
+            rank, (void *)mpi_send_counts, size);
+    fflush(stderr);
+    
     MPI_Bcast(mpi_send_counts, size, MPI_INT, 0, MPI_COMM_WORLD);
     
     /* Compute displacements */
