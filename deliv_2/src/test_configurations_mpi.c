@@ -238,7 +238,15 @@ int main(int argc, char* argv[]) {
     
     fprintf(stderr, "Rank %d: About to Bcast nnz_global_local=%lld\n", global_rank, nnz_global_local);
     fflush(stderr);
-    bcast_result = MPI_Bcast(&nnz_global_local, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
+    fprintf(stderr, "Rank %d: Passed barrier before nnz Bcast, var at %p\n", global_rank, (void *)&nnz_global_local);
+    fflush(stderr);
+    
+    /* Use temporary buffer to avoid any alignment issues with stack variable */
+    long long nnz_bcast_buf = nnz_global_local;
+    bcast_result = MPI_Bcast(&nnz_bcast_buf, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+    nnz_global_local = nnz_bcast_buf;
+    
     fprintf(stderr, "Rank %d: Bcast nnz_global_local completed with code %d\n", global_rank, bcast_result);
     fflush(stderr);
     
