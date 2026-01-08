@@ -183,10 +183,6 @@ int main(int argc, char* argv[]) {
     int line_count = 0;
     while (fgets(line, sizeof(line), fp_test) != NULL) {
         line_count++;
-        if (line_count <= 5) {
-            fprintf(stderr, "Rank %d: Line %d: %.80s\n", global_rank, line_count, line);
-            fflush(stderr);
-        }
         if (line[0] == '%') continue;
         int parsed = sscanf(line, "%d %d %lld", &m_global_local, &n_global_local, &nnz_global_local);
         if (parsed == 3) {
@@ -218,6 +214,13 @@ int main(int argc, char* argv[]) {
     fflush(stderr);
     MPI_Barrier(MPI_COMM_WORLD);
     fprintf(stderr, "Rank %d: Exited barrier\n", global_rank);
+    fflush(stderr);
+
+    /* Broadcast the working path from rank 0 to all ranks */
+    fprintf(stderr, "Rank %d: About to Bcast working_matrix_path=%s\n", global_rank, working_matrix_path);
+    fflush(stderr);
+    bcast_result = MPI_Bcast(working_matrix_path, 1024, MPI_CHAR, 0, MPI_COMM_WORLD);
+    fprintf(stderr, "Rank %d: Bcast working_matrix_path completed with code %d\n", global_rank, bcast_result);
     fflush(stderr);
 
     /* Broadcast dimensions to ensure all ranks agree */
@@ -260,8 +263,15 @@ int main(int argc, char* argv[]) {
     row_start = (m_global / global_size) * global_rank;
     row_end = (global_rank == global_size - 1) ? m_global : row_start + (m_global / global_size);
     
+    fprintf(stderr, "Rank %d: About to import matrix rows [%d,%d) from %s\n", 
+            global_rank, row_start, row_end, working_matrix_path);
+    fflush(stderr);
+    
     csr_matrix *A_local = NULL;
     int result = import_matrix_rows_to_csr(working_matrix_path, row_start, row_end, n_global, &A_local);
+    
+    fprintf(stderr, "Rank %d: Matrix import completed with result=%d\n", global_rank, result);
+    fflush(stderr);
     
     if (result != 0) {
         fprintf(stderr, "Rank %d: Failed to import matrix rows [%d,%d)\n", global_rank, row_start, row_end);
