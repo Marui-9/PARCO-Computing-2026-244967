@@ -122,6 +122,7 @@ int main(int argc, char* argv[]) {
     /* Try to open matrix file - check if path needs adjustment */
     char resolved_path[1024] = {0};
     FILE *fp_test = NULL;
+    char working_matrix_path[1024];
     
     /* First try the provided path */
     fp_test = fopen(matrix_file, "r");
@@ -130,22 +131,21 @@ int main(int argc, char* argv[]) {
     if (!fp_test && matrix_file[0] != '/') {
         snprintf(resolved_path, sizeof(resolved_path), "../%s", matrix_file);
         fp_test = fopen(resolved_path, "r");
-        if (fp_test && global_rank == 0) {
-            printf("Opened matrix file via adjusted path: %s\n", resolved_path);
-        }
     }
     
     if (!fp_test && matrix_file[0] != '/') {
         snprintf(resolved_path, sizeof(resolved_path), "../../%s", matrix_file);
         fp_test = fopen(resolved_path, "r");
-        if (fp_test && global_rank == 0) {
-            printf("Opened matrix file via adjusted path: %s\n", resolved_path);
-        }
     }
     
-    if (!fp_test) {
-        fprintf(stderr, "Rank %d: Cannot open matrix file %s (errno=%d, tried: %s)\n", 
-                global_rank, matrix_file, errno, resolved_path);
+    /* Set working path for use by all ranks */
+    if (fp_test && resolved_path[0] != '\0') {
+        strcpy(working_matrix_path, resolved_path);
+    } else if (fp_test) {
+        strcpy(working_matrix_path, matrix_file);
+    } else {
+        fprintf(stderr, "Rank %d: Cannot open matrix file %s (errno=%d)\n", 
+                global_rank, matrix_file, errno);
         fflush(stderr);
         MPI_Finalize();
         exit(1);
@@ -162,25 +162,12 @@ int main(int argc, char* argv[]) {
     }
     fclose(fp_test);
     
-    if (global_rank == 0 && !header_found) {
-        fprintf(stderr, "Rank 0: Failed to read matrix header from %s\n", matrix_file);
+    if (!header_found) {
+        fprintf(stderr, "Rank %d: Failed to read matrix header from %s\n", global_rank, working_matrix_path);
         MPI_Finalize();
         exit(1);
     }
-    
-    /* Determine the actual path to use (resolved_path if successful, original otherwise) */
-    char final_matrix_path[1024];
-    if (global_rank == 0) {
-        if (resolved_path[0] != '\0') {
-            strcpy(final_matrix_path, resolved_path);
-        } else {
-            strcpy(final_matrix_path, matrix_file);
-        }
-    }
-    
-    /* Broadcast the final path to all ranks so they use the same file path */
-    MPI_Bcast(final_matrix_path, 1024, MPI_CHAR, 0, MPI_COMM_WORLD);
-    
+
     /* Broadcast dimensions to ensure all ranks agree */
     MPI_Bcast(&m_global_local, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&n_global_local, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -205,7 +192,7 @@ int main(int argc, char* argv[]) {
     row_end = (global_rank == global_size - 1) ? m_global : row_start + (m_global / global_size);
     
     csr_matrix *A_local = NULL;
-    int result = import_matrix_rows_to_csr(final_matrix_path, row_start, row_end, n_global, &A_local);
+    int result = import_matrix_rows_to_csr(working_matrix_path, row_start, row_end, n_global, &A_local);
     
     if (result != 0) {
         fprintf(stderr, "Rank %d: Failed to import matrix rows [%d,%d)\n", global_rank, row_start, row_end);
