@@ -223,7 +223,7 @@ int main(int argc, char* argv[]) {
     /* Broadcast dimensions to ensure all ranks agree */
     fprintf(stderr, "Rank %d: About to Bcast m_global_local=%d\n", global_rank, m_global_local);
     fflush(stderr);
-    int bcast_result = MPI_Bcast(&m_global_local, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    bcast_result = MPI_Bcast(&m_global_local, 1, MPI_INT, 0, MPI_COMM_WORLD);
     fprintf(stderr, "Rank %d: Bcast m_global_local completed with code %d\n", global_rank, bcast_result);
     fflush(stderr);
     
@@ -859,7 +859,7 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
     /* Write CSV */
     char csv_dir[256];
     char csv_filename[256];
-    snprintf(csv_dir, sizeof(csv_dir), "results/test_results_Xnodes", size);
+    snprintf(csv_dir, sizeof(csv_dir), "results/test_results_Xnodes");
     snprintf(csv_filename, sizeof(csv_filename), "%s/test_config_mpi_results_%dnodes.csv", csv_dir, size);
     
     FILE *csv = fopen(csv_filename, "a");
