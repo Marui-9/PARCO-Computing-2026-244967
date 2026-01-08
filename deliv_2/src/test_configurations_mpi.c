@@ -265,13 +265,6 @@ int main(int argc, char* argv[]) {
         if (A_local->values) free(A_local->values);
         free(A_local);
     }
-    
-    if (A_global) {
-        if (A_global->row_ptr) free(A_global->row_ptr);
-        if (A_global->col_ind) free(A_global->col_ind);
-        if (A_global->values) free(A_global->values);
-        free(A_global);
-    }
 
     MPI_Finalize();
     return 0;
@@ -793,7 +786,7 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
     /* Write CSV */
     char csv_dir[256];
     char csv_filename[256];
-    snprintf(csv_dir, sizeof(csv_dir), "results/test_results_Xnodes", size);
+    snprintf(csv_dir, sizeof(csv_dir), "results/test_results_%dnodes", size);
     snprintf(csv_filename, sizeof(csv_filename), "%s/test_config_mpi_results_%dnodes.csv", csv_dir, size);
     
     FILE *csv = fopen(csv_filename, "a");
