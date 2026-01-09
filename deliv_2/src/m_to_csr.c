@@ -470,14 +470,15 @@ int import_matrix_distribute_mpi(
     const char *filename,
     int row_start,
     int row_end,
-    int global_cols,
+    int *global_rows,
+    int *global_cols,
     csr_matrix **out_csr
 ) {
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     
-    int global_rows = 0, cols = 0;
+    int rows = 0, cols = 0;
     long long total_nnz = 0;
     int *all_row_ind = NULL;
     int *all_col_ind = NULL;
@@ -498,19 +499,11 @@ int import_matrix_distribute_mpi(
         /* Read header */
         while (fgets(line, sizeof(line), fp)) {
             if (line[0] == '%') continue;
-            if (sscanf(line, "%d %d %lld", &global_rows, &cols, &total_nnz) == 3) break;
+            if (sscanf(line, "%d %d %lld", &rows, &cols, &total_nnz) == 3) break;
         }
         
-        if (global_rows <= 0 || cols <= 0 || total_nnz <= 0) {
+        if (rows <= 0 || cols <= 0 || total_nnz <= 0) {
             fprintf(stderr, "Error: Invalid matrix market header\n");
-            fclose(fp);
-            total_nnz = -1;
-            MPI_Bcast(&total_nnz, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
-            return EINVAL;
-        }
-        
-        if (global_cols != cols) {
-            fprintf(stderr, "Error: Column mismatch (%d vs %d)\n", global_cols, cols);
             fclose(fp);
             total_nnz = -1;
             MPI_Bcast(&total_nnz, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
@@ -553,8 +546,8 @@ int import_matrix_distribute_mpi(
         }
     }
     
-    /* Broadcast dimensions */
-    MPI_Bcast(&global_rows, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    /* Broadcast dimensions to all ranks */
+    MPI_Bcast(&rows, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&cols, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&total_nnz, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
     
@@ -664,13 +657,16 @@ int import_matrix_distribute_mpi(
     }
     
     csr->rows = local_rows;
-    csr->cols = global_cols;
+    csr->cols = cols;
     csr->nnz = nnz_local;
     csr->row_ptr = row_ptr;
     csr->col_ind = csr_col_ind;
     csr->values = csr_values;
     
     *out_csr = csr;
+    /* Return dimensions via output parameters */
+    *global_rows = rows;
+    *global_cols = cols;
     return 0;
 }
 #endif

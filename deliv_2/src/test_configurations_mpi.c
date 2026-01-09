@@ -124,163 +124,57 @@ int main(int argc, char* argv[]) {
     int num_iterations = (argc == 3) ? atoi(argv[2]) : 50;
     const int thread_count = 24;  // Fixed optimal thread count per NUMA analysis
     
-    fprintf(stderr, "Rank %d: Matrix file arg: %s\n", global_rank, matrix_file);
-    fflush(stderr);
-    
-    /* All ranks read global matrix dimensions first */
-    int m_global_local = 0, n_global_local = 0;
-    long long nnz_global_local = 0;
-    int bcast_result = 0;
-    
-    /* Try to open matrix file - check if path needs adjustment */
-    char resolved_path[1024] = {0};
-    FILE *fp_test = NULL;
+    /* Try path variants: direct, ../matrices/, ../../matrices/ */
     char working_matrix_path[1024];
+    FILE *fp_test = NULL;
     
-    fprintf(stderr, "Rank %d: Trying to open %s\n", global_rank, matrix_file);
-    fflush(stderr);
-    
-    /* First try the provided path */
+    /* Try direct path first */
     fp_test = fopen(matrix_file, "r");
-    
-    /* If that fails and path is relative, try with ../matrices/ or ../../matrices/ */
-    if (!fp_test && matrix_file[0] != '/') {
-        fprintf(stderr, "Rank %d: First attempt failed, trying ../%s\n", global_rank, matrix_file);
-        fflush(stderr);
-        snprintf(resolved_path, sizeof(resolved_path), "../%s", matrix_file);
-        fp_test = fopen(resolved_path, "r");
-    }
-    
-    if (!fp_test && matrix_file[0] != '/') {
-        fprintf(stderr, "Rank %d: Second attempt failed, trying ../../%s\n", global_rank, matrix_file);
-        fflush(stderr);
-        snprintf(resolved_path, sizeof(resolved_path), "../../%s", matrix_file);
-        fp_test = fopen(resolved_path, "r");
-    }
-    
-    /* Set working path for use by all ranks */
-    if (fp_test && resolved_path[0] != '\0') {
-        strcpy(working_matrix_path, resolved_path);
-        fprintf(stderr, "Rank %d: Successfully opened with resolved path: %s\n", global_rank, resolved_path);
-        fflush(stderr);
-    } else if (fp_test) {
+    if (fp_test) {
         strcpy(working_matrix_path, matrix_file);
-        fprintf(stderr, "Rank %d: Successfully opened with original path: %s\n", global_rank, matrix_file);
-        fflush(stderr);
-    } else {
-        fprintf(stderr, "Rank %d: FAILED to open matrix file %s (errno=%d)\n", 
-                global_rank, matrix_file, errno);
-        fflush(stderr);
-        MPI_Finalize();
-        exit(1);
-    }
-    
-    char line[256];
-    int header_found = 0;
-    fprintf(stderr, "Rank %d: Starting to read header from file\n", global_rank);
-    fflush(stderr);
-    
-    int line_count = 0;
-    while (fgets(line, sizeof(line), fp_test) != NULL) {
-        line_count++;
-        if (line[0] == '%') continue;
-        int parsed = sscanf(line, "%d %d %lld", &m_global_local, &n_global_local, &nnz_global_local);
-        if (parsed == 3) {
-            fprintf(stderr, "Rank %d: Found header! m=%d, n=%d, nnz=%lld\n", 
-                    global_rank, m_global_local, n_global_local, nnz_global_local);
-            fflush(stderr);
-            header_found = 1;
-            break;
+        fclose(fp_test);
+    } else if (matrix_file[0] != '/') {
+        /* Try with ../matrices/ prefix */
+        snprintf(working_matrix_path, sizeof(working_matrix_path), "../%s", matrix_file);
+        fp_test = fopen(working_matrix_path, "r");
+        if (fp_test) {
+            fclose(fp_test);
+        } else {
+            /* Try with ../../matrices/ prefix */
+            snprintf(working_matrix_path, sizeof(working_matrix_path), "../../%s", matrix_file);
+            fp_test = fopen(working_matrix_path, "r");
+            if (fp_test) {
+                fclose(fp_test);
+            } else {
+                if (global_rank == 0) {
+                    fprintf(stderr, "ERROR: Cannot open matrix file %s\n", matrix_file);
+                }
+                MPI_Finalize();
+                exit(1);
+            }
         }
-    }
-    fclose(fp_test);
-    
-    fprintf(stderr, "Rank %d: Finished reading file, header_found=%d\n", global_rank, header_found);
-    fflush(stderr);
-    
-    if (!header_found) {
-        fprintf(stderr, "Rank %d: FAILED to read matrix header from %s\n", global_rank, working_matrix_path);
-        fflush(stderr);
+    } else {
+        if (global_rank == 0) {
+            fprintf(stderr, "ERROR: Cannot open matrix file %s\n", matrix_file);
+        }
         MPI_Finalize();
         exit(1);
     }
-
-    fprintf(stderr, "Rank %d: Header successfully read. m=%d, n=%d, nnz=%lld\n", 
-            global_rank, m_global_local, n_global_local, nnz_global_local);
-    fflush(stderr);
-
-    /* CRITICAL: Synchronize ALL ranks before any broadcasts */
-    /* This ensures all ranks have finished reading headers from file before proceeding */
-    fprintf(stderr, "Rank %d: About to enter sync barrier (all header reads must be done)\n", global_rank);
-    fflush(stderr);
-    MPI_Barrier(MPI_COMM_WORLD);
-    fprintf(stderr, "Rank %d: Exited sync barrier\n", global_rank);
-    fflush(stderr);
-
-    /* Broadcast the working path from rank 0 to all ranks */
-    fprintf(stderr, "Rank %d: About to Bcast working_matrix_path=%s\n", global_rank, working_matrix_path);
-    fflush(stderr);
-    bcast_result = MPI_Bcast(working_matrix_path, 1024, MPI_CHAR, 0, MPI_COMM_WORLD);
-    fprintf(stderr, "Rank %d: Bcast working_matrix_path completed with code %d\n", global_rank, bcast_result);
-    fflush(stderr);
-
-    /* Broadcast dimensions to ensure all ranks agree */
-    fprintf(stderr, "Rank %d: About to Bcast m_global_local=%d\n", global_rank, m_global_local);
-    fflush(stderr);
-    bcast_result = MPI_Bcast(&m_global_local, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    fprintf(stderr, "Rank %d: Bcast m_global_local completed with code %d\n", global_rank, bcast_result);
-    fflush(stderr);
-    
-    fprintf(stderr, "Rank %d: About to Bcast n_global_local=%d\n", global_rank, n_global_local);
-    fflush(stderr);
-    bcast_result = MPI_Bcast(&n_global_local, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    fprintf(stderr, "Rank %d: Bcast n_global_local completed with code %d\n", global_rank, bcast_result);
-    fflush(stderr);
-    
-    fprintf(stderr, "Rank %d: About to Bcast nnz_global_local=%lld\n", global_rank, nnz_global_local);
-    fflush(stderr);
-    MPI_Barrier(MPI_COMM_WORLD);
-    fprintf(stderr, "Rank %d: Passed barrier before nnz Bcast, var at %p\n", global_rank, (void *)&nnz_global_local);
-    fflush(stderr);
-    
-    /* Use temporary buffer to avoid any alignment issues with stack variable */
-    long long nnz_bcast_buf = nnz_global_local;
-    bcast_result = MPI_Bcast(&nnz_bcast_buf, 1, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
-    nnz_global_local = nnz_bcast_buf;
-    
-    fprintf(stderr, "Rank %d: Bcast nnz_global_local completed with code %d\n", global_rank, bcast_result);
-    fflush(stderr);
-    
-    fprintf(stderr, "Rank %d: All broadcasts complete\n", global_rank);
-    fflush(stderr);
-    
-    m_global = m_global_local;
-    n_global = n_global_local;
-    nnz_global = nnz_global_local;
     
     if (global_rank == 0) {
         printf("\n=== MPI Communication Modes Benchmark ===\n");
-        printf("Matrix: %s\n", matrix_file);
-        printf("Dimensions: %d × %d, %lld NNZ (%.4f%% density)\n\n", 
-               m_global, n_global, nnz_global,
-               (nnz_global / (double)(m_global * n_global)) * 100.0);
         printf("MPI Ranks: %d, Threads/rank: %d\n", global_size, thread_count);
         printf("Iterations: %d\n\n", num_iterations);
+        printf("Testing 6 MPI communication modes...\n\n");
     }
     
+    /* Each rank reads its assigned rows directly from the shared filesystem */
     /* Each rank reads its assigned rows directly from the shared filesystem */
     row_start = (m_global / global_size) * global_rank;
     row_end = (global_rank == global_size - 1) ? m_global : row_start + (m_global / global_size);
     
-    fprintf(stderr, "Rank %d: About to import matrix rows [%d,%d) from %s\n", 
-            global_rank, row_start, row_end, working_matrix_path);
-    fflush(stderr);
-    
     csr_matrix *A_local = NULL;
-    int result = import_matrix_distribute_mpi(working_matrix_path, row_start, row_end, n_global, &A_local);
-    
-    fprintf(stderr, "Rank %d: MPI matrix distribution completed with result=%d\n", global_rank, result);
-    fflush(stderr);
+    int result = import_matrix_distribute_mpi(working_matrix_path, row_start, row_end, &m_global, &n_global, &A_local);
     
     if (result != 0) {
         fprintf(stderr, "Rank %d: Failed to distribute matrix rows [%d,%d)\n", global_rank, row_start, row_end);
@@ -290,8 +184,15 @@ int main(int argc, char* argv[]) {
     
     m_local = A_local->rows;
     
+    /* Calculate global nnz count across all ranks */
+    long long nnz_local = A_local->nnz;
+    MPI_Allreduce(&nnz_local, &nnz_global, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+    
     if (global_rank == 0) {
-        printf("Matrix loading complete.\n\n");
+        printf("Matrix: %s\n", matrix_file);
+        printf("Dimensions: %d × %d, %lld NNZ (%.4f%% density)\n\n", 
+               m_global, n_global, nnz_global,
+               (nnz_global / (double)(m_global * n_global)) * 100.0);
     }
 
     /* Allocate and generate x_global on all ranks */
@@ -354,8 +255,6 @@ int main(int argc, char* argv[]) {
     /* Define communication modes to test */
     CommMode modes[6];
     int num_modes = 0;
-
-    if (global_rank == 0) printf("Testing 6 MPI communication modes...\n\n");
 
     /* Mode 1: Standard MPI_Bcast + MPI_Gatherv (baseline) */
     strcpy(modes[num_modes].name, "MPI_Bcast+Gatherv");
@@ -571,15 +470,18 @@ void comm_ibcast_igatherv(int rank, int size, csr_matrix *A_local,
     /* Non-blocking gather results with proper handling of uneven rows */
     t_start = MPI_Wtime();
     
-    /* Gather local row counts */
-    MPI_Gather(&m_local, 1, MPI_INT, mpi_send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    /* For Igatherv, we need row counts - pre-gather these on all ranks */
+    int *tmp_counts = (int *)malloc(size * sizeof(int));
+    MPI_Allgather(&m_local, 1, MPI_INT, tmp_counts, 1, MPI_INT, MPI_COMM_WORLD);
     
     if (rank == 0) {
         mpi_displs[0] = 0;
-        for (int i = 1; i < size; i++) {
-            mpi_displs[i] = mpi_displs[i-1] + mpi_send_counts[i-1];
+        for (int i = 0; i < size; i++) {
+            mpi_send_counts[i] = tmp_counts[i];
+            if (i > 0) mpi_displs[i] = mpi_displs[i-1] + tmp_counts[i-1];
         }
     }
+    free(tmp_counts);
     
     /* Use non-blocking gather (Igatherv) */
     MPI_Igatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_gather);
@@ -612,10 +514,6 @@ void comm_allgather(int rank, int size, csr_matrix *A_local,
     
     /* Gather local row counts to all ranks */
     MPI_Gather(&m_local, 1, MPI_INT, mpi_send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    
-    fprintf(stderr, "Rank %d: Before Bcast mpi_send_counts, ptr=%p, size=%d\n", 
-            rank, (void *)mpi_send_counts, size);
-    fflush(stderr);
     
     MPI_Bcast(mpi_send_counts, size, MPI_INT, 0, MPI_COMM_WORLD);
     
@@ -734,28 +632,59 @@ void comm_ring_reduce(int rank, int size, csr_matrix *A_local,
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
 
-    /* Ring-based reduction: pass y through ring topology to rank 0 */
+    /* Ring-based reduction: collect all y values at rank 0 via ring */
     t_start = MPI_Wtime();
     
     int next_rank = (rank + 1) % size;
     int prev_rank = (rank - 1 + size) % size;
     
-    /* Use y_temp as buffer for ring passing */
-    memcpy(y_temp, y, m_local * sizeof(float));
+    /* Gather local row counts to all ranks for proper indexing */
+    int *all_row_counts = (int *)malloc(size * sizeof(int));
+    MPI_Allgather(&m_local, 1, MPI_INT, all_row_counts, 1, MPI_INT, MPI_COMM_WORLD);
     
-    for (int stage = 0; stage < size - 1; stage++) {
-        if (rank == 0) {
-            /* Rank 0 receives from rank size-1 */
-            MPI_Recv(y_temp, m_local, MPI_FLOAT, prev_rank, stage, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        } else if (rank == size - 1) {
-            /* Rank size-1 sends to rank 0 (next_rank) */
-            MPI_Send(y_temp, m_local, MPI_FLOAT, next_rank, stage, MPI_COMM_WORLD);
-        } else {
-            /* Middle ranks: send to next, then receive from previous */
-            MPI_Send(y_temp, m_local, MPI_FLOAT, next_rank, stage, MPI_COMM_WORLD);
-            MPI_Recv(y_temp, m_local, MPI_FLOAT, prev_rank, stage, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    /* Compute displacements for rank 0 to place received data */
+    int *displs = NULL;
+    if (rank == 0) {
+        displs = (int *)malloc(size * sizeof(int));
+        displs[0] = 0;
+        for (int i = 1; i < size; i++) {
+            displs[i] = displs[i-1] + all_row_counts[i-1];
         }
     }
+    
+    /* Ring communication: pass y values around, rank 0 collects in mpi_y_global */
+    MPI_Request req_send, req_recv;
+    
+    for (int stage = 0; stage < size; stage++) {
+        int sender_rank = stage;
+        int sender_rows = all_row_counts[sender_rank];
+        
+        if (rank == sender_rank) {
+            /* This rank sends its y to next rank in ring */
+            MPI_Isend(y, m_local, MPI_FLOAT, next_rank, stage, MPI_COMM_WORLD, &req_send);
+            MPI_Wait(&req_send, MPI_STATUS_IGNORE);
+        }
+        
+        if (rank == 0 && sender_rank != 0) {
+            /* Rank 0 receives data from each non-zero rank (passed through ring) */
+            MPI_Irecv(mpi_y_global + displs[sender_rank], sender_rows, MPI_FLOAT, 
+                     prev_rank, stage, MPI_COMM_WORLD, &req_recv);
+            MPI_Wait(&req_recv, MPI_STATUS_IGNORE);
+        } else if (rank == 0 && sender_rank == 0) {
+            /* Rank 0 copies its own y to result buffer */
+            memcpy(mpi_y_global, y, m_local * sizeof(float));
+        } else {
+            /* Non-zero ranks pass data through the ring */
+            MPI_Irecv(y_temp, all_row_counts[(rank - 1 + size) % size], MPI_FLOAT,
+                     prev_rank, stage, MPI_COMM_WORLD, &req_recv);
+            MPI_Isend(y_temp, sender_rows, MPI_FLOAT, next_rank, stage, MPI_COMM_WORLD, &req_send);
+            MPI_Wait(&req_recv, MPI_STATUS_IGNORE);
+            MPI_Wait(&req_send, MPI_STATUS_IGNORE);
+        }
+    }
+    
+    free(all_row_counts);
+    if (rank == 0) free(displs);
     t_comm += MPI_Wtime() - t_start;
 
     *comm_time = t_comm;
@@ -788,15 +717,18 @@ void comm_async_collectives(int rank, int size, csr_matrix *A_local,
     /* Non-blocking gather of y results to rank 0 */
     t_start = MPI_Wtime();
     
-    /* Gather local row counts synchronously */
-    MPI_Gather(&m_local, 1, MPI_INT, mpi_send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    /* For Igatherv, pre-gather local row counts on all ranks */
+    int *tmp_counts = (int *)malloc(size * sizeof(int));
+    MPI_Allgather(&m_local, 1, MPI_INT, tmp_counts, 1, MPI_INT, MPI_COMM_WORLD);
     
     if (rank == 0) {
         mpi_displs[0] = 0;
-        for (int i = 1; i < size; i++) {
-            mpi_displs[i] = mpi_displs[i-1] + mpi_send_counts[i-1];
+        for (int i = 0; i < size; i++) {
+            mpi_send_counts[i] = tmp_counts[i];
+            if (i > 0) mpi_displs[i] = mpi_displs[i-1] + tmp_counts[i-1];
         }
     }
+    free(tmp_counts);
     
     /* Use Igatherv for non-blocking gather of y to rank 0 */
     MPI_Igatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_gather);
@@ -889,9 +821,9 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
         
         printf("%-25s | %13.4f | %8.4f | %9.4f | %7.2f | %10.2f%%\n",
                modes[i].name,
-               modes[i].avg_time,
-               modes[i].std_dev,
-               modes[i].comm_time,
+               modes[i].avg_time * 1000,
+               modes[i].std_dev * 1000,
+               modes[i].comm_time * 1000,
                modes[i].speedup,
                modes[i].efficiency_pct);
     }
@@ -908,6 +840,10 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
         return;
     }
 
+    /* Extract just the matrix filename (basename) from path */
+    const char *basename = strrchr(matrix_file, '/');
+    const char *csv_matrix_name = basename ? basename + 1 : matrix_file;
+
     /* Write header if file is empty */
     fseek(csv, 0, SEEK_END);
     if (ftell(csv) == 0) {
@@ -918,10 +854,10 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
     for (int i = 0; i < num_modes; i++) {
         double density = (nnz_global / (double)(m_global * n_global)) * 100.0;
         fprintf(csv, "%d,%s,%d,%d,%lld,%.4f,%s,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.2f,%d,\"\"\n",
-                size, matrix_file, m_global, n_global, nnz_global, 
+                size, csv_matrix_name, m_global, n_global, nnz_global, 
                 density, modes[i].name,
-                modes[i].avg_time, modes[i].std_dev, modes[i].min_time, modes[i].max_time,
-                modes[i].comm_time, modes[i].compute_time, modes[i].speedup, 
+                modes[i].avg_time * 1000, modes[i].std_dev * 1000, modes[i].min_time * 1000, modes[i].max_time * 1000,
+                modes[i].comm_time * 1000, modes[i].compute_time * 1000, modes[i].speedup, 
                 modes[i].efficiency_pct, iterations);
     }
 
