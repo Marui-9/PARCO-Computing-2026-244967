@@ -34,8 +34,8 @@ fi
 
 echo "Working directory: $(pwd)"
 
-# Set OpenMP thread count (48 cores/node, 8 ranks = 6 threads per rank)
-export OMP_NUM_THREADS=6
+# Set OpenMP thread count (48 cores per node, 1 rank per node = 48 threads per rank)
+export OMP_NUM_THREADS=48
 export OMP_PROC_BIND=close
 export OMP_PLACES=cores
 echo "OpenMP threads per rank: $OMP_NUM_THREADS"
