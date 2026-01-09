@@ -17,17 +17,20 @@ NODE_COUNTS="2"
 # Test matrices - comment/uncomment as needed
 MATRICES_DIR="matrices"
 TEST_MATRICES=(
-    "36k_0p17.mtx"           # 36K rows
-    "98k_0p52.mtx"           # 98K rows
-    "262k_0p0011.mtx"        # 262K rows, very sparse
-    "326k_0p0030.mtx"        # 326K rows, very sparse
-    "916k_0p0006.mtx"        # 916K rows, very sparse
-    "1135k_0p0002.mtx"       # 1135K rows, ultra sparse
-    "1508k_0p0012.mtx"       # 1508K rows, ultra sparse
-    "1585k_0p0002.mtx"       # 1585K rows, ultra sparse
-    "3998k_0p0002.mtx"       # 3998K rows, ultra sparse
-    "4194k_0p0001.mtx"       # 4194K rows, ultra sparse
-    "5155k_0p0004.mtx"       # 5155K rows, ultra sparse
+    # "36k_0p17.mtx"           # 36K rows
+    # "98k_0p52.mtx"           # 98K rows
+    # "262k_0p0011.mtx"        # 262K rows, very sparse
+    # "326k_0p0030.mtx"        # 326K rows, very sparse
+    # "916k_0p0006.mtx"        # 916K rows, very sparse
+    # "1135k_0p0002.mtx"       # 1135K rows, ultra sparse
+    # "1508k_0p0012.mtx"       # 1508K rows, ultra sparse
+    # "1585k_0p0002.mtx"       # 1585K rows, ultra sparse
+    # "3998k_0p0002.mtx"       # 3998K rows, ultra sparse
+    # "4194k_0p0001.mtx"       # 4194K rows, ultra sparse
+    # "5155k_0p0004.mtx"       # 5155K rows, ultra sparse
+    "10k_1p5.mtx" "15k_0p41.mtx" "2k_0p22.mtx" "40k_0p02.mtx" "60k_0p005.mtx"
+"11k_0p35.mtx" "20k_0p38.mtx" "2k_0p52.mtx" "50k_0p008.mtx" "6k_6p3.mtx"
+"11k_0p38.mtx" "25k_0p03.mtx" "30k_0p05.mtx" "5k_9p37.mtx" "9k_0p77.mtx"
 )
 
 if [ ! -d "$MATRICES_DIR" ]; then
