@@ -3,6 +3,7 @@
 #include <time.h>
 #include <errno.h>
 #include <string.h>
+#include <omp.h>
 #include "m_to_csr.h"
 
 #define ROWS 8
@@ -595,13 +596,31 @@ int import_matrix_distribute_mpi(
         return ENOMEM;
     }
     
-    /* Count NNZ in local rows */
-    for (i = 0; i < total_nnz; i++) {
-        r = all_row_ind[i];
-        if (r >= row_start && r < row_end) {
-            row_counts[r - row_start]++;
-            nnz_local++;
+    /* Count NNZ in local rows - parallelized with thread-local counts */
+    #pragma omp parallel
+    {
+        int *thread_row_counts = (int *)calloc(local_rows, sizeof(int));
+        long long thread_nnz = 0;
+        
+        #pragma omp for nowait
+        for (i = 0; i < total_nnz; i++) {
+            r = all_row_ind[i];
+            if (r >= row_start && r < row_end) {
+                thread_row_counts[r - row_start]++;
+                thread_nnz++;
+            }
         }
+        
+        /* Merge thread-local counts into global row_counts */
+        #pragma omp critical
+        {
+            for (long long j = 0; j < local_rows; j++) {
+                row_counts[j] += thread_row_counts[j];
+            }
+            nnz_local += thread_nnz;
+        }
+        
+        free(thread_row_counts);
     }
     
     /* Allocate CSR arrays */
@@ -628,15 +647,25 @@ int import_matrix_distribute_mpi(
         row_ptr[i + 1] = row_ptr[i] + row_counts[i];
     }
     
-    /* Place entries in CSR format */
+    /* Place entries in CSR format - parallelized with atomic position updates */
+    #pragma omp parallel for
     for (i = 0; i < total_nnz; i++) {
         r = all_row_ind[i];
         if (r >= row_start && r < row_end) {
             local_r = r - row_start;
-            pos = row_ptr[local_r] + entry_pos[local_r];
+            int local_pos;
+            
+            /* Atomically increment entry_pos[local_r] and capture old value */
+            #pragma omp atomic capture
+            {
+                local_pos = entry_pos[local_r];
+                entry_pos[local_r]++;
+            }
+            
+            /* Compute actual position in CSR arrays */
+            pos = row_ptr[local_r] + local_pos;
             csr_col_ind[pos] = all_col_ind[i];
             csr_values[pos] = all_values[i];
-            entry_pos[local_r]++;
         }
     }
     
