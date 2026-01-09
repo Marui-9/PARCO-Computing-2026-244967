@@ -180,8 +180,7 @@ download_matrix() {
 # Main script logic
 main() {
     echo ""
-    echo "Downloading 14 matrices..."
-    echo "  (~8-10 GB total, estimated time: 20-40 minutes)"
+    echo "Downloading 10 matrices from SuiteSparse Collection..."
     echo ""
     
     # Download all matrices in MATRICES array
@@ -193,8 +192,8 @@ main() {
     rm -rf "$TEMP_DIR"
     
     echo ""
-    echo "=============================================="
-    echo "Download complete!"
+    echo "==============================================="
+    echo "Matrix download complete!"
     echo ""
     echo "Downloaded matrices in $OUTPUT_DIR:"
     ls -lh "$OUTPUT_DIR"/*.mtx 2>/dev/null | awk '{print "  " $9 " (" $5 ")"}' || echo "  (no matrices found)"
@@ -202,10 +201,8 @@ main() {
     # Calculate total size
     local total_size=$(du -sh "$OUTPUT_DIR" 2>/dev/null | awk '{print $1}')
     echo ""
-    echo "Total downloaded size: $total_size"
-    echo "Naming convention: {rows_in_k}k_{density%}.mtx"
-    echo ""
-    echo "Download complete! Matrices ready for use."
+    echo "Total download size: $total_size (expected ~500 MB)"
+    echo "Matrix files ready for benchmarking."
     echo "=============================================="
 }
 
@@ -213,24 +210,22 @@ main() {
 usage() {
     echo "Usage: $0"
     echo ""
-    echo "Downloads 14 matrices from SuiteSparse Collection"
+    echo "Downloads 10 matrices from SuiteSparse Collection"
     echo ""
     echo "Matrix categories:"
-    echo "  - Small (3):     100k-300k rows"
-    echo "  - Medium (5):    500k-1.8M rows"
-    echo "  - Big (4):       4.8M-10.6M rows (automatically downloaded)"
-    echo "  - Extra (2):     10M-18.5M rows (commented, available on demand)"
+    echo "  - Small (4):     36k-325k rows (quick testing)"
+    echo "  - Medium (6):    265k-1.8M rows (larger computation)"
     echo ""
-    echo "Total size: ~4.6 GB (for 11 matrices)"
-    echo "Estimated download time: 3-5 minutes (depending on internet speed)"
+    echo "Total size: ~500 MB"
+    echo "Estimated download time: 2-3 minutes (depending on internet speed)"
     echo ""
     echo "Output: Matrices saved to ./matrices/ with naming convention:"
     echo "        {rows_in_k}k_{density%}.mtx"
     echo ""
     echo "Examples:"
-    echo "  131k_0p0018.mtx  = 131k rows, 0.0018% density"
-    echo "  1400k_0p015.mtx  = 1.4M rows, 0.015% density"
-}
+    echo "  36k_0p17.mtx     = 36k rows, 0.17% density"
+    echo "  1438k_0p0016.mtx = 1.4M rows, 0.0016% density"
+
 
 if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
     usage
