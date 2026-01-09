@@ -220,8 +220,13 @@ int main(int argc, char* argv[]) {
 
     /* First-touch initialization for NUMA awareness */
     if (global_rank == 0) printf("Performing first-touch initialization...\n");
+    fflush(stdout);
     first_touch_init(thread_count);
+    if (global_rank == 0) printf("First-touch initialization complete on rank 0, waiting at barrier...\n");
+    fflush(stdout);
     MPI_Barrier(MPI_COMM_WORLD);
+    if (global_rank == 0) printf("All ranks synchronized after initialization.\n\n");
+    fflush(stdout);
 
     /* Pre-allocate MPI communication buffers to avoid repeated allocations in benchmark loop */
     /* All ranks need these buffers allocated (though only rank 0 uses them actively) */
