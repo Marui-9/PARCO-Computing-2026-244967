@@ -102,15 +102,6 @@ int main(int argc, char* argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &global_size);
     
-    /* Critical: flush to ensure output is seen even if program crashes */
-    fprintf(stderr, "=== Rank %d of %d initialized ===\n", global_rank, global_size);
-    fflush(stderr);
-    
-    /* Ensure all ranks have started */
-    MPI_Barrier(MPI_COMM_WORLD);
-    fprintf(stderr, "Rank %d: Passed initialization barrier\n", global_rank);
-    fflush(stderr);
-    
     if (argc < 2 || argc > 3) {
         if (global_rank == 0) {
             fprintf(stderr, "usage: mpirun -np <num_ranks> %s <matrix_file> [iterations]\n", argv[0]);
@@ -168,21 +159,20 @@ int main(int argc, char* argv[]) {
         printf("Testing 6 MPI communication modes...\n\n");
     }
     
-    /* Each rank reads its assigned rows directly from the shared filesystem */
-    /* Each rank reads its assigned rows directly from the shared filesystem */
-    row_start = (m_global / global_size) * global_rank;
-    row_end = (global_rank == global_size - 1) ? m_global : row_start + (m_global / global_size);
-    
+    /* Import and distribute matrix - use special value -1 to indicate auto-distribution */
     csr_matrix *A_local = NULL;
-    int result = import_matrix_distribute_mpi(working_matrix_path, row_start, row_end, &m_global, &n_global, &A_local);
+    int result = import_matrix_distribute_mpi(working_matrix_path, -1, -1, &m_global, &n_global, &A_local);
     
     if (result != 0) {
-        fprintf(stderr, "Rank %d: Failed to distribute matrix rows [%d,%d)\n", global_rank, row_start, row_end);
+        fprintf(stderr, "Rank %d: Failed to import matrix\n", global_rank);
         MPI_Finalize();
         exit(1);
     }
     
+    /* Extract actual row distribution used */
     m_local = A_local->rows;
+    row_start = (m_global / global_size) * global_rank;
+    row_end = (global_rank == global_size - 1) ? m_global : row_start + (m_global / global_size);
     
     /* Calculate global nnz count across all ranks */
     long long nnz_local = A_local->nnz;
@@ -196,10 +186,6 @@ int main(int argc, char* argv[]) {
     }
 
     /* Allocate and generate x_global on all ranks */
-    fprintf(stderr, "Rank %d: About to allocate x_global (n_global=%d, size=%zu bytes)\n", 
-            global_rank, n_global, (size_t)n_global * sizeof(float));
-    fflush(stderr);
-    
     x_global = generate_vector_aligned(n_global);
     if (!x_global) {
         fprintf(stderr, "Rank %d: Failed to allocate x_global (size=%d)\n", global_rank, n_global);
@@ -207,18 +193,8 @@ int main(int argc, char* argv[]) {
         exit(1);
     }
     
-    fprintf(stderr, "Rank %d: Successfully allocated x_global at %p\n", global_rank, (void *)x_global);
-    fflush(stderr);
-    
     /* Ensure all ranks have identical x_global - broadcast from rank 0 */
-    fprintf(stderr, "Rank %d: About to Bcast x_global (n_global=%d, ptr=%p)\n", 
-            global_rank, n_global, (void *)x_global);
-    fflush(stderr);
-    
     MPI_Bcast(x_global, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    
-    fprintf(stderr, "Rank %d: Bcast x_global completed\n", global_rank);
-    fflush(stderr);
 
     if (posix_memalign((void**)&y_local, 64, (size_t)m_local * sizeof(float)) != 0) {
         fprintf(stderr, "Rank %d: Failed to allocate y_local\n", global_rank);
@@ -248,9 +224,6 @@ int main(int argc, char* argv[]) {
         MPI_Finalize();
         exit(1);
     }
-    
-    fprintf(stderr, "Rank %d: Pre-allocated MPI buffers\n", global_rank);
-    fflush(stderr);
 
     /* Define communication modes to test */
     CommMode modes[6];

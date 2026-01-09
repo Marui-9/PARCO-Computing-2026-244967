@@ -576,8 +576,30 @@ int import_matrix_distribute_mpi(
     MPI_Bcast(all_col_ind, total_nnz, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(all_values, total_nnz, MPI_FLOAT, 0, MPI_COMM_WORLD);
     
+    /* Calculate row distribution if auto-distribute requested (row_start == -1) */
+    int local_rows;
+    int actual_row_start, actual_row_end;
+    
+    if (row_start == -1 || row_end == -1) {
+        /* Auto-distribute: divide rows evenly across ranks */
+        int rows_per_rank = rows / size;
+        int extra_rows = rows % size;
+        
+        actual_row_start = rank * rows_per_rank + (rank < extra_rows ? rank : extra_rows);
+        if (rank < extra_rows) {
+            actual_row_end = actual_row_start + rows_per_rank + 1;
+        } else {
+            actual_row_end = actual_row_start + rows_per_rank;
+        }
+        local_rows = actual_row_end - actual_row_start;
+    } else {
+        /* Use provided row range */
+        actual_row_start = row_start;
+        actual_row_end = row_end;
+        local_rows = row_end - row_start;
+    }
+    
     /* Each rank extracts its rows and builds CSR */
-    int local_rows = row_end - row_start;
     long long nnz_local = 0;
     int *row_ptr = NULL;
     int *csr_col_ind = NULL;
@@ -605,8 +627,8 @@ int import_matrix_distribute_mpi(
         #pragma omp for nowait
         for (i = 0; i < total_nnz; i++) {
             r = all_row_ind[i];
-            if (r >= row_start && r < row_end) {
-                thread_row_counts[r - row_start]++;
+            if (r >= actual_row_start && r < actual_row_end) {
+                thread_row_counts[r - actual_row_start]++;
                 thread_nnz++;
             }
         }
@@ -651,8 +673,8 @@ int import_matrix_distribute_mpi(
     #pragma omp parallel for
     for (i = 0; i < total_nnz; i++) {
         r = all_row_ind[i];
-        if (r >= row_start && r < row_end) {
-            local_r = r - row_start;
+        if (r >= actual_row_start && r < actual_row_end) {
+            local_r = r - actual_row_start;
             int local_pos;
             
             /* Atomically increment entry_pos[local_r] and capture old value */
