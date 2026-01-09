@@ -239,6 +239,9 @@ int main(int argc, char* argv[]) {
         MPI_Finalize();
         exit(1);
     }
+    
+    if (global_rank == 0) printf("MPI buffers allocated successfully.\n");
+    fflush(stdout);
 
     /* Define communication modes to test */
     CommMode modes[4];
@@ -247,8 +250,12 @@ int main(int argc, char* argv[]) {
     /* Mode 1: Standard MPI_Bcast + MPI_Gatherv (baseline) */
     strcpy(modes[num_modes].name, "MPI_Bcast+Gatherv");
     strcpy(modes[num_modes].description, "Standard broadcast x, local SpMV, gatherv y to rank 0");
+    if (global_rank == 0) printf("Starting benchmark: %s\n", modes[num_modes].name);
+    fflush(stdout);
     run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
                   comm_bcast_reduce, num_iterations, thread_count);
+    if (global_rank == 0) printf("Completed benchmark: %s\n", modes[num_modes].name);
+    fflush(stdout);
     num_modes++;
 
     /* Mode 2: Non-blocking Ibcast/Igatherv */
@@ -717,11 +724,16 @@ void comm_async_collectives(int rank, int size, csr_matrix *A_local,
 void run_benchmark(CommMode *mode, int rank, int size, csr_matrix *A_local,
                    void (*func)(int, int, csr_matrix*, float*, float*, int, double*, double*),
                    int num_iterations, int thread_count) {
+    if (rank == 0) printf("  [run_benchmark] Starting %d iterations...\n", num_iterations);
+    fflush(stdout);
+    
     double times[num_iterations];
     double comm_times[num_iterations];
     double comp_times[num_iterations];
     
     for (int iter = 0; iter < num_iterations; iter++) {
+        if (rank == 0 && iter == 0) printf("  [run_benchmark] Iteration %d/%d\n", iter+1, num_iterations);
+        fflush(stdout);
         double t_start = MPI_Wtime();
         double comm_time = 0.0, comp_time = 0.0;
         
