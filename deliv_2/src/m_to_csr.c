@@ -664,28 +664,6 @@ int import_matrix_distribute_mpi(
     return 0;
 }
 #endif
-
-/*------------------------------------------------------------------*/
-/* MPI-based matrix loading: rank 0 reads once, broadcasts to all  */
-/* Avoids contention from concurrent file I/O on multiple ranks    */
-#ifdef MPI_ENABLED
-#include <mpi.h>
-
-int import_matrix_distribute_mpi(
-    const char *filename,
-    int row_start,
-    int row_end,
-    int global_cols,
-    csr_matrix **out_csr
-) {
-    int rank, size;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-    
-    int global_rows = 0, nnz_total = 0;
-    int *all_row_idx = NULL;
-    int *all_col_idx = NULL;
-    float *all_values = NULL;
     
     /* Rank 0 reads the file */
     if (rank == 0) {
