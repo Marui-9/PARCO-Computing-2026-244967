@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
     char *omp_env = getenv("OMP_NUM_THREADS");
     if (omp_env == NULL) {
         /* If OMP_NUM_THREADS not set, use safe default of 24 threads per rank */
-        thread_count = 24;
+        thread_count = 48;
         omp_set_num_threads(thread_count);
     } else {
         thread_count = omp_get_max_threads();
@@ -166,7 +166,7 @@ int main(int argc, char* argv[]) {
         printf("\n=== MPI Communication Modes Benchmark ===\n");
         printf("MPI Ranks: %d, Threads/rank: %d\n", global_size, thread_count);
         printf("Iterations: %d\n\n", num_iterations);
-        printf("Testing 4 MPI communication modes...\n\n");
+        printf("Testing 3 MPI communication modes...\n\n");
     }
     
     /* Import and distribute matrix - use special value -1 to indicate auto-distribution */
@@ -244,7 +244,7 @@ int main(int argc, char* argv[]) {
     fflush(stdout);
 
     /* Define communication modes to test */
-    CommMode modes[4];
+    CommMode modes[3];
     int num_modes = 0;
 
     /* Mode 1: Standard MPI_Bcast + MPI_Gatherv (baseline) */
@@ -265,12 +265,12 @@ int main(int argc, char* argv[]) {
                   comm_ibcast_igatherv, num_iterations, thread_count);
     num_modes++;
 
-    /* Mode 3: Pipelined Communication */
-    strcpy(modes[num_modes].name, "Pipelined");
-    strcpy(modes[num_modes].description, "Exchange x in chunks, overlap with computation");
-    run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
-                  comm_pipelined, num_iterations, thread_count);
-    num_modes++;
+    // /* Mode 3: Pipelined Communication */
+    // strcpy(modes[num_modes].name, "Pipelined");
+    // strcpy(modes[num_modes].description, "Exchange x in chunks, overlap with computation");
+    // run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
+    //               comm_pipelined, num_iterations, thread_count);
+    // num_modes++;
 
     /* Mode 4: Async Collectives (MPI_Ibcast + MPI_Igatherv) */
     strcpy(modes[num_modes].name, "Async_Collectives");
@@ -541,11 +541,14 @@ void comm_allgather(int rank, int size, csr_matrix *A_local,
 void comm_pipelined(int rank, int size, csr_matrix *A_local, 
                     float *x, float *y, int thread_count,
                     double *comm_time, double *compute_time) {
+    if (rank == 0) { printf("    [comm_pipelined] rank 0 entering\n"); fflush(stdout); }
     double t_comm = 0.0, t_comp = 0.0;
     
     /* Pipelined distribution: each rank sends its chunk to next rank in ring */
     int chunk_size = (n_global + size - 1) / size;
     double t_start = MPI_Wtime();
+    
+    if (rank == 0) { printf("    [comm_pipelined] rank 0 chunk_size=%d, before malloc\n", chunk_size); fflush(stdout); }
     
     /* Pre-compute chunk sizes for all ranks to ensure consistency */
     int *chunk_sizes = (int *)malloc(size * sizeof(int));
@@ -555,11 +558,14 @@ void comm_pipelined(int rank, int size, csr_matrix *A_local,
         chunk_sizes[r] = chunk_end - chunk_start;
     }
     
+    if (rank == 0) { printf("    [comm_pipelined] rank 0 before ring loop\n"); fflush(stdout); }
+    
     /* Ring-based distribution: rank i sends its chunk to rank (i+1)%size */
     /* This is repeated size times to ensure all ranks eventually get all chunks */
     MPI_Request req_send, req_recv;
     
     for (int stage = 0; stage < size - 1; stage++) {
+        if (rank == 0 && stage == 0) { printf("    [comm_pipelined] rank 0 stage %d/%d\n", stage, size-1); fflush(stdout); }
         int next_rank = (rank + 1) % size;
         int prev_rank = (rank - 1 + size) % size;
         
@@ -591,15 +597,19 @@ void comm_pipelined(int rank, int size, csr_matrix *A_local,
         /* Wait for both operations */
         if (recv_issued) MPI_Wait(&req_recv, MPI_STATUS_IGNORE);
         if (send_issued) MPI_Wait(&req_send, MPI_STATUS_IGNORE);
+        if (rank == 0 && stage == 0) { printf("    [comm_pipelined] rank 0 completed stage %d\n", stage); fflush(stdout); }
     }
     
+    if (rank == 0) { printf("    [comm_pipelined] rank 0 after ring loop\n"); fflush(stdout); }
     free(chunk_sizes);
     t_comm += MPI_Wtime() - t_start;
 
     /* Local SpMV after pipelined receive completes */
+    if (rank == 0) { printf("    [comm_pipelined] rank 0 before local_spvec\n"); fflush(stdout); }
     t_start = MPI_Wtime();
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
+    if (rank == 0) { printf("    [comm_pipelined] rank 0 after local_spvec\n"); fflush(stdout); }
 
     /* Gather y results to rank 0 */
     t_start = MPI_Wtime();
