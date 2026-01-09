@@ -530,8 +530,10 @@ int import_matrix_distribute_mpi(
         long long idx = 0;
         int r, c;
         float val;
+        int lines_read = 0;
         
         while (fgets(line, sizeof(line), fp) && idx < total_nnz) {
+            lines_read++;
             if (sscanf(line, "%d %d %f", &r, &c, &val) == 3) {
                 all_row_ind[idx] = r - 1;  /* Convert to 0-indexed */
                 all_col_ind[idx] = c - 1;
@@ -542,7 +544,9 @@ int import_matrix_distribute_mpi(
         fclose(fp);
         
         if (idx != total_nnz) {
-            fprintf(stderr, "Warning: Expected %lld entries, got %lld\n", total_nnz, idx);
+            fprintf(stderr, "Warning: Expected %lld entries, read %d lines, parsed %lld entries\n", 
+                    total_nnz, lines_read, idx);
+            fprintf(stderr, "File: %s\n", filename);
             total_nnz = idx;
         }
     }

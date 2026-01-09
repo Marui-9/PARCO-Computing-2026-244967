@@ -207,12 +207,6 @@ for num_nodes in $NODE_COUNTS; do
         else
             echo "  SUCCESS: Test completed"
             echo "  SUCCESS: Test completed" >> "$OUT_LOG"
-            
-            # Log output and CSV was written by C program
-            if [ -s "$tmpout" ]; then
-                echo "  Test output:" >> "$OUT_LOG"
-                head -30 "$tmpout" | sed 's/^/    /' >> "$OUT_LOG"
-            fi
         fi
         
         # Log any errors
