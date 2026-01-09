@@ -393,33 +393,44 @@ void local_spvec(csr_matrix *A_local, float *x, float *y, int thread_count) {
 void comm_bcast_reduce(int rank, int size, csr_matrix *A_local, 
                        float *x, float *y, int thread_count,
                        double *comm_time, double *compute_time) {
+    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 entering function\n"); fflush(stdout); }
     double t_comm = 0.0, t_comp = 0.0;
     
     /* Broadcast x from rank 0 */
+    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 before MPI_Bcast (n_global=%d)\n", n_global); fflush(stdout); }
     double t_start = MPI_Wtime();
     MPI_Bcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD);
     t_comm += MPI_Wtime() - t_start;
+    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 after MPI_Bcast\n"); fflush(stdout); }
 
     /* Local SpMV */
+    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 before local_spvec\n"); fflush(stdout); }
     t_start = MPI_Wtime();
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
+    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 after local_spvec\n"); fflush(stdout); }
 
     /* Reduce y results to rank 0 with proper handling of uneven rows */
+    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 before MPI_Gather\n"); fflush(stdout); }
     t_start = MPI_Wtime();
     
     /* Gather local row counts */
     MPI_Gather(&m_local, 1, MPI_INT, mpi_send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 after MPI_Gather\n"); fflush(stdout); }
     
     if (rank == 0) {
         mpi_displs[0] = 0;
         for (int i = 1; i < size; i++) {
             mpi_displs[i] = mpi_displs[i-1] + mpi_send_counts[i-1];
         }
+        printf("    [comm_bcast_reduce] rank 0 computed displs, before MPI_Gatherv\n"); fflush(stdout);
     }
     
     MPI_Gatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 after MPI_Gatherv\n"); fflush(stdout); }
     t_comm += MPI_Wtime() - t_start;
+    
+    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 exiting function\n"); fflush(stdout); }
 
     *comm_time = t_comm;
     *compute_time = t_comp;
