@@ -3,16 +3,15 @@
 # https://sparse.tamu.edu/
 #
 # Matrix selection strategy:
-#   - 3 small matrices (100k-300k rows): Quick testing, baseline comparison
-#   - 5 sweet spot matrices (500k-1.8M rows, 10-50M nnz): Larger computation
-#   - 4 big matrices (4.8M-10.6M rows, 69-160M nnz): Largest matrices
-#   - 2 commented matrices (10M, 18.5M rows): Available but not auto-downloaded
+#   - 4 small matrices (36k-325k rows): Quick testing, baseline comparison
+#   - 6 medium matrices (500k-1.8M rows, 10-50M nnz): Larger computation
+#   - Total: 10 matrices across small and medium sizes
 #
 # Matrices are auto-renamed to match project convention: {rows_in_k}k_{density%}.mtx
 # Example: A 1.4M row matrix with 0.015% density -> 1400k_0p015.mtx
 #
-# Data size: ~8-10 GB total
-# Estimated download time: 20-40 minutes (depends on internet speed)
+# Data size: ~500 MB total
+# Estimated download time: 2-3 minutes (depends on internet speed)
 #
 # Usage: ./download_matrices_mpi.sh
 
@@ -31,37 +30,30 @@ echo "=============================================="
 echo "SuiteSparse Matrix Downloader"
 echo "Output directory: $OUTPUT_DIR"
 echo "Naming convention: {rows_in_k}k_{density%}.mtx"
-echo "Estimated total download size: ~4.6 GB"
-echo "Estimated download time: 3-5 minutes (depending on internet speed)"
+echo "Estimated total download size: ~500 MB"
+echo "Estimated download time: 2-3 minutes (depending on internet speed)"
 echo "=============================================="
 
 # Base URL for SuiteSparse Matrix Collection
 BASE_URL="https://suitesparse-collection-website.herokuapp.com/MM"
 
-# 12 matrices spanning 3 size categories
+# 10 matrices: 4 small + 6 medium (no big matrices)
 declare -A MATRICES=(
-    # Small matrices: 100k-300k rows
+    # Small matrices: 36k-325k rows
     # Quick testing, baseline comparison
+    ["Williams/pdb1HYS"]="pdb1HYS"                        # 36k rows
     ["Mycielski/mycielskian17"]="mycielskian17"           # 131k rows
     ["DIMACS10/delaunay_n18"]="delaunay_n18"             # 262k rows, 0.79M nnz
-    ["Williams/pdb1HYS"]="pdb1HYS"                        # 36k rows
+    ["LAW/cnr-2000"]="cnr-2000"                           # 325k rows, 3M nnz
     
     # Medium: 500k-1.8M rows, 10-50M nnz
     # Larger computation
     ["SNAP/web-Google"]="web-Google"                      # 916k rows, 5M nnz
-    #["Janna/Geo_1438"]="Geo_1438"                         # 1.4M rows, 15M nnz
     ["Schenk_AFE/af_shell10"]="af_shell10"                # 1.8M rows, 11M nnz
     ["AMD/G3_circuit"]="G3_circuit"                       # 1.6M rows, 4.7M nnz
-    ["LAW/cnr-2000"]="cnr-2000"                           # 325k rows, 3M nnz
-    
-    # Big matrices: 4.8M-10.6M rows
-    # Largest matrices
-    ["SNAP/com-LiveJournal"]="com-LiveJournal"            # 4.8M rows, 69M nnz
-    ["vanHeukelum/cage15"]="cage15"                       # 5.2M rows, 99M nnz
-    ["SNAP/com-Youtube"]="com-Youtube"                    # 6.5M rows, 160M nnz
-    ["DIMACS10/delaunay_n22"]="delaunay_n22"              # 10.6M rows, 78M nnz
-   # ["LAW/twitter7"]="twitter7"                           # 10M rows, 405M nnz (unstable archive)
-   # ["LAW/uk-2002"]="uk-2002"                             # 18.5M rows, 298M nnz
+    ["Janna/Geo_1438"]="Geo_1438"                         # 1.4M rows, 15M nnz
+    ["Schenk_ISEI/isei"]="isei"                           # 1.1M rows, 39M nnz
+    ["SNAP/email-EuAll"]="email-EuAll"                    # 265k rows, 420k nnz
 )
 
 # Function to generate filename from matrix properties

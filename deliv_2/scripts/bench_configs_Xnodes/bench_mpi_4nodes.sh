@@ -20,14 +20,12 @@ TEST_MATRICES=(
     "36k_0p17.mtx"           # 36K rows
     "98k_0p52.mtx"           # 98K rows
     "262k_0p0011.mtx"        # 262K rows, very sparse
-    "326k_0p0030.mtx"        # 326K rows, very sparse
+    "265k_0p0006.mtx"        # 265K rows, sparse
+    "326k_0p0030.mtx"        # 326K rows, sparse
     "916k_0p0006.mtx"        # 916K rows, very sparse
-    "1135k_0p0002.mtx"       # 1135K rows, ultra sparse
+    "1438k_0p0016.mtx"       # 1438K rows, ultra sparse
     "1508k_0p0012.mtx"       # 1508K rows, ultra sparse
     "1585k_0p0002.mtx"       # 1585K rows, ultra sparse
-    "3998k_0p0002.mtx"       # 3998K rows, ultra sparse
-    "4194k_0p0001.mtx"       # 4194K rows, ultra sparse
-    "5155k_0p0004.mtx"       # 5155K rows, ultra sparse
 )
 
 if [ ! -d "$MATRICES_DIR" ]; then
