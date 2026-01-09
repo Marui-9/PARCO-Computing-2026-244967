@@ -4,11 +4,11 @@
 #
 # Matrix selection strategy:
 #   - 4 small matrices (36k-325k rows): Quick testing, baseline comparison
-#   - 6 medium matrices (500k-1.8M rows, 10-50M nnz): Larger computation
+#   - 6 medium matrices (265k-1.8M rows, 1-15M nnz): Larger computation
 #   - Total: 10 matrices across small and medium sizes
 #
 # Matrices are auto-renamed to match project convention: {rows_in_k}k_{density%}.mtx
-# Example: A 1.4M row matrix with 0.015% density -> 1400k_0p015.mtx
+# Example: A 524k row matrix with 0.63% density -> 524k_0p63.mtx
 #
 # Data size: ~500 MB total
 # Estimated download time: 2-3 minutes (depends on internet speed)
@@ -48,11 +48,11 @@ declare -A MATRICES=(
     
     # Medium: 500k-1.8M rows, 10-50M nnz
     # Larger computation
+    ["DIMACS10/delaunay_n19"]="delaunay_n19"             # 524k rows, 1.6M nnz
     ["SNAP/web-Google"]="web-Google"                      # 916k rows, 5M nnz
     ["Schenk_AFE/af_shell10"]="af_shell10"                # 1.8M rows, 11M nnz
     ["AMD/G3_circuit"]="G3_circuit"                       # 1.6M rows, 4.7M nnz
     ["Janna/Geo_1438"]="Geo_1438"                         # 1.4M rows, 15M nnz
-    ["Schenk_ISEI/isei"]="isei"                           # 1.1M rows, 39M nnz
     ["SNAP/email-EuAll"]="email-EuAll"                    # 265k rows, 420k nnz
 )
 
