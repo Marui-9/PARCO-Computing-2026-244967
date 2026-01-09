@@ -56,6 +56,9 @@ if [ ! -x "$EXE" ]; then
   exit 3
 fi
 
+rm *6*
+rm results/*6*
+rm results/test_results_Xnodes/*6*
 # Create output directory
 mkdir -p results
 

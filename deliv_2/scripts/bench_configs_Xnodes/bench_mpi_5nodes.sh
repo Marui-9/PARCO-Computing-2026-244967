@@ -55,7 +55,9 @@ if [ ! -x "$EXE" ]; then
   echo "ERROR: '$EXE' exists but is not executable. Try 'chmod +x $EXE'." >&2
   exit 3
 fi
-
+rm *5*
+rm results/*5*
+rm results/test_results_Xnodes/*5*
 # Create output directory
 mkdir -p results
 
