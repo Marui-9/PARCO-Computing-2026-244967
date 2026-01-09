@@ -669,25 +669,15 @@ int import_matrix_distribute_mpi(
         row_ptr[i + 1] = row_ptr[i] + row_counts[i];
     }
     
-    /* Place entries in CSR format - parallelized with atomic position updates */
-    #pragma omp parallel for
+    /* Place entries in CSR format - sequential (parallel version too slow due to atomic contention) */
     for (i = 0; i < total_nnz; i++) {
         r = all_row_ind[i];
         if (r >= actual_row_start && r < actual_row_end) {
             local_r = r - actual_row_start;
-            int local_pos;
-            
-            /* Atomically increment entry_pos[local_r] and capture old value */
-            #pragma omp atomic capture
-            {
-                local_pos = entry_pos[local_r];
-                entry_pos[local_r]++;
-            }
-            
-            /* Compute actual position in CSR arrays */
-            pos = row_ptr[local_r] + local_pos;
+            pos = row_ptr[local_r] + entry_pos[local_r];
             csr_col_ind[pos] = all_col_ind[i];
             csr_values[pos] = all_values[i];
+            entry_pos[local_r]++;
         }
     }
     

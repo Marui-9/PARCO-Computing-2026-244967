@@ -113,7 +113,15 @@ int main(int argc, char* argv[]) {
 
     const char *matrix_file = argv[1];
     int num_iterations = (argc == 3) ? atoi(argv[2]) : 50;
-    const int thread_count = 48;  // Fixed optimal thread count per NUMA analysis
+    
+    /* Determine thread count: use OMP_NUM_THREADS if set, otherwise safe default */
+    int thread_count = omp_get_max_threads();
+    char *omp_env = getenv("OMP_NUM_THREADS");
+    if (omp_env == NULL) {
+        /* If OMP_NUM_THREADS not set, use safe default of 24 threads per rank */
+        thread_count = 24;
+        omp_set_num_threads(thread_count);
+    }
     
     /* Try path variants: direct, ../matrices/, ../../matrices/ */
     char working_matrix_path[1024];
