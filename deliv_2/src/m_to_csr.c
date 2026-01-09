@@ -622,6 +622,10 @@ int import_matrix_distribute_mpi(
     #pragma omp parallel
     {
         int *thread_row_counts = (int *)calloc(local_rows, sizeof(int));
+        if (!thread_row_counts) {
+            fprintf(stderr, "Error: Failed to allocate thread_row_counts in OpenMP region\n");
+            exit(1);
+        }
         long long thread_nnz = 0;
         
         #pragma omp for nowait

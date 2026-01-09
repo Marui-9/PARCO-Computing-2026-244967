@@ -115,12 +115,14 @@ int main(int argc, char* argv[]) {
     int num_iterations = (argc == 3) ? atoi(argv[2]) : 50;
     
     /* Determine thread count: use OMP_NUM_THREADS if set, otherwise safe default */
-    int thread_count = omp_get_max_threads();
+    int thread_count;
     char *omp_env = getenv("OMP_NUM_THREADS");
     if (omp_env == NULL) {
         /* If OMP_NUM_THREADS not set, use safe default of 24 threads per rank */
         thread_count = 24;
         omp_set_num_threads(thread_count);
+    } else {
+        thread_count = omp_get_max_threads();
     }
     
     /* Try path variants: direct, ../matrices/, ../../matrices/ */

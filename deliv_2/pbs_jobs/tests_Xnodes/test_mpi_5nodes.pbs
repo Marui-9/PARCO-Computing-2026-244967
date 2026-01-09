@@ -34,6 +34,12 @@ fi
 
 echo "Working directory: $(pwd)"
 
+# Set OpenMP thread count (48 cores/node, 5 ranks = ~10 threads per rank)
+export OMP_NUM_THREADS=10
+export OMP_PROC_BIND=close
+export OMP_PLACES=cores
+echo "OpenMP threads per rank: $OMP_NUM_THREADS"
+
 # Verify MPI setup
 echo "=== MPI Environment ==="
 which mpicc
