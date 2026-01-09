@@ -166,7 +166,7 @@ int main(int argc, char* argv[]) {
         printf("\n=== MPI Communication Modes Benchmark ===\n");
         printf("MPI Ranks: %d, Threads/rank: %d\n", global_size, thread_count);
         printf("Iterations: %d\n\n", num_iterations);
-        printf("Testing 6 MPI communication modes...\n\n");
+        printf("Testing 4 MPI communication modes...\n\n");
     }
     
     /* Import and distribute matrix - use special value -1 to indicate auto-distribution */
@@ -236,7 +236,7 @@ int main(int argc, char* argv[]) {
     }
 
     /* Define communication modes to test */
-    CommMode modes[6];
+    CommMode modes[4];
     int num_modes = 0;
 
     /* Mode 1: Standard MPI_Bcast + MPI_Gatherv (baseline) */
@@ -253,28 +253,14 @@ int main(int argc, char* argv[]) {
                   comm_ibcast_igatherv, num_iterations, thread_count);
     num_modes++;
 
-    /* Mode 3: MPI_Allgatherv */
-    strcpy(modes[num_modes].name, "Allgatherv");
-    strcpy(modes[num_modes].description, "Broadcast x, local SpMV, all ranks receive full y vector");
-    run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
-                  comm_allgather, num_iterations, thread_count);
-    num_modes++;
-
-    /* Mode 4: Pipelined Communication */
+    /* Mode 3: Pipelined Communication */
     strcpy(modes[num_modes].name, "Pipelined");
     strcpy(modes[num_modes].description, "Exchange x in chunks, overlap with computation");
     run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
                   comm_pipelined, num_iterations, thread_count);
     num_modes++;
 
-    /* Mode 5: Ring-based Reduction */
-    strcpy(modes[num_modes].name, "Ring_Reduce");
-    strcpy(modes[num_modes].description, "Custom ring reduction pattern for y results");
-    run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
-                  comm_ring_reduce, num_iterations, thread_count);
-    num_modes++;
-
-    /* Mode 6: Async Collectives (MPI_Ibcast + MPI_Igatherv) */
+    /* Mode 4: Async Collectives (MPI_Ibcast + MPI_Igatherv) */
     strcpy(modes[num_modes].name, "Async_Collectives");
     strcpy(modes[num_modes].description, "Non-blocking Ibcast x and Igatherv y with computation overlap");
     run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
