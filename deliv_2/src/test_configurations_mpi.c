@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
 
     const char *matrix_file = argv[1];
     int num_iterations = (argc == 3) ? atoi(argv[2]) : 50;
-    const int thread_count = 24;  // Fixed optimal thread count per NUMA analysis
+    const int thread_count = 48;  // Fixed optimal thread count per NUMA analysis
     
     /* Try path variants: direct, ../matrices/, ../../matrices/ */
     char working_matrix_path[1024];
