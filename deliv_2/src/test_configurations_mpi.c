@@ -441,30 +441,40 @@ void comm_bcast_reduce(int rank, int size, csr_matrix *A_local,
 void comm_ibcast_igatherv(int rank, int size, csr_matrix *A_local, 
                           float *x, float *y, int thread_count,
                           double *comm_time, double *compute_time) {
+    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 entering\n"); fflush(stdout); }
     double t_comm = 0.0, t_comp = 0.0;
     
     /* Non-blocking broadcast using Ibcast */
     MPI_Request req_bcast, req_gather;
+    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 before MPI_Ibcast\n"); fflush(stdout); }
     double t_start = MPI_Wtime();
     MPI_Ibcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_bcast);
     t_comm += MPI_Wtime() - t_start;
+    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 after MPI_Ibcast\n"); fflush(stdout); }
 
     /* Local SpMV (partially overlapped with Ibcast) */
+    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 before local_spvec\n"); fflush(stdout); }
     t_start = MPI_Wtime();
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
+    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 after local_spvec\n"); fflush(stdout); }
 
     /* Wait for broadcast to complete */
+    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 before MPI_Wait(Ibcast)\n"); fflush(stdout); }
     t_start = MPI_Wtime();
     MPI_Wait(&req_bcast, MPI_STATUS_IGNORE);
     t_comm += MPI_Wtime() - t_start;
+    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 after MPI_Wait(Ibcast)\n"); fflush(stdout); }
 
     /* Non-blocking gather results with proper handling of uneven rows */
+    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 before malloc tmp_counts\n"); fflush(stdout); }
     t_start = MPI_Wtime();
     
     /* For Igatherv, we need row counts - pre-gather these on all ranks */
     int *tmp_counts = (int *)malloc(size * sizeof(int));
+    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 before MPI_Allgather\n"); fflush(stdout); }
     MPI_Allgather(&m_local, 1, MPI_INT, tmp_counts, 1, MPI_INT, MPI_COMM_WORLD);
+    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 after MPI_Allgather\n"); fflush(stdout); }
     
     if (rank == 0) {
         mpi_displs[0] = 0;
@@ -472,12 +482,15 @@ void comm_ibcast_igatherv(int rank, int size, csr_matrix *A_local,
             mpi_send_counts[i] = tmp_counts[i];
             if (i > 0) mpi_displs[i] = mpi_displs[i-1] + tmp_counts[i-1];
         }
+        printf("    [comm_ibcast_igatherv] rank 0 before MPI_Igatherv\n"); fflush(stdout);
     }
     free(tmp_counts);
     
     /* Use non-blocking gather (Igatherv) */
     MPI_Igatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_gather);
+    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 after MPI_Igatherv, before Wait\n"); fflush(stdout); }
     MPI_Wait(&req_gather, MPI_STATUS_IGNORE);
+    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 after MPI_Wait(Igatherv)\n"); fflush(stdout); }
     t_comm += MPI_Wtime() - t_start;
 
     *comm_time = t_comm;
