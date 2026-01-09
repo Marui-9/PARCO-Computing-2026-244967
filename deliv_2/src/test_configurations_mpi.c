@@ -219,14 +219,8 @@ int main(int argc, char* argv[]) {
     }
 
     /* First-touch initialization for NUMA awareness */
-    if (global_rank == 0) printf("Performing first-touch initialization...\n");
-    fflush(stdout);
     first_touch_init(thread_count);
-    if (global_rank == 0) printf("First-touch initialization complete on rank 0, waiting at barrier...\n");
-    fflush(stdout);
     MPI_Barrier(MPI_COMM_WORLD);
-    if (global_rank == 0) printf("All ranks synchronized after initialization.\n\n");
-    fflush(stdout);
 
     /* Pre-allocate MPI communication buffers to avoid repeated allocations in benchmark loop */
     /* All ranks need these buffers allocated (though only rank 0 uses them actively) */
@@ -239,9 +233,6 @@ int main(int argc, char* argv[]) {
         MPI_Finalize();
         exit(1);
     }
-    
-    if (global_rank == 0) printf("MPI buffers allocated successfully.\n");
-    fflush(stdout);
 
     /* Define communication modes to test */
     CommMode modes[3];
@@ -250,12 +241,8 @@ int main(int argc, char* argv[]) {
     /* Mode 1: Standard MPI_Bcast + MPI_Gatherv (baseline) */
     strcpy(modes[num_modes].name, "MPI_Bcast+Gatherv");
     strcpy(modes[num_modes].description, "Standard broadcast x, local SpMV, gatherv y to rank 0");
-    if (global_rank == 0) printf("Starting benchmark: %s\n", modes[num_modes].name);
-    fflush(stdout);
     run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
                   comm_bcast_reduce, num_iterations, thread_count);
-    if (global_rank == 0) printf("Completed benchmark: %s\n", modes[num_modes].name);
-    fflush(stdout);
     num_modes++;
 
     /* Mode 2: Non-blocking Ibcast/Igatherv */
@@ -393,44 +380,33 @@ void local_spvec(csr_matrix *A_local, float *x, float *y, int thread_count) {
 void comm_bcast_reduce(int rank, int size, csr_matrix *A_local, 
                        float *x, float *y, int thread_count,
                        double *comm_time, double *compute_time) {
-    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 entering function\n"); fflush(stdout); }
     double t_comm = 0.0, t_comp = 0.0;
     
     /* Broadcast x from rank 0 */
-    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 before MPI_Bcast (n_global=%d)\n", n_global); fflush(stdout); }
     double t_start = MPI_Wtime();
     MPI_Bcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD);
     t_comm += MPI_Wtime() - t_start;
-    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 after MPI_Bcast\n"); fflush(stdout); }
 
     /* Local SpMV */
-    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 before local_spvec\n"); fflush(stdout); }
     t_start = MPI_Wtime();
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
-    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 after local_spvec\n"); fflush(stdout); }
 
     /* Reduce y results to rank 0 with proper handling of uneven rows */
-    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 before MPI_Gather\n"); fflush(stdout); }
     t_start = MPI_Wtime();
     
     /* Gather local row counts */
     MPI_Gather(&m_local, 1, MPI_INT, mpi_send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 after MPI_Gather\n"); fflush(stdout); }
     
     if (rank == 0) {
         mpi_displs[0] = 0;
         for (int i = 1; i < size; i++) {
             mpi_displs[i] = mpi_displs[i-1] + mpi_send_counts[i-1];
         }
-        printf("    [comm_bcast_reduce] rank 0 computed displs, before MPI_Gatherv\n"); fflush(stdout);
     }
     
     MPI_Gatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 after MPI_Gatherv\n"); fflush(stdout); }
     t_comm += MPI_Wtime() - t_start;
-    
-    if (rank == 0) { printf("    [comm_bcast_reduce] rank 0 exiting function\n"); fflush(stdout); }
 
     *comm_time = t_comm;
     *compute_time = t_comp;
@@ -441,40 +417,30 @@ void comm_bcast_reduce(int rank, int size, csr_matrix *A_local,
 void comm_ibcast_igatherv(int rank, int size, csr_matrix *A_local, 
                           float *x, float *y, int thread_count,
                           double *comm_time, double *compute_time) {
-    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 entering\n"); fflush(stdout); }
     double t_comm = 0.0, t_comp = 0.0;
     
     /* Non-blocking broadcast using Ibcast */
     MPI_Request req_bcast, req_gather;
-    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 before MPI_Ibcast\n"); fflush(stdout); }
     double t_start = MPI_Wtime();
     MPI_Ibcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_bcast);
     t_comm += MPI_Wtime() - t_start;
-    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 after MPI_Ibcast\n"); fflush(stdout); }
 
     /* Local SpMV (partially overlapped with Ibcast) */
-    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 before local_spvec\n"); fflush(stdout); }
     t_start = MPI_Wtime();
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
-    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 after local_spvec\n"); fflush(stdout); }
 
     /* Wait for broadcast to complete */
-    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 before MPI_Wait(Ibcast)\n"); fflush(stdout); }
     t_start = MPI_Wtime();
     MPI_Wait(&req_bcast, MPI_STATUS_IGNORE);
     t_comm += MPI_Wtime() - t_start;
-    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 after MPI_Wait(Ibcast)\n"); fflush(stdout); }
 
     /* Non-blocking gather results with proper handling of uneven rows */
-    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 before malloc tmp_counts\n"); fflush(stdout); }
     t_start = MPI_Wtime();
     
     /* For Igatherv, we need row counts - pre-gather these on all ranks */
     int *tmp_counts = (int *)malloc(size * sizeof(int));
-    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 before MPI_Allgather\n"); fflush(stdout); }
     MPI_Allgather(&m_local, 1, MPI_INT, tmp_counts, 1, MPI_INT, MPI_COMM_WORLD);
-    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 after MPI_Allgather\n"); fflush(stdout); }
     
     if (rank == 0) {
         mpi_displs[0] = 0;
@@ -482,15 +448,12 @@ void comm_ibcast_igatherv(int rank, int size, csr_matrix *A_local,
             mpi_send_counts[i] = tmp_counts[i];
             if (i > 0) mpi_displs[i] = mpi_displs[i-1] + tmp_counts[i-1];
         }
-        printf("    [comm_ibcast_igatherv] rank 0 before MPI_Igatherv\n"); fflush(stdout);
     }
     free(tmp_counts);
     
     /* Use non-blocking gather (Igatherv) */
     MPI_Igatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_gather);
-    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 after MPI_Igatherv, before Wait\n"); fflush(stdout); }
     MPI_Wait(&req_gather, MPI_STATUS_IGNORE);
-    if (rank == 0) { printf("    [comm_ibcast_igatherv] rank 0 after MPI_Wait(Igatherv)\n"); fflush(stdout); }
     t_comm += MPI_Wtime() - t_start;
 
     *comm_time = t_comm;
@@ -541,14 +504,11 @@ void comm_allgather(int rank, int size, csr_matrix *A_local,
 void comm_pipelined(int rank, int size, csr_matrix *A_local, 
                     float *x, float *y, int thread_count,
                     double *comm_time, double *compute_time) {
-    if (rank == 0) { printf("    [comm_pipelined] rank 0 entering\n"); fflush(stdout); }
     double t_comm = 0.0, t_comp = 0.0;
     
     /* Pipelined distribution: each rank sends its chunk to next rank in ring */
     int chunk_size = (n_global + size - 1) / size;
     double t_start = MPI_Wtime();
-    
-    if (rank == 0) { printf("    [comm_pipelined] rank 0 chunk_size=%d, before malloc\n", chunk_size); fflush(stdout); }
     
     /* Pre-compute chunk sizes for all ranks to ensure consistency */
     int *chunk_sizes = (int *)malloc(size * sizeof(int));
@@ -558,14 +518,11 @@ void comm_pipelined(int rank, int size, csr_matrix *A_local,
         chunk_sizes[r] = chunk_end - chunk_start;
     }
     
-    if (rank == 0) { printf("    [comm_pipelined] rank 0 before ring loop\n"); fflush(stdout); }
-    
     /* Ring-based distribution: rank i sends its chunk to rank (i+1)%size */
     /* This is repeated size times to ensure all ranks eventually get all chunks */
     MPI_Request req_send, req_recv;
     
     for (int stage = 0; stage < size - 1; stage++) {
-        if (rank == 0 && stage == 0) { printf("    [comm_pipelined] rank 0 stage %d/%d\n", stage, size-1); fflush(stdout); }
         int next_rank = (rank + 1) % size;
         int prev_rank = (rank - 1 + size) % size;
         
@@ -597,19 +554,15 @@ void comm_pipelined(int rank, int size, csr_matrix *A_local,
         /* Wait for both operations */
         if (recv_issued) MPI_Wait(&req_recv, MPI_STATUS_IGNORE);
         if (send_issued) MPI_Wait(&req_send, MPI_STATUS_IGNORE);
-        if (rank == 0 && stage == 0) { printf("    [comm_pipelined] rank 0 completed stage %d\n", stage); fflush(stdout); }
     }
     
-    if (rank == 0) { printf("    [comm_pipelined] rank 0 after ring loop\n"); fflush(stdout); }
     free(chunk_sizes);
     t_comm += MPI_Wtime() - t_start;
 
     /* Local SpMV after pipelined receive completes */
-    if (rank == 0) { printf("    [comm_pipelined] rank 0 before local_spvec\n"); fflush(stdout); }
     t_start = MPI_Wtime();
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
-    if (rank == 0) { printf("    [comm_pipelined] rank 0 after local_spvec\n"); fflush(stdout); }
 
     /* Gather y results to rank 0 */
     t_start = MPI_Wtime();
@@ -758,16 +711,11 @@ void comm_async_collectives(int rank, int size, csr_matrix *A_local,
 void run_benchmark(CommMode *mode, int rank, int size, csr_matrix *A_local,
                    void (*func)(int, int, csr_matrix*, float*, float*, int, double*, double*),
                    int num_iterations, int thread_count) {
-    if (rank == 0) printf("  [run_benchmark] Starting %d iterations...\n", num_iterations);
-    fflush(stdout);
-    
     double times[num_iterations];
     double comm_times[num_iterations];
     double comp_times[num_iterations];
     
     for (int iter = 0; iter < num_iterations; iter++) {
-        if (rank == 0 && iter == 0) printf("  [run_benchmark] Iteration %d/%d\n", iter+1, num_iterations);
-        fflush(stdout);
         double t_start = MPI_Wtime();
         double comm_time = 0.0, comp_time = 0.0;
         
