@@ -9,7 +9,7 @@ EXE="./test_config_mpi"
 OUT_BASE="results/test_results_Xnodes/test_config_mpi_results"
 OUT_LOG="results/bench_mpi_2nodes.log"
 TIMEOUT_SECS=3600      # 60 minutes per matrix combo
-ITERATIONS=50          # 50 iterations per configuration
+ITERATIONS=30          # 50 iterations per configuration
 
 # Node counts to test - FIXED TO 2 NODES
 NODE_COUNTS="2"
