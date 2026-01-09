@@ -35,6 +35,17 @@ int import_matrix_rows_to_csr(
     csr_matrix **out_csr
 );
 
+/* MPI-based matrix distribution: rank 0 reads, broadcasts to all ranks */
+#ifdef MPI_ENABLED
+int import_matrix_distribute_mpi(
+    const char *filename,
+    int row_start,
+    int row_end,
+    int global_cols,
+    csr_matrix **out_csr
+);
+#endif
+
 void print_csr(csr_matrix *csr);
 void csr_free(csr_matrix *A);
 #endif

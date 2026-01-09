@@ -277,13 +277,13 @@ int main(int argc, char* argv[]) {
     fflush(stderr);
     
     csr_matrix *A_local = NULL;
-    int result = import_matrix_rows_to_csr(working_matrix_path, row_start, row_end, n_global, &A_local);
+    int result = import_matrix_distribute_mpi(working_matrix_path, row_start, row_end, n_global, &A_local);
     
-    fprintf(stderr, "Rank %d: Matrix import completed with result=%d\n", global_rank, result);
+    fprintf(stderr, "Rank %d: MPI matrix distribution completed with result=%d\n", global_rank, result);
     fflush(stderr);
     
     if (result != 0) {
-        fprintf(stderr, "Rank %d: Failed to import matrix rows [%d,%d)\n", global_rank, row_start, row_end);
+        fprintf(stderr, "Rank %d: Failed to distribute matrix rows [%d,%d)\n", global_rank, row_start, row_end);
         MPI_Finalize();
         exit(1);
     }
