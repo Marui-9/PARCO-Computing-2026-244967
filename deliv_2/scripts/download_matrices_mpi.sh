@@ -225,7 +225,7 @@ usage() {
     echo "Examples:"
     echo "  36k_0p17.mtx     = 36k rows, 0.17% density"
     echo "  1438k_0p0016.mtx = 1.4M rows, 0.0016% density"
-
+}
 
 if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
     usage
