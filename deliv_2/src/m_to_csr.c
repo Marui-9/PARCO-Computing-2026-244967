@@ -486,6 +486,8 @@ int import_matrix_distribute_mpi(
     /* Rank 0 reads the entire matrix file */
     if (rank == 0) {
         FILE *fp = fopen(filename, "r");
+        char line[256];  /* Declare before any statements */
+        
         if (!fp) {
             fprintf(stderr, "Error: Cannot open file %s\n", filename);
             total_nnz = -1;  /* Signal error */
@@ -494,7 +496,6 @@ int import_matrix_distribute_mpi(
         }
         
         /* Read header */
-        char line[256];
         while (fgets(line, sizeof(line), fp)) {
             if (line[0] == '%') continue;
             if (sscanf(line, "%d %d %lld", &global_rows, &cols, &total_nnz) == 3) break;
@@ -533,9 +534,10 @@ int import_matrix_distribute_mpi(
         }
         
         long long idx = 0;
+        int r, c;
+        float val;
+        
         while (fgets(line, sizeof(line), fp) && idx < total_nnz) {
-            int r, c;
-            float val;
             if (sscanf(line, "%d %d %f", &r, &c, &val) == 3) {
                 all_row_ind[idx] = r - 1;  /* Convert to 0-indexed */
                 all_col_ind[idx] = c - 1;
@@ -582,7 +584,16 @@ int import_matrix_distribute_mpi(
     
     /* Each rank extracts its rows and builds CSR */
     int local_rows = row_end - row_start;
-    int *row_counts = (int *)calloc(local_rows, sizeof(int));
+    long long nnz_local = 0;
+    int *row_ptr = NULL;
+    int *csr_col_ind = NULL;
+    float *csr_values = NULL;
+    int *entry_pos = NULL;
+    int *row_counts = NULL;
+    long long i;
+    int r, local_r, pos;
+    
+    row_counts = (int *)calloc(local_rows, sizeof(int));
     
     if (!row_counts) {
         free(all_row_ind);
@@ -592,9 +603,8 @@ int import_matrix_distribute_mpi(
     }
     
     /* Count NNZ in local rows */
-    long long nnz_local = 0;
-    for (long long i = 0; i < total_nnz; i++) {
-        int r = all_row_ind[i];
+    for (i = 0; i < total_nnz; i++) {
+        r = all_row_ind[i];
         if (r >= row_start && r < row_end) {
             row_counts[r - row_start]++;
             nnz_local++;
@@ -602,10 +612,10 @@ int import_matrix_distribute_mpi(
     }
     
     /* Allocate CSR arrays */
-    int *row_ptr = (int *)malloc((local_rows + 1) * sizeof(int));
-    int *csr_col_ind = (int *)malloc(nnz_local * sizeof(int));
-    float *csr_values = (float *)malloc(nnz_local * sizeof(float));
-    int *entry_pos = (int *)calloc(local_rows, sizeof(int));
+    row_ptr = (int *)malloc((local_rows + 1) * sizeof(int));
+    csr_col_ind = (int *)malloc(nnz_local * sizeof(int));
+    csr_values = (float *)malloc(nnz_local * sizeof(float));
+    entry_pos = (int *)calloc(local_rows, sizeof(int));
     
     if (!row_ptr || !csr_col_ind || !csr_values || !entry_pos) {
         free(row_counts);
@@ -621,16 +631,16 @@ int import_matrix_distribute_mpi(
     
     /* Build row_ptr from counts */
     row_ptr[0] = 0;
-    for (int i = 0; i < local_rows; i++) {
+    for (i = 0; i < local_rows; i++) {
         row_ptr[i + 1] = row_ptr[i] + row_counts[i];
     }
     
     /* Place entries in CSR format */
-    for (long long i = 0; i < total_nnz; i++) {
-        int r = all_row_ind[i];
+    for (i = 0; i < total_nnz; i++) {
+        r = all_row_ind[i];
         if (r >= row_start && r < row_end) {
-            int local_r = r - row_start;
-            int pos = row_ptr[local_r] + entry_pos[local_r];
+            local_r = r - row_start;
+            pos = row_ptr[local_r] + entry_pos[local_r];
             csr_col_ind[pos] = all_col_ind[i];
             csr_values[pos] = all_values[i];
             entry_pos[local_r]++;
@@ -661,193 +671,6 @@ int import_matrix_distribute_mpi(
     csr->values = csr_values;
     
     *out_csr = csr;
-    return 0;
-}
-#endif
-    
-    /* Rank 0 reads the file */
-    if (rank == 0) {
-        FILE *fp = fopen(filename, "r");
-        if (!fp) {
-            fprintf(stderr, "Error: Cannot open file %s\n", filename);
-            nnz_total = -1;
-        } else {
-            /* Read header */
-            char line[256];
-            int cols;
-            while (fgets(line, sizeof(line), fp)) {
-                if (line[0] == '%') continue;
-                if (sscanf(line, "%d %d %d", &global_rows, &cols, &nnz_total) == 3) break;
-            }
-            
-            if (global_rows > 0 && cols == global_cols && nnz_total > 0) {
-                /* Allocate triplet storage */
-                all_row_idx = (int *)malloc(nnz_total * sizeof(int));
-                all_col_idx = (int *)malloc(nnz_total * sizeof(int));
-                all_values = (float *)malloc(nnz_total * sizeof(float));
-                
-                if (!all_row_idx || !all_col_idx || !all_values) {
-                    free(all_row_idx);
-                    free(all_col_idx);
-                    free(all_values);
-                    fclose(fp);
-                    return ENOMEM;
-                }
-                
-                /* Single pass: read all entries */
-                int idx = 0;
-                while (fgets(line, sizeof(line), fp) && idx < nnz_total) {
-                    int r, c;
-                    float val;
-                    if (sscanf(line, "%d %d %f", &r, &c, &val) == 3) {
-                        all_row_idx[idx] = r - 1;  /* Convert to 0-indexed */
-                        all_col_idx[idx] = c - 1;
-                        all_values[idx] = val;
-                        idx++;
-                    }
-                }
-                
-                nnz_total = idx;  /* Actual count read */
-            }
-            fclose(fp);
-        }
-    }
-    
-    /* Broadcast dimensions and NNZ */
-    MPI_Bcast(&global_rows, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&nnz_total, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    
-    if (nnz_total <= 0) return EINVAL;
-    
-    /* Non-rank-0 processes allocate triplet buffers */
-    if (rank != 0) {
-        all_row_idx = (int *)malloc(nnz_total * sizeof(int));
-        all_col_idx = (int *)malloc(nnz_total * sizeof(int));
-        all_values = (float *)malloc(nnz_total * sizeof(float));
-        
-        if (!all_row_idx || !all_col_idx || !all_values) {
-            free(all_row_idx);
-            free(all_col_idx);
-            free(all_values);
-            return ENOMEM;
-        }
-    }
-    
-    /* Broadcast triplets to all ranks */
-    MPI_Bcast(all_row_idx, nnz_total, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(all_col_idx, nnz_total, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(all_values, nnz_total, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    
-    /* Each rank converts its local rows to CSR */
-    int local_rows = row_end - row_start;
-    int *row_counts = (int *)calloc(local_rows, sizeof(int));
-    
-    /* Count entries in our row range */
-    int nnz_local = 0;
-    for (int i = 0; i < nnz_total; i++) {
-        int r = all_row_idx[i];
-        if (r >= row_start && r < row_end) {
-            row_counts[r - row_start]++;
-            nnz_local++;
-        }
-    }
-    
-    /* Allocate local triplet storage */
-    int *row_indices = (int *)malloc(nnz_local * sizeof(int));
-    int *col_indices = (int *)malloc(nnz_local * sizeof(int));
-    float *values = (float *)malloc(nnz_local * sizeof(float));
-    
-    if (!row_counts || !row_indices || !col_indices || !values) {
-        free(row_counts);
-        free(row_indices);
-        free(col_indices);
-        free(values);
-        free(all_row_idx);
-        free(all_col_idx);
-        free(all_values);
-        return ENOMEM;
-    }
-    
-    /* Collect entries for our rows */
-    nnz_local = 0;
-    for (int i = 0; i < nnz_total; i++) {
-        int r = all_row_idx[i];
-        if (r >= row_start && r < row_end) {
-            row_indices[nnz_local] = r - row_start;
-            col_indices[nnz_local] = all_col_idx[i];
-            values[nnz_local] = all_values[i];
-            nnz_local++;
-        }
-    }
-    
-    free(all_row_idx);
-    free(all_col_idx);
-    free(all_values);
-    
-    /* Build CSR format */
-    int *row_ptr = (int *)malloc((local_rows + 1) * sizeof(int));
-    if (!row_ptr) {
-        free(row_counts);
-        free(row_indices);
-        free(col_indices);
-        free(values);
-        return ENOMEM;
-    }
-    
-    row_ptr[0] = 0;
-    for (int i = 0; i < local_rows; i++) {
-        row_ptr[i + 1] = row_ptr[i] + row_counts[i];
-    }
-    
-    /* Sort entries by row and fill CSR arrays */
-    int *csr_col_ind = (int *)malloc(nnz_local * sizeof(int));
-    float *csr_values = (float *)malloc(nnz_local * sizeof(float));
-    int *entry_pos = (int *)calloc(local_rows, sizeof(int));
-    
-    if (!csr_col_ind || !csr_values || !entry_pos) {
-        free(row_ptr);
-        free(row_counts);
-        free(row_indices);
-        free(col_indices);
-        free(values);
-        free(csr_col_ind);
-        free(csr_values);
-        free(entry_pos);
-        return ENOMEM;
-    }
-    
-    for (int i = 0; i < nnz_local; i++) {
-        int r = row_indices[i];
-        int pos = row_ptr[r] + entry_pos[r];
-        csr_col_ind[pos] = col_indices[i];
-        csr_values[pos] = values[i];
-        entry_pos[r]++;
-    }
-    
-    free(row_counts);
-    free(row_indices);
-    free(col_indices);
-    free(values);
-    free(entry_pos);
-    
-    /* Create CSR matrix structure */
-    csr_matrix *csr = (csr_matrix *)malloc(sizeof(csr_matrix));
-    if (!csr) {
-        free(row_ptr);
-        free(csr_col_ind);
-        free(csr_values);
-        return ENOMEM;
-    }
-    
-    csr->rows = local_rows;
-    csr->cols = global_cols;
-    csr->nnz = nnz_local;
-    csr->row_ptr = row_ptr;
-    csr->col_ind = csr_col_ind;
-    csr->values = csr_values;
-    
-    *out_csr = csr;
-    
     return 0;
 }
 #endif
