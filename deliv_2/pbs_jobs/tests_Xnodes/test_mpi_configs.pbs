@@ -58,7 +58,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-gcc-9.1.0 -g -Wall -O3 -fopenmp -DMPI_ENABLED -c src/m_to_csr.c -o m_to_csr.o
+mpicc -g -Wall -O3 -fopenmp -DMPI_ENABLED -c src/m_to_csr.c -o m_to_csr.o
 if [ $? -ne 0 ]; then
     echo "ERROR: Failed to compile m_to_csr.c"
     exit 1
