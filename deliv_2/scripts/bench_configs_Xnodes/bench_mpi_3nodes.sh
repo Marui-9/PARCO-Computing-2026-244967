@@ -127,11 +127,7 @@ for num_nodes in $NODE_COUNTS; do
     # Create or clear CSV for this node count
     if [ ! -f "$OUT_CSV" ]; then
         echo "Creating new CSV: $OUT_CSV"
-        {
-            echo "num_nodes,matrix,rows,cols,nnz,density_pct,config_name,"
-            echo "avg_time_ms,std_dev_ms,min_time_ms,max_time_ms,"
-            echo "comm_time_ms,compute_time_ms,speedup,efficiency_pct,iterations,notes"
-        } | paste -sd',' - > "$OUT_CSV"
+        echo "num_nodes,matrix,rows,cols,nnz,density_pct,config_name,avg_time_ms,std_dev_ms,min_time_ms,max_time_ms,comm_time_ms,compute_time_ms,speedup,efficiency_pct,iterations,notes" > "$OUT_CSV"
     fi
     
     # Loop over test matrices

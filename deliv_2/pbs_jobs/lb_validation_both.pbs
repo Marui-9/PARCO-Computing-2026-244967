@@ -1,0 +1,205 @@
+#!/bin/bash
+#PBS -N lb_validation_both
+#PBS -o ./lb_validation_both.out
+#PBS -e ./lb_validation_both.err
+#PBS -q short_cpuQ
+#PBS -l walltime=04:00:00
+#PBS -l select=7:ncpus=48:mem=32gb
+
+# Load necessary modules
+echo "Loading modules..."
+module load gcc91
+module load mpich-3.2.1--gcc-9.1.0
+
+# Navigate to project directory
+echo "=== Load Balancing Validation Test (6 + 7 NODES) ==="
+echo "Initial directory: $(pwd)"
+cd PARCO-Computing-2026-244967/deliv_2/ 2>/dev/null || true
+
+# Navigate to deliv_2 directory (PBS starts in submission directory or home)
+if [ -d "deliv_2" ]; then
+    cd deliv_2
+    echo "Changed to deliv_2/"
+elif [ -d "../deliv_2" ]; then
+    cd ../deliv_2
+    echo "Changed to ../deliv_2/"
+elif [ -d "." ] && [ -f "Makefile" ]; then
+    echo "Already in deliv_2 directory"
+else
+    echo "ERROR: Cannot find deliv_2 directory!"
+    echo "Current directory: $(pwd)"
+    ls -la
+    exit 1
+fi
+
+echo "Working directory: $(pwd)"
+
+# Set OpenMP thread count (48 threads per rank, as per optimal configuration)
+export OMP_NUM_THREADS=48
+export OMP_PROC_BIND=close
+export OMP_PLACES=cores
+echo "OpenMP threads per rank: $OMP_NUM_THREADS"
+
+# Verify MPI setup
+echo "=== MPI Environment ==="
+which mpicc
+which mpirun
+mpicc --version
+
+# Clean and compile the load balancing validation test
+echo ""
+echo "Cleaning old build artifacts..."
+rm -f test_lb_validation *.o
+
+echo "Compiling load balancing validation test..."
+mpicc -g -Wall -O3 -fopenmp -c src/test_load_balance_validation.c -o test_load_balance_validation.o
+if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to compile test_load_balance_validation.c"
+    exit 1
+fi
+
+mpicc -g -Wall -O3 -fopenmp -c src/load_balance.c -o load_balance.o
+if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to compile load_balance.c"
+    exit 1
+fi
+
+gcc-9.1.0 -g -Wall -O3 -fopenmp -c src/generator.c -o generator.o
+if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to compile generator.c"
+    exit 1
+fi
+
+mpicc -g -Wall -O3 -fopenmp -DMPI_ENABLED -c src/m_to_csr.c -o m_to_csr.o
+if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to compile m_to_csr.c"
+    exit 1
+fi
+
+mpicc -g -Wall -O3 -fopenmp -o test_lb_validation \
+    test_load_balance_validation.o load_balance.o generator.o m_to_csr.o -lm
+if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to link test_lb_validation"
+    exit 1
+fi
+
+if [ ! -x test_lb_validation ]; then
+    echo "ERROR: test_lb_validation was not created or is not executable"
+    exit 1
+fi
+
+echo "Successfully compiled test_lb_validation"
+ls -lh test_lb_validation
+
+# Create results directory
+mkdir -p results/load_balancing
+
+echo ""
+echo "================================================================================"
+echo "This script runs validation tests for both 6 and 7 nodes (worst performers)"
+echo "================================================================================"
+echo ""
+
+# Test matrix: most irregular from analysis
+MATRIX="matrices/1585k_0p0002.mtx"
+ITERATIONS=20
+
+if [ ! -f "$MATRIX" ]; then
+    echo "ERROR: Matrix file not found: $MATRIX"
+    echo "Available matrices:"
+    ls -1 matrices/*.mtx
+    exit 1
+fi
+
+echo "Test Configuration:"
+echo "  Matrix:       $MATRIX (most irregular from analysis)"
+echo "  Threads/rank: $OMP_NUM_THREADS"
+echo "  Iterations:   $ITERATIONS per test"
+echo ""
+
+# ============================================================================
+# TEST 1: 6 NODES
+# ============================================================================
+
+echo ""
+echo "================================================================================"
+echo "TEST 1: 6 NODES (288 total cores)"
+echo "================================================================================"
+echo "Timestamp: $(date)"
+echo ""
+
+OUTPUT_FILE_6="results/load_balancing/validation_6nodes_cluster.txt"
+
+mpirun -np 6 ./test_lb_validation "$MATRIX" $ITERATIONS 2>&1 | tee "$OUTPUT_FILE_6"
+EXIT_6=${PIPESTATUS[0]}
+
+echo ""
+echo "6-node test completed (exit code: $EXIT_6)"
+echo "Results saved to: $OUTPUT_FILE_6"
+echo ""
+
+# ============================================================================
+# TEST 2: 7 NODES
+# ============================================================================
+
+echo ""
+echo "================================================================================"
+echo "TEST 2: 7 NODES (336 total cores)"
+echo "================================================================================"
+echo "Timestamp: $(date)"
+echo ""
+
+OUTPUT_FILE_7="results/load_balancing/validation_7nodes_cluster.txt"
+
+mpirun -np 7 ./test_lb_validation "$MATRIX" $ITERATIONS 2>&1 | tee "$OUTPUT_FILE_7"
+EXIT_7=${PIPESTATUS[0]}
+
+echo ""
+echo "7-node test completed (exit code: $EXIT_7)"
+echo "Results saved to: $OUTPUT_FILE_7"
+echo ""
+
+# ============================================================================
+# SUMMARY
+# ============================================================================
+
+echo ""
+echo "================================================================================"
+echo "VALIDATION TESTS SUMMARY"
+echo "================================================================================"
+echo "Timestamp: $(date)"
+echo ""
+
+echo "Test Results:"
+echo "  6 nodes: Exit code $EXIT_6"
+echo "  7 nodes: Exit code $EXIT_7"
+echo ""
+
+if [ $EXIT_6 -eq 0 ] && [ -f "$OUTPUT_FILE_6" ]; then
+    echo ""
+    echo "=== 6 NODES RESULTS ==="
+    grep -A 5 "Speedup Factor" "$OUTPUT_FILE_6" || echo "Could not extract 6-node results"
+    grep -A 3 "CONCLUSION" "$OUTPUT_FILE_6" | head -4 || echo "Could not extract 6-node conclusion"
+fi
+
+if [ $EXIT_7 -eq 0 ] && [ -f "$OUTPUT_FILE_7" ]; then
+    echo ""
+    echo "=== 7 NODES RESULTS ==="
+    grep -A 5 "Speedup Factor" "$OUTPUT_FILE_7" || echo "Could not extract 7-node results"
+    grep -A 3 "CONCLUSION" "$OUTPUT_FILE_7" | head -4 || echo "Could not extract 7-node conclusion"
+fi
+
+echo ""
+echo "Full results available in:"
+echo "  - $OUTPUT_FILE_6"
+echo "  - $OUTPUT_FILE_7"
+echo ""
+
+# Exit with error if either test failed
+if [ $EXIT_6 -ne 0 ] || [ $EXIT_7 -ne 0 ]; then
+    echo "ERROR: One or more tests failed"
+    exit 1
+fi
+
+echo "All validation tests completed successfully!"
+exit 0
