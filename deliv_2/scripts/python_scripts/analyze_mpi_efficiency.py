@@ -64,12 +64,13 @@ def read_results(csv_path: str) -> pd.DataFrame:
     # If we couldn't find all columns by name, use fixed positions
     if len(col_pos) < len(expected_cols):
         # Assume fixed structure: skip header line(s), then data rows
-        # Expected: num_nodes,matrix,rows,cols,nnz,density_pct,config_name,avg_time_ms,...
+        # Expected (with empty columns): num_nodes,matrix,rows,cols,nnz,density_pct,config_name,,avg_time_ms,std_dev_ms,min_time_ms,max_time_ms,,comm_time_ms,compute_time_ms,speedup,efficiency_pct,iterations,notes
+        # Actual positions after parsing (accounting for empty columns):
         col_pos = {
             'num_nodes': 0, 'matrix': 1, 'rows': 2, 'cols': 3, 'nnz': 4,
-            'density_pct': 5, 'config_name': 6, 'avg_time_ms': 7, 'std_dev_ms': 8,
-            'min_time_ms': 9, 'max_time_ms': 10, 'comm_time_ms': 11, 'compute_time_ms': 12,
-            'speedup': 13, 'efficiency_pct': 14, 'iterations': 15, 'notes': 16
+            'density_pct': 5, 'config_name': 6, 'avg_time_ms': 8, 'std_dev_ms': 9,
+            'min_time_ms': 10, 'max_time_ms': 11, 'comm_time_ms': 13, 'compute_time_ms': 14,
+            'speedup': 15, 'efficiency_pct': 16, 'iterations': 17, 'notes': 18
         }
     
     # Parse data rows
@@ -116,8 +117,15 @@ def read_results(csv_path: str) -> pd.DataFrame:
 
 def load_all_results(results_dir: str) -> pd.DataFrame:
     """Load all *nodes.csv files from results directory."""
-    pattern = os.path.join(results_dir, "*nodes.csv")
+    # First try the subdirectory structure
+    pattern = os.path.join(results_dir, "test_results_Xnodes", "*nodes.csv")
     paths = sorted(glob.glob(pattern))
+    
+    # Fall back to direct results directory if subdirectory not found
+    if not paths:
+        pattern = os.path.join(results_dir, "*nodes.csv")
+        paths = sorted(glob.glob(pattern))
+    
     if not paths:
         print(f"[ERROR] No CSV files matching {pattern}", file=sys.stderr)
         return pd.DataFrame()
