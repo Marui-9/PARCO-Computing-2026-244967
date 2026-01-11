@@ -463,7 +463,6 @@ int import_matrix_rows_to_csr(
 }
 
 /*------------------------------------------------------------------*/
-#ifdef MPI_ENABLED
 #include <mpi.h>
 
 /* MPI-based matrix distribution: rank 0 reads, broadcasts to all ranks */
@@ -718,4 +717,3 @@ int import_matrix_distribute_mpi(
     *global_cols = cols;
     return 0;
 }
-#endif

@@ -37,7 +37,6 @@ int import_matrix_rows_to_csr(
 
 /* MPI-based matrix distribution: rank 0 reads, broadcasts to all ranks
    Returns dimensions via output parameters to avoid redundant file reads */
-#ifdef MPI_ENABLED
 int import_matrix_distribute_mpi(
     const char *filename,
     int row_start,
@@ -46,7 +45,6 @@ int import_matrix_distribute_mpi(
     int *global_cols,
     csr_matrix **out_csr
 );
-#endif
 
 void print_csr(csr_matrix *csr);
 void csr_free(csr_matrix *A);
