@@ -327,9 +327,16 @@ double benchmark_distribution(const char *matrix_file, const char *strategy_name
             int *recv_counts = (int *)malloc(size * sizeof(int));
             int *displs = (int *)malloc(size * sizeof(int));
             
+            /* Correct calculation accounting for remainder rows */
+            int rows_per_rank = m_global / size;
+            int extra_rows = m_global % size;
+            
             for (int r = 0; r < size; r++) {
-                recv_counts[r] = (r == size - 1) ? (m_global - (m_global / size) * r) : (m_global / size);
-                displs[r] = (m_global / size) * r;
+                recv_counts[r] = rows_per_rank;
+                if (r < extra_rows) {
+                    recv_counts[r]++;  /* First 'extra_rows' ranks get +1 row */
+                }
+                displs[r] = rows_per_rank * r + (r < extra_rows ? r : extra_rows);
             }
             
             MPI_Gatherv(y_local, m_local, MPI_FLOAT, y_global, recv_counts, 
