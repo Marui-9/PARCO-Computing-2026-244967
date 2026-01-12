@@ -230,26 +230,26 @@ int main(int argc, char* argv[]) {
     CommMode modes[4];
     int num_modes = 0;
 
-    /* Mode 1: Standard MPI_Bcast + MPI_Gatherv (baseline) */
-    strcpy(modes[num_modes].name, "MPI_Bcast+Gatherv");
-    strcpy(modes[num_modes].description, "Standard blocking broadcast and gather");
-    run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
-                  comm_bcast_reduce, num_iterations, thread_count);
-    num_modes++;
+    // /* Mode 1: Standard MPI_Bcast + MPI_Gatherv (baseline) */
+    // strcpy(modes[num_modes].name, "MPI_Bcast+Gatherv");
+    // strcpy(modes[num_modes].description, "Standard blocking broadcast and gather");
+    // run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
+    //               comm_bcast_reduce, num_iterations, thread_count);
+    // num_modes++;
 
-    /* Mode 2: Non-blocking Ibcast/Igatherv */
-    strcpy(modes[num_modes].name, "Ibcast/Igatherv");
-    strcpy(modes[num_modes].description, "Non-blocking broadcast and gather");
-    run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
-                  comm_ibcast_igatherv, num_iterations, thread_count);
-    num_modes++;
+    // /* Mode 2: Non-blocking Ibcast/Igatherv */
+    // strcpy(modes[num_modes].name, "Ibcast/Igatherv");
+    // strcpy(modes[num_modes].description, "Non-blocking broadcast and gather");
+    // run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
+    //               comm_ibcast_igatherv, num_iterations, thread_count);
+    // num_modes++;
 
-    /* Mode 3: Async Collectives */
-    strcpy(modes[num_modes].name, "Async_Collectives");
-    strcpy(modes[num_modes].description, "Asynchronous collectives: Ibcast for x, Iallgatherv for y to all ranks");
-    run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
-                  comm_async_collectives, num_iterations, thread_count);
-    num_modes++;
+    // /* Mode 3: Async Collectives */
+    // strcpy(modes[num_modes].name, "Async_Collectives");
+    // strcpy(modes[num_modes].description, "Asynchronous collectives: Ibcast for x, Iallgatherv for y to all ranks");
+    // run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
+    //               comm_async_collectives, num_iterations, thread_count);
+    // num_modes++;
 
     /* Mode 4: Pipelined chunked communication */
     strcpy(modes[num_modes].name, "Pipelined_Chunked");
