@@ -25,7 +25,7 @@ mkdir -p "$RESULTS_DIR"
 cd "$SRC_DIR"
 if [ ! -f "test_config_mpi" ] || [ "test_configurations_mpi.c" -nt "test_config_mpi" ]; then
     echo "Compiling test_configurations_mpi.c..."
-    mpicc -g -Wall -O3 -fopenmp -o test_config_mpi \
+    mpicc -std=c99 -g -Wall -O3 -fopenmp -o test_config_mpi \
         test_configurations_mpi.c generator.c m_to_csr.c -lm
     if [ $? -ne 0 ]; then
         echo "ERROR: Compilation failed"
@@ -59,16 +59,13 @@ for NP in "${PROCESS_COUNTS[@]}"; do
     echo "Testing: $NP MPI processes × $THREADS_PER_RANK threads = $TOTAL_THREADS total"
     echo "------------------------------------------"
     
-    # Create output file for this configuration
-    OUTPUT_FILE="$RESULTS_DIR/results_${NP}procs_${MATRIX_BASENAME}.txt"
-    
     # Run the benchmark
     mpirun -np $NP \
         --bind-to none \
         --map-by node:PE=$THREADS_PER_RANK \
-        "$SRC_DIR/test_config_mpi" "$MATRIX_FILE" $ITERATIONS 2>&1 | tee "$OUTPUT_FILE"
+        "$SRC_DIR/test_config_mpi" "$MATRIX_FILE" $ITERATIONS
     
-    if [ ${PIPESTATUS[0]} -ne 0 ]; then
+    if [ $? -ne 0 ]; then
         echo "WARNING: mpirun with $NP processes failed"
         continue
     fi
@@ -84,6 +81,5 @@ echo "Finished: $(date)"
 echo ""
 echo "Results saved to:"
 echo "  - Main CSV: $BASE_DIR/results/configurations_results.csv"
-echo "  - Individual logs: $RESULTS_DIR/"
 echo ""
 echo "All process counts tested successfully."

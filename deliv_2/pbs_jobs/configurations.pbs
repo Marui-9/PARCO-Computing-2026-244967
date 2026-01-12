@@ -106,9 +106,6 @@ for MATRIX in "${MATRICES[@]}"; do
         echo "Testing: $NP MPI ranks × $THREADS_PER_RANK threads = $TOTAL_THREADS total"
         echo "----------------------------------------------"
         
-        # Output file for this configuration
-        OUTPUT_FILE="results/${MATRIX_BASENAME}_${NP}procs.txt"
-        
         # Record start time
         START_TIME=$(date +%s)
         
@@ -116,7 +113,7 @@ for MATRIX in "${MATRICES[@]}"; do
         # Use --bind-to none to let OpenMP handle thread binding
         mpirun -np $NP \
             --bind-to none \
-            ./src/test_config_mpi "$MATRIX" $ITERATIONS 2>&1 | tee "$OUTPUT_FILE"
+            ./src/test_config_mpi "$MATRIX" $ITERATIONS
         
         RUN_STATUS=$?
         END_TIME=$(date +%s)
