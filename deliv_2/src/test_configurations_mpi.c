@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
         printf("Matrix: %s\n", matrix_file);
         printf("Dimensions: %d × %d, %lld NNZ (%.4f%% density)\n\n", 
                m_global, n_global, nnz_global,
-               (nnz_global / (double)(m_global * n_global)) * 100.0);
+               (nnz_global / (double)((long long)m_global * (long long)n_global)) * 100.0);
     }
 
     /* Allocate and generate x_global on all ranks */
@@ -820,7 +820,7 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
 
     /* Write data rows */
     for (int i = 0; i < num_modes; i++) {
-        double density = (nnz_global / (double)(m_global * n_global)) * 100.0;
+        double density = (nnz_global / (double)((long long)m_global * (long long)n_global)) * 100.0;
         fprintf(csv, "%d,%s,%d,%d,%lld,%.4f,%s,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.2f,%d,\"\"\n",
                 size, csv_matrix_name, m_global, n_global, nnz_global, 
                 density, modes[i].name,

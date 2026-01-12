@@ -512,7 +512,7 @@ void comm_pipelined_chunked(int rank, int size, csr_matrix *A_local,
     
     int chunk_size = (n_global + num_chunks - 1) / num_chunks;
     
-    /* Allocate two buffers for double buffering: current and next chunk */
+    /* Allocate chunk buffers for true non-blocking pipeline */
     float *x_curr = NULL, *x_next = NULL;
     if (posix_memalign((void**)&x_curr, 64, chunk_size * sizeof(float)) != 0) {
         fprintf(stderr, "Rank %d: Failed to allocate x_curr\n", rank);
@@ -534,63 +534,64 @@ void comm_pipelined_chunked(int rank, int size, csr_matrix *A_local,
     MPI_Barrier(MPI_COMM_WORLD);
     double t_total_start = MPI_Wtime();
     
-    /* Prefetch first chunk */
-    int chunk_start = 0;
-    int chunk_end = (num_chunks > 1) ? chunk_size : n_global;
-    int actual_chunk_size = chunk_end - chunk_start;
-    
-    if (rank == 0) {
-        memcpy(x_curr, x + chunk_start, actual_chunk_size * sizeof(float));
+    /* Non-blocking broadcast requests */
+    MPI_Request *bcast_reqs = (MPI_Request *)malloc(num_chunks * sizeof(MPI_Request));
+    if (!bcast_reqs) {
+        fprintf(stderr, "Rank %d: Failed to allocate bcast_reqs\n", rank);
+        MPI_Finalize();
+        exit(1);
     }
     
-    double t_comm_start = MPI_Wtime();
-    MPI_Bcast(x_curr, actual_chunk_size, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    t_comm += MPI_Wtime() - t_comm_start;
-    
-    /* Pipeline: broadcast next chunk while computing current chunk */
+    /* Phase 1: Post all non-blocking broadcasts immediately */
     for (int c = 0; c < num_chunks; c++) {
-        chunk_start = c * chunk_size;
-        chunk_end = (c == num_chunks - 1) ? n_global : (c + 1) * chunk_size;
-        actual_chunk_size = chunk_end - chunk_start;
+        int chunk_start = c * chunk_size;
+        int chunk_end = (c == num_chunks - 1) ? n_global : (c + 1) * chunk_size;
+        int actual_chunk_size = chunk_end - chunk_start;
         
-        /* Prefetch next chunk in background (non-blocking if possible) */
-        if (c + 1 < num_chunks) {
-            int next_chunk_start = (c + 1) * chunk_size;
-            int next_chunk_end = (c + 1 == num_chunks - 1) ? n_global : (c + 2) * chunk_size;
-            int next_chunk_size = next_chunk_end - next_chunk_start;
-            
-            if (rank == 0) {
-                memcpy(x_next, x + next_chunk_start, next_chunk_size * sizeof(float));
-            }
-            
-            /* Start async broadcast of next chunk */
-            double t_comm_start = MPI_Wtime();
-            MPI_Bcast(x_next, next_chunk_size, MPI_FLOAT, 0, MPI_COMM_WORLD);
-            t_comm += MPI_Wtime() - t_comm_start;
+        /* Rank 0 prepares chunk data */
+        float *chunk_buf = (c % 2 == 0) ? x_curr : x_next;
+        if (rank == 0) {
+            memcpy(chunk_buf, x + chunk_start, actual_chunk_size * sizeof(float));
         }
         
-        /* Compute SpMV contribution using current chunk (while next is being broadcast) */
+        /* Post non-blocking broadcast */
+        double t_comm_start = MPI_Wtime();
+        MPI_Ibcast(chunk_buf, actual_chunk_size, MPI_FLOAT, 0, MPI_COMM_WORLD, &bcast_reqs[c]);
+        t_comm += MPI_Wtime() - t_comm_start;
+    }
+    
+    /* Phase 2: Compute SpMV using chunks as they arrive, true communication-computation overlap */
+    for (int c = 0; c < num_chunks; c++) {
+        int chunk_start = c * chunk_size;
+        int chunk_end = (c == num_chunks - 1) ? n_global : (c + 1) * chunk_size;
+        int actual_chunk_size = chunk_end - chunk_start;
+        
+        /* Get appropriate buffer for this chunk */
+        float *chunk_buf = (c % 2 == 0) ? x_curr : x_next;
+        
+        /* Wait for this chunk's broadcast to complete */
+        double t_comm_start = MPI_Wtime();
+        MPI_Wait(&bcast_reqs[c], MPI_STATUS_IGNORE);
+        t_comm += MPI_Wtime() - t_comm_start;
+        
+        /* Compute SpMV contribution using this chunk
+         * While compute happens, remaining broadcasts continue in background */
         double t_comp_start = MPI_Wtime();
         #pragma omp parallel for schedule(dynamic) num_threads(thread_count) \
-            default(none) shared(A_local, x_curr, y, m_local, chunk_start, chunk_end, thread_count)
+            default(none) shared(A_local, chunk_buf, y, m_local, chunk_start, chunk_end, thread_count)
         for (int i = 0; i < m_local; i++) {
             float sum = 0.0f;
             #pragma omp simd reduction(+:sum)
             for (long long j = A_local->row_ptr[i]; j < A_local->row_ptr[i + 1]; j++) {
                 int col = A_local->col_ind[j];
                 if (col >= chunk_start && col < chunk_end) {
-                    sum += A_local->values[j] * x_curr[col - chunk_start];
+                    sum += A_local->values[j] * chunk_buf[col - chunk_start];
                 }
             }
             #pragma omp atomic
             y[i] += sum;
         }
         t_comp += MPI_Wtime() - t_comp_start;
-        
-        /* Swap buffers for next iteration */
-        float *temp = x_curr;
-        x_curr = x_next;
-        x_next = temp;
     }
     
     /* Gather y results to rank 0 */
@@ -610,6 +611,7 @@ void comm_pipelined_chunked(int rank, int size, csr_matrix *A_local,
     
     free(x_curr);
     free(x_next);
+    free(bcast_reqs);
     
     *comm_time = t_comm;
     *compute_time = t_comp;
