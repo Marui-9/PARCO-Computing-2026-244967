@@ -247,7 +247,7 @@ int main(int argc, char* argv[]) {
 
     /* Mode 2: Non-blocking Ibcast/Igatherv */
     strcpy(modes[num_modes].name, "Ibcast/Igatherv");
-    strcpy(modes[num_modes].description, "Non-blocking broadcast and gather (no overlap due to data dependency)");
+    strcpy(modes[num_modes].description, "Non-blocking broadcast (Ibcast) and gather (Igatherv)");
     run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
                   comm_ibcast_igatherv, num_iterations, thread_count);
     num_modes++;
@@ -259,9 +259,9 @@ int main(int argc, char* argv[]) {
     //               comm_pipelined, num_iterations, thread_count);
     // num_modes++;
 
-    /* Mode 4: Async Collective with Iallgatherv */
-    strcpy(modes[num_modes].name, "Async_Iallgatherv");
-    strcpy(modes[num_modes].description, "Async collective using MPI_Iallgatherv to distribute results to all ranks");
+    /* Mode 4: Async Collectives (Ibcast + Iallgatherv) */
+    strcpy(modes[num_modes].name, "Async_Collectives");
+    strcpy(modes[num_modes].description, "Asynchronous collectives: Ibcast for x, Iallgatherv for y to all ranks");
     run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
                   comm_async_collectives, num_iterations, thread_count);
     num_modes++;
@@ -418,25 +418,23 @@ void comm_ibcast_igatherv(int rank, int size, csr_matrix *A_local,
                           float *x, float *y, int thread_count,
                           double *comm_time, double *compute_time) {
     double t_comm = 0.0, t_comp = 0.0;
-    
-    /* Non-blocking broadcast using Ibcast */
     MPI_Request req_bcast, req_gather;
+    
+    /* Issue non-blocking broadcast of x */
     double t_start = MPI_Wtime();
     MPI_Ibcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_bcast);
     
-    /* Wait for broadcast to complete before computation (data dependency on x) */
+    /* Wait for broadcast (data dependency - cannot proceed without x) */
     MPI_Wait(&req_bcast, MPI_STATUS_IGNORE);
     t_comm += MPI_Wtime() - t_start;
 
-    /* Local SpMV after broadcast completes */
+    /* Local SpMV computation */
     t_start = MPI_Wtime();
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
 
-    /* Non-blocking gather results with proper handling of uneven rows */
+    /* Prepare metadata for non-blocking gather */
     t_start = MPI_Wtime();
-    
-    /* For Igatherv, we need row counts - pre-gather these on all ranks */
     int *tmp_counts = (int *)malloc(size * sizeof(int));
     MPI_Allgather(&m_local, 1, MPI_INT, tmp_counts, 1, MPI_INT, MPI_COMM_WORLD);
     
@@ -449,8 +447,10 @@ void comm_ibcast_igatherv(int rank, int size, csr_matrix *A_local,
     }
     free(tmp_counts);
     
-    /* Use non-blocking gather (Igatherv) */
+    /* Issue non-blocking gather of results to rank 0 */
     MPI_Igatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_gather);
+    
+    /* Wait for gather to complete */
     MPI_Wait(&req_gather, MPI_STATUS_IGNORE);
     t_comm += MPI_Wtime() - t_start;
 
@@ -583,98 +583,102 @@ void comm_pipelined(int rank, int size, csr_matrix *A_local,
 
 /*------------------------------------------------------------------*/
 /* Communication Mode 5: Ring-based Reduction - y through ring to rank 0 */
-void comm_ring_reduce(int rank, int size, csr_matrix *A_local, 
-                      float *x, float *y, int thread_count,
-                      double *comm_time, double *compute_time) {
-    double t_comm = 0.0, t_comp = 0.0;
+// void comm_ring_reduce(int rank, int size, csr_matrix *A_local, 
+//                       float *x, float *y, int thread_count,
+//                       double *comm_time, double *compute_time) {
+//     double t_comm = 0.0, t_comp = 0.0;
     
-    /* Broadcast x */
-    double t_start = MPI_Wtime();
-    MPI_Bcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    t_comm += MPI_Wtime() - t_start;
+//     /* Broadcast x */
+//     double t_start = MPI_Wtime();
+//     MPI_Bcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD);
+//     t_comm += MPI_Wtime() - t_start;
 
-    /* Local SpMV */
-    t_start = MPI_Wtime();
-    local_spvec(A_local, x, y, thread_count);
-    t_comp += MPI_Wtime() - t_start;
+//     /* Local SpMV */
+//     t_start = MPI_Wtime();
+//     local_spvec(A_local, x, y, thread_count);
+//     t_comp += MPI_Wtime() - t_start;
 
-    /* Ring-based reduction: collect all y values at rank 0 via ring */
-    t_start = MPI_Wtime();
+//     /* Ring-based reduction: collect all y values at rank 0 via ring */
+//     t_start = MPI_Wtime();
     
-    int next_rank = (rank + 1) % size;
-    int prev_rank = (rank - 1 + size) % size;
+//     int next_rank = (rank + 1) % size;
+//     int prev_rank = (rank - 1 + size) % size;
     
-    /* Gather local row counts to all ranks for proper indexing */
-    int *all_row_counts = (int *)malloc(size * sizeof(int));
-    MPI_Allgather(&m_local, 1, MPI_INT, all_row_counts, 1, MPI_INT, MPI_COMM_WORLD);
+//     /* Gather local row counts to all ranks for proper indexing */
+//     int *all_row_counts = (int *)malloc(size * sizeof(int));
+//     MPI_Allgather(&m_local, 1, MPI_INT, all_row_counts, 1, MPI_INT, MPI_COMM_WORLD);
     
-    /* Compute displacements for rank 0 to place received data */
-    int *displs = NULL;
-    if (rank == 0) {
-        displs = (int *)malloc(size * sizeof(int));
-        displs[0] = 0;
-        for (int i = 1; i < size; i++) {
-            displs[i] = displs[i-1] + all_row_counts[i-1];
-        }
-    }
+//     /* Compute displacements for rank 0 to place received data */
+//     int *displs = NULL;
+//     if (rank == 0) {
+//         displs = (int *)malloc(size * sizeof(int));
+//         displs[0] = 0;
+//         for (int i = 1; i < size; i++) {
+//             displs[i] = displs[i-1] + all_row_counts[i-1];
+//         }
+//     }
     
-    /* Ring communication: pass y values around, rank 0 collects in mpi_y_global */
-    MPI_Request req_send, req_recv;
+//     /* Ring communication: pass y values around, rank 0 collects in mpi_y_global */
+//     MPI_Request req_send, req_recv;
     
-    for (int stage = 0; stage < size; stage++) {
-        int sender_rank = stage;
-        int sender_rows = all_row_counts[sender_rank];
+//     for (int stage = 0; stage < size; stage++) {
+//         int sender_rank = stage;
+//         int sender_rows = all_row_counts[sender_rank];
         
-        if (rank == sender_rank) {
-            /* This rank sends its y to next rank in ring */
-            MPI_Isend(y, m_local, MPI_FLOAT, next_rank, stage, MPI_COMM_WORLD, &req_send);
-            MPI_Wait(&req_send, MPI_STATUS_IGNORE);
-        }
+//         if (rank == sender_rank) {
+//             /* This rank sends its y to next rank in ring */
+//             MPI_Isend(y, m_local, MPI_FLOAT, next_rank, stage, MPI_COMM_WORLD, &req_send);
+//             MPI_Wait(&req_send, MPI_STATUS_IGNORE);
+//         }
         
-        if (rank == 0 && sender_rank != 0) {
-            /* Rank 0 receives data from each non-zero rank (passed through ring) */
-            MPI_Irecv(mpi_y_global + displs[sender_rank], sender_rows, MPI_FLOAT, 
-                     prev_rank, stage, MPI_COMM_WORLD, &req_recv);
-            MPI_Wait(&req_recv, MPI_STATUS_IGNORE);
-        } else if (rank == 0 && sender_rank == 0) {
-            /* Rank 0 copies its own y to result buffer */
-            memcpy(mpi_y_global, y, m_local * sizeof(float));
-        } else {
-            /* Non-zero ranks pass data through the ring */
-            MPI_Irecv(y_temp, all_row_counts[(rank - 1 + size) % size], MPI_FLOAT,
-                     prev_rank, stage, MPI_COMM_WORLD, &req_recv);
-            MPI_Isend(y_temp, sender_rows, MPI_FLOAT, next_rank, stage, MPI_COMM_WORLD, &req_send);
-            MPI_Wait(&req_recv, MPI_STATUS_IGNORE);
-            MPI_Wait(&req_send, MPI_STATUS_IGNORE);
-        }
-    }
+//         if (rank == 0 && sender_rank != 0) {
+//             /* Rank 0 receives data from each non-zero rank (passed through ring) */
+//             MPI_Irecv(mpi_y_global + displs[sender_rank], sender_rows, MPI_FLOAT, 
+//                      prev_rank, stage, MPI_COMM_WORLD, &req_recv);
+//             MPI_Wait(&req_recv, MPI_STATUS_IGNORE);
+//         } else if (rank == 0 && sender_rank == 0) {
+//             /* Rank 0 copies its own y to result buffer */
+//             memcpy(mpi_y_global, y, m_local * sizeof(float));
+//         } else {
+//             /* Non-zero ranks pass data through the ring */
+//             MPI_Irecv(y_temp, all_row_counts[(rank - 1 + size) % size], MPI_FLOAT,
+//                      prev_rank, stage, MPI_COMM_WORLD, &req_recv);
+//             MPI_Isend(y_temp, sender_rows, MPI_FLOAT, next_rank, stage, MPI_COMM_WORLD, &req_send);
+//             MPI_Wait(&req_recv, MPI_STATUS_IGNORE);
+//             MPI_Wait(&req_send, MPI_STATUS_IGNORE);
+//         }
+//     }
     
-    free(all_row_counts);
-    if (rank == 0) free(displs);
-    t_comm += MPI_Wtime() - t_start;
+//     free(all_row_counts);
+//     if (rank == 0) free(displs);
+//     t_comm += MPI_Wtime() - t_start;
 
-    *comm_time = t_comm;
-    *compute_time = t_comp;
-}
+//     *comm_time = t_comm;
+//     *compute_time = t_comp;
+// }
 
 /*------------------------------------------------------------------*/
-/* Communication Mode 6: Async Collective with Iallgatherv */
+/* Communication Mode 4: Async Collectives (Ibcast + Iallgatherv) */
 void comm_async_collectives(int rank, int size, csr_matrix *A_local, 
                             float *x, float *y, int thread_count,
                             double *comm_time, double *compute_time) {
     double t_comm = 0.0, t_comp = 0.0;
+    MPI_Request req_bcast, req_allgather;
     
-    /* Blocking broadcast of x (all ranks need it for computation) */
+    /* Asynchronous broadcast of x using Ibcast */
     double t_start = MPI_Wtime();
-    MPI_Bcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Ibcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_bcast);
+    
+    /* Wait for broadcast (data dependency) */
+    MPI_Wait(&req_bcast, MPI_STATUS_IGNORE);
     t_comm += MPI_Wtime() - t_start;
 
-    /* Local SpMV */
+    /* Local SpMV computation */
     t_start = MPI_Wtime();
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
 
-    /* Non-blocking allgatherv - all ranks receive full y vector using async collective */
+    /* Prepare for asynchronous allgatherv - all ranks receive full y vector */
     t_start = MPI_Wtime();
     
     /* Gather local row counts to all ranks */
@@ -689,8 +693,7 @@ void comm_async_collectives(int rank, int size, csr_matrix *A_local,
     }
     free(tmp_counts);
     
-    /* Use non-blocking Iallgatherv - all ranks get full result asynchronously */
-    MPI_Request req_allgather;
+    /* Issue asynchronous Iallgatherv - all ranks get full result */
     MPI_Iallgatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, MPI_COMM_WORLD, &req_allgather);
     
     /* Wait for async collective to complete */
