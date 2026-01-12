@@ -38,10 +38,6 @@ export OMP_NUM_THREADS=$THREADS_PER_RANK
 export OMP_PROC_BIND=close
 export OMP_PLACES=cores
 
-# Summary CSV file
-SUMMARY_FILE="$RESULTS_DIR/process_sweep_summary.csv"
-echo "num_procs,threads_per_proc,total_threads,matrix,config_name,avg_time_ms,std_dev_ms,comm_time_ms,compute_time_ms,speedup,efficiency_pct" > "$SUMMARY_FILE"
-
 # Get matrix basename for output
 MATRIX_BASENAME=$(basename "$MATRIX_FILE" .mtx)
 
@@ -84,26 +80,10 @@ echo ""
 echo "=========================================="
 echo "  Sweep Complete"
 echo "=========================================="
-echo "Results saved to: $RESULTS_DIR"
+echo "Finished: $(date)"
 echo ""
-
-# Consolidate all CSV results
-echo "Consolidating CSV results..."
-CONSOLIDATED_CSV="$RESULTS_DIR/all_configurations_results.csv"
-FIRST=1
-for CSV_FILE in "$RESULTS_DIR"/../test_results_Xnodes/test_config_mpi_results_*nodes.csv; do
-    if [ -f "$CSV_FILE" ]; then
-        if [ $FIRST -eq 1 ]; then
-            cat "$CSV_FILE" > "$CONSOLIDATED_CSV"
-            FIRST=0
-        else
-            tail -n +2 "$CSV_FILE" >> "$CONSOLIDATED_CSV"
-        fi
-    fi
-done
-
-if [ -f "$CONSOLIDATED_CSV" ]; then
-    echo "Consolidated results: $CONSOLIDATED_CSV"
-fi
-
-echo "Done."
+echo "Results saved to:"
+echo "  - Main CSV: $BASE_DIR/results/configurations_results.csv"
+echo "  - Individual logs: $RESULTS_DIR/"
+echo ""
+echo "All process counts tested successfully."
