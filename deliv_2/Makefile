@@ -7,6 +7,7 @@ TEST_OUT ?= test_config
 TEST_NUMA_OUT ?= test_config_numa
 TEST_MEMORY_OUT ?= test_memory_opt
 TEST_MPI_OUT ?= test_config_mpi
+TEST_PIPELINED_OUT ?= test_pipelined_mpi
 SRCDIR := src
 SRCS := $(SRCDIR)/main.c $(SRCDIR)/generator.c $(SRCDIR)/m_to_csr.c
 OBJS := $(SRCS:.c=.o)
@@ -18,6 +19,8 @@ TEST_MEMORY_SRCS := $(SRCDIR)/test_memory_optimizations.c $(SRCDIR)/generator.c 
 TEST_MEMORY_OBJS := $(TEST_MEMORY_SRCS:.c=.o)
 TEST_MPI_SRCS := $(SRCDIR)/test_configurations_mpi.c $(SRCDIR)/generator.c $(SRCDIR)/m_to_csr.c
 TEST_MPI_OBJS := $(TEST_MPI_SRCS:.c=.o)
+TEST_PIPELINED_SRCS := $(SRCDIR)/test_pipelined_mpi.c $(SRCDIR)/generator.c $(SRCDIR)/m_to_csr.c
+TEST_PIPELINED_OBJS := $(TEST_PIPELINED_SRCS:.c=.o)
 
 # # detect OpenMP usage and add flags (best-effort)
 # ifeq (, $(filter %#include <omp.h>%,$(shell sed -n '1,200p' $(SRCS) 2>/dev/null)))
@@ -27,7 +30,7 @@ TEST_MPI_OBJS := $(TEST_MPI_SRCS:.c=.o)
 # LDLIBS += -fopenmp
 # endif
 
-.PHONY: all clean run test test_numa test_memory test_mpi
+.PHONY: all clean run test test_numa test_memory test_mpi test_pipelined
 
 all: $(OUT)
 
@@ -38,6 +41,8 @@ test_numa: $(TEST_NUMA_OUT)
 test_memory: $(TEST_MEMORY_OUT)
 
 test_mpi: $(TEST_MPI_OUT)
+
+test_pipelined: $(TEST_PIPELINED_OUT)
 
 $(OUT): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
@@ -54,15 +59,18 @@ $(TEST_MEMORY_OUT): $(TEST_MEMORY_OBJS)
 $(TEST_MPI_OUT): $(TEST_MPI_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
 
+$(TEST_PIPELINED_OUT): $(TEST_PIPELINED_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
+
 # generic rule to compile .c -> .o
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(TEST_OBJS) $(TEST_NUMA_OBJS) $(TEST_MEMORY_OBJS) $(TEST_MPI_OBJS) \
-	      $(OUT) $(TEST_OUT) $(TEST_NUMA_OUT) $(TEST_MEMORY_OUT) $(TEST_MPI_OUT) \
+	rm -f $(OBJS) $(TEST_OBJS) $(TEST_NUMA_OBJS) $(TEST_MEMORY_OBJS) $(TEST_MPI_OBJS) $(TEST_PIPELINED_OBJS) \
+	      $(OUT) $(TEST_OUT) $(TEST_NUMA_OUT) $(TEST_MEMORY_OUT) $(TEST_MPI_OUT) $(TEST_PIPELINED_OUT) \
 	      $(SRCDIR)/test_configurations.o $(SRCDIR)/test_configurations_numa.o \
-	      $(SRCDIR)/test_memory_optimizations.o $(SRCDIR)/test_configurations_mpi.o
+	      $(SRCDIR)/test_memory_optimizations.o $(SRCDIR)/test_configurations_mpi.o $(SRCDIR)/test_pipelined_mpi.o
 
 run: all
 	mpirun -np 2 ./$(OUT) 96 matrices/121k_0p0093.mtx
