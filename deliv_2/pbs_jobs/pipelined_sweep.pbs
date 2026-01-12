@@ -1,14 +1,14 @@
 #!/bin/bash
-#PBS -N mpi_config_sweep
+#PBS -N pipelined_sweep
 #PBS -l select=8:ncpus=64:mpiprocs=16:ompthreads=4:mem=64gb
 #PBS -l walltime=06:00:00
 #PBS -q short_cpuQ
-#PBS -o configurations_sweep.out
-#PBS -e configurations_sweep.err
+#PBS -o pipelined_sweep.out
+#PBS -e pipelined_sweep.err
 #PBS -m abe
 
 #
-# PBS Job: MPI Process Count Sweep for SpMV Benchmark
+# PBS Job: MPI Process Count Sweep for Pipelined SpMV Benchmark
 #
 # Resources requested:
 #   - 8 nodes with 64 cores each (512 cores total, no hyperthreading)
@@ -32,7 +32,7 @@ module load gcc91
 # Change to working directory
 cd "$PBS_O_WORKDIR" || cd /home/jacob.marui/PARCO-Computing-2026-244967/deliv_2
 
-# Create logs directory
+# Create logs and results directories
 mkdir -p logs
 mkdir -p results
 
@@ -41,12 +41,18 @@ PROCESS_COUNTS=(2 4 8 16 24 32 48 64 72 84 96 108 128)
 THREADS_PER_RANK=4
 ITERATIONS=30
 
-# Matrices to test (adjust paths as needed)
+# Matrices to test
 MATRICES=(
     "matrices/36k_0p17.mtx"
     "matrices/98k_0p52.mtx"
     "matrices/262k_0p0011.mtx"
+    "matrices/265k_0p0006.mtx"
     "matrices/326k_0p0030.mtx"
+    "matrices/524k_0p0006.mtx"
+    "matrices/916k_0p0006.mtx"
+    "matrices/1438k_0p0016.mtx"
+    "matrices/1508k_0p0012.mtx"
+    "matrices/1585k_0p0002.mtx"
 )
 
 # Set OpenMP environment
@@ -57,7 +63,7 @@ export OMP_STACKSIZE=64M
 
 # Print job info
 echo "=============================================="
-echo "  MPI Configuration Sweep Benchmark"
+echo "  Pipelined MPI Sweep Benchmark"
 echo "=============================================="
 echo "Job ID: $PBS_JOBID"
 echo "Started: $(date)"
@@ -68,14 +74,14 @@ echo "Configuration:"
 echo "  Threads per MPI rank: $THREADS_PER_RANK"
 echo "  Iterations per test: $ITERATIONS"
 echo "  Process counts: ${PROCESS_COUNTS[*]}"
-echo "  Matrices: ${MATRICES[*]}"
+echo "  Matrices: ${#MATRICES[@]} total"
 echo ""
 
 # Compile the benchmark
-echo "Compiling test_configurations_mpi.c..."
+echo "Compiling test_pipelined_mpi.c..."
 cd src
-mpicc -std=c99 -g -Wall -O3 -fopenmp -o test_config_mpi \
-    test_configurations_mpi.c generator.c m_to_csr.c -lm
+mpicc -std=c99 -g -Wall -O3 -fopenmp -o test_pipelined_mpi \
+    test_pipelined_mpi.c generator.c m_to_csr.c -lm
 
 if [ $? -ne 0 ]; then
     echo "ERROR: Compilation failed"
@@ -87,7 +93,7 @@ echo ""
 cd ..
 
 # Summary results file (job execution tracking, separate from main CSV)
-SUMMARY_FILE="results/job_execution_summary.csv"
+SUMMARY_FILE="results/pipelined_job_summary.csv"
 echo "num_procs,threads_per_proc,total_threads,matrix,status,runtime_sec" > "$SUMMARY_FILE"
 
 # Run benchmarks for each matrix and process count
@@ -107,7 +113,7 @@ for MATRIX in "${MATRICES[@]}"; do
         echo "----------------------------------------------"
         
         # Output file for this configuration
-        OUTPUT_FILE="results/${MATRIX_BASENAME}_${NP}procs.txt"
+        OUTPUT_FILE="results/${MATRIX_BASENAME}_${NP}procs_pipelined.txt"
         
         # Record start time
         START_TIME=$(date +%s)
@@ -116,7 +122,7 @@ for MATRIX in "${MATRICES[@]}"; do
         # Use --bind-to none to let OpenMP handle thread binding
         mpirun -np $NP \
             -bind-to none \
-            ./src/test_config_mpi "$MATRIX" $ITERATIONS 2>&1 | tee "$OUTPUT_FILE"
+            ./src/test_pipelined_mpi "$MATRIX" $ITERATIONS 2>&1 | tee "$OUTPUT_FILE"
         
         RUN_STATUS=$?
         END_TIME=$(date +%s)
@@ -141,7 +147,7 @@ echo "=============================================="
 echo "Finished: $(date)"
 echo ""
 echo "Results saved to:"
-echo "  - Main CSV: results/configurations_results.csv"
+echo "  - Main CSV: results/pipelined_results.csv"
 echo "  - Job summary: $SUMMARY_FILE"
 echo ""
 echo "All process counts (2-128) with all matrices tested."

@@ -758,11 +758,17 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
                modes[i].efficiency_pct);
     }
 
-    /* Write CSV */
-    char csv_dir[256];
+    /* Write to unified CSV file (matching test_configurations_mpi.c format) */
     char csv_filename[256];
-    snprintf(csv_dir, sizeof(csv_dir), "results/pipelined_results");
-    snprintf(csv_filename, sizeof(csv_filename), "%s/test_pipelined_mpi_results_%dnodes.csv", csv_dir, size);
+    snprintf(csv_filename, sizeof(csv_filename), "results/pipelined_results.csv");
+    
+    /* Check if file exists to determine if header is needed */
+    int file_exists = 0;
+    FILE *test = fopen(csv_filename, "r");
+    if (test) {
+        file_exists = 1;
+        fclose(test);
+    }
     
     FILE *csv = fopen(csv_filename, "a");
     if (!csv) {
@@ -770,14 +776,16 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
         return;
     }
 
+    /* Extract just the matrix filename (basename) from path */
     const char *basename = strrchr(matrix_file, '/');
     const char *csv_matrix_name = basename ? basename + 1 : matrix_file;
 
-    fseek(csv, 0, SEEK_END);
-    if (ftell(csv) == 0) {
-        fprintf(csv, "num_nodes,matrix,rows,cols,nnz,density_pct,config_name,avg_time_ms,std_dev_ms,min_time_ms,max_time_ms,comm_time_ms,compute_time_ms,speedup,efficiency_pct,iterations,notes\n");
+    /* Write header if file doesn't exist */
+    if (!file_exists) {
+        fprintf(csv, "num_procs,matrix,rows,cols,nnz,density_pct,config_name,avg_time_ms,std_dev_ms,min_time_ms,max_time_ms,comm_time_ms,compute_time_ms,speedup,efficiency_pct,iterations,notes\n");
     }
 
+    /* Write data rows */
     for (int i = 0; i < num_modes; i++) {
         double density = (nnz_global / (double)((long long)m_global * (long long)n_global)) * 100.0;
         fprintf(csv, "%d,%s,%d,%d,%lld,%.4f,%s,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.2f,%d,\"\"\n",
@@ -789,5 +797,5 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
     }
 
     fclose(csv);
-    printf("\nResults written to: %s\n", csv_filename);
+    printf("\nResults appended to: %s\n", csv_filename);
 }
