@@ -15,7 +15,7 @@ TIMEOUT_SECS=3600      # 60 minutes per matrix combo
 # Configuration
 PROCESS_COUNTS=(2 4 8 16 24 32 48 64 72 84 96 108 128)
 THREADS_PER_RANK=4
-ITERATIONS=${2:-30}
+ITERATIONS=12
 MATRIX_FILE=${1:-"matrices/36k_0p17.mtx"}
 
 # Directories
