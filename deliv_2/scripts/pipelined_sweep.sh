@@ -13,24 +13,28 @@ PROCESS_COUNTS=(2 4 8 16 24 32 48 64 72 84 96 108 128)
 THREADS_PER_RANK=4
 ITERATIONS=30
 
-# Matrices to test
+# Matrices to test (all matrices in deliv_2/matrices/)
 MATRICES=(
-    "matrices/36k_0p17.mtx"
-    "matrices/98k_0p52.mtx"
-    "matrices/262k_0p0011.mtx"
-    "matrices/265k_0p0006.mtx"
-    "matrices/326k_0p0030.mtx"
-    "matrices/524k_0p0006.mtx"
-    "matrices/916k_0p0006.mtx"
-    "matrices/1438k_0p0016.mtx"
-    "matrices/1508k_0p0012.mtx"
-    "matrices/1585k_0p0002.mtx"
+    "matrices/2k_0p22.mtx"
+    "matrices/2k_0p52.mtx"
+    "matrices/5k_9p37.mtx"
+    "matrices/6k_6p3.mtx"
+    "matrices/9k_0p77.mtx"
+    "matrices/10k_1p5.mtx"
+    "matrices/11k_0p35.mtx"
+    "matrices/11k_0p38.mtx"
+    "matrices/15k_0p41.mtx"
+    "matrices/20k_0p38.mtx"
+    "matrices/25k_0p03.mtx"
+    "matrices/30k_0p05.mtx"
+    "matrices/40k_0p02.mtx"
+    "matrices/50k_0p008.mtx"
+    "matrices/60k_0p005.mtx"
 )
 
 # Paths
 EXE="./src/test_pipelined_mpi"
 RESULTS_DIR="results"
-SUMMARY_FILE="${RESULTS_DIR}/pipelined_job_summary.csv"
 
 # Create results directory
 mkdir -p "$RESULTS_DIR"
@@ -67,9 +71,6 @@ if [ ! -f "$EXE" ]; then
     cd ..
 fi
 
-# Initialize summary file
-echo "num_procs,threads_per_proc,total_threads,matrix,status,runtime_sec" > "$SUMMARY_FILE"
-
 # Run benchmarks
 for MATRIX in "${MATRICES[@]}"; do
     MATRIX_BASENAME=$(basename "$MATRIX" .mtx)
@@ -92,24 +93,14 @@ for MATRIX in "${MATRICES[@]}"; do
         echo "Testing: $NP MPI ranks × $THREADS_PER_RANK threads = $TOTAL_THREADS total"
         echo "----------------------------------------------"
         
-        # Output file for this configuration
-        OUTPUT_FILE="${RESULTS_DIR}/${MATRIX_BASENAME}_${NP}procs_pipelined.txt"
-        
-        # Record start time
-        START_TIME=$(date +%s)
-        
         # Run the benchmark
-        mpirun -np $NP "$EXE" "$MATRIX" $ITERATIONS 2>&1 | tee "$OUTPUT_FILE"
+        mpirun -np $NP "$EXE" "$MATRIX" $ITERATIONS
         
         RUN_STATUS=$?
-        END_TIME=$(date +%s)
-        RUNTIME=$((END_TIME - START_TIME))
         
         if [ $RUN_STATUS -eq 0 ]; then
-            echo "$NP,$THREADS_PER_RANK,$TOTAL_THREADS,$MATRIX_BASENAME,success,$RUNTIME" >> "$SUMMARY_FILE"
-            echo "✓ Completed in ${RUNTIME}s"
+            echo "✓ Completed successfully"
         else
-            echo "$NP,$THREADS_PER_RANK,$TOTAL_THREADS,$MATRIX_BASENAME,failed,$RUNTIME" >> "$SUMMARY_FILE"
             echo "✗ FAILED (exit code: $RUN_STATUS)"
         fi
         
@@ -123,7 +114,5 @@ echo "  Benchmark Complete"
 echo "=============================================="
 echo "Finished: $(date)"
 echo ""
-echo "Results saved to:"
-echo "  - Main CSV: ${RESULTS_DIR}/pipelined_results.csv"
-echo "  - Job summary: $SUMMARY_FILE"
+echo "Results saved to: ${RESULTS_DIR}/pipelined_results.csv"
 echo ""

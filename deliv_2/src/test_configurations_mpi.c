@@ -460,126 +460,126 @@ void comm_ibcast_igatherv(int rank, int size, csr_matrix *A_local,
 
 /*------------------------------------------------------------------*/
 /* Communication Mode 3: MPI_Allgatherv - gather full y on all ranks */
-void comm_allgather(int rank, int size, csr_matrix *A_local, 
-                    float *x, float *y, int thread_count,
-                    double *comm_time, double *compute_time) {
-    double t_comm = 0.0, t_comp = 0.0;
+// void comm_allgather(int rank, int size, csr_matrix *A_local, 
+//                     float *x, float *y, int thread_count,
+//                     double *comm_time, double *compute_time) {
+//     double t_comm = 0.0, t_comp = 0.0;
     
-    /* Broadcast x from rank 0 to all ranks */
-    double t_start = MPI_Wtime();
-    MPI_Bcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    t_comm += MPI_Wtime() - t_start;
+//     /* Broadcast x from rank 0 to all ranks */
+//     double t_start = MPI_Wtime();
+//     MPI_Bcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD);
+//     t_comm += MPI_Wtime() - t_start;
 
-    /* Local SpMV */
-    t_start = MPI_Wtime();
-    local_spvec(A_local, x, y, thread_count);
-    t_comp += MPI_Wtime() - t_start;
+//     /* Local SpMV */
+//     t_start = MPI_Wtime();
+//     local_spvec(A_local, x, y, thread_count);
+//     t_comp += MPI_Wtime() - t_start;
 
-    /* Allgatherv: all ranks receive full y vector */
-    t_start = MPI_Wtime();
+//     /* Allgatherv: all ranks receive full y vector */
+//     t_start = MPI_Wtime();
     
-    /* Gather local row counts to all ranks */
-    MPI_Gather(&m_local, 1, MPI_INT, mpi_send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+//     /* Gather local row counts to all ranks */
+//     MPI_Gather(&m_local, 1, MPI_INT, mpi_send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
     
-    MPI_Bcast(mpi_send_counts, size, MPI_INT, 0, MPI_COMM_WORLD);
+//     MPI_Bcast(mpi_send_counts, size, MPI_INT, 0, MPI_COMM_WORLD);
     
-    /* Compute displacements */
-    mpi_displs[0] = 0;
-    for (int i = 1; i < size; i++) {
-        mpi_displs[i] = mpi_displs[i-1] + mpi_send_counts[i-1];
-    }
+//     /* Compute displacements */
+//     mpi_displs[0] = 0;
+//     for (int i = 1; i < size; i++) {
+//         mpi_displs[i] = mpi_displs[i-1] + mpi_send_counts[i-1];
+//     }
     
-    /* Each rank gets full y from all other ranks */
-    MPI_Allgatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, MPI_COMM_WORLD);
-    t_comm += MPI_Wtime() - t_start;
+//     /* Each rank gets full y from all other ranks */
+//     MPI_Allgatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, MPI_COMM_WORLD);
+//     t_comm += MPI_Wtime() - t_start;
 
-    *comm_time = t_comm;
-    *compute_time = t_comp;
-}
+//     *comm_time = t_comm;
+//     *compute_time = t_comp;
+// }
 
 /*------------------------------------------------------------------*/
 /* Communication Mode 4: Pipelined Communication - x in chunks */
-void comm_pipelined(int rank, int size, csr_matrix *A_local, 
-                    float *x, float *y, int thread_count,
-                    double *comm_time, double *compute_time) {
-    double t_comm = 0.0, t_comp = 0.0;
+// void comm_pipelined(int rank, int size, csr_matrix *A_local, 
+//                     float *x, float *y, int thread_count,
+//                     double *comm_time, double *compute_time) {
+//     double t_comm = 0.0, t_comp = 0.0;
     
-    /* Pipelined distribution: each rank sends its chunk to next rank in ring */
-    int chunk_size = (n_global + size - 1) / size;
-    double t_start = MPI_Wtime();
+//     /* Pipelined distribution: each rank sends its chunk to next rank in ring */
+//     int chunk_size = (n_global + size - 1) / size;
+//     double t_start = MPI_Wtime();
     
-    /* Pre-compute chunk sizes for all ranks to ensure consistency */
-    int *chunk_sizes = (int *)malloc(size * sizeof(int));
-    for (int r = 0; r < size; r++) {
-        int chunk_start = r * chunk_size;
-        int chunk_end = (r == size - 1) ? n_global : (r + 1) * chunk_size;
-        chunk_sizes[r] = chunk_end - chunk_start;
-    }
+//     /* Pre-compute chunk sizes for all ranks to ensure consistency */
+//     int *chunk_sizes = (int *)malloc(size * sizeof(int));
+//     for (int r = 0; r < size; r++) {
+//         int chunk_start = r * chunk_size;
+//         int chunk_end = (r == size - 1) ? n_global : (r + 1) * chunk_size;
+//         chunk_sizes[r] = chunk_end - chunk_start;
+//     }
     
-    /* Ring-based distribution: rank i sends its chunk to rank (i+1)%size */
-    /* This is repeated size times to ensure all ranks eventually get all chunks */
-    MPI_Request req_send, req_recv;
+//     /* Ring-based distribution: rank i sends its chunk to rank (i+1)%size */
+//     /* This is repeated size times to ensure all ranks eventually get all chunks */
+//     MPI_Request req_send, req_recv;
     
-    for (int stage = 0; stage < size - 1; stage++) {
-        int next_rank = (rank + 1) % size;
-        int prev_rank = (rank - 1 + size) % size;
+//     for (int stage = 0; stage < size - 1; stage++) {
+//         int next_rank = (rank + 1) % size;
+//         int prev_rank = (rank - 1 + size) % size;
         
-        /* The chunk being passed in this stage comes from rank prev_rank */
-        int incoming_chunk_source = (rank - stage - 1 + size) % size;
-        int outgoing_chunk_source = (rank - stage + size) % size;
+//         /* The chunk being passed in this stage comes from rank prev_rank */
+//         int incoming_chunk_source = (rank - stage - 1 + size) % size;
+//         int outgoing_chunk_source = (rank - stage + size) % size;
         
-        int incoming_chunk_start = incoming_chunk_source * chunk_size;
-        int incoming_chunk_len = chunk_sizes[incoming_chunk_source];
+//         int incoming_chunk_start = incoming_chunk_source * chunk_size;
+//         int incoming_chunk_len = chunk_sizes[incoming_chunk_source];
         
-        int outgoing_chunk_start = outgoing_chunk_source * chunk_size;
-        int outgoing_chunk_len = chunk_sizes[outgoing_chunk_source];
+//         int outgoing_chunk_start = outgoing_chunk_source * chunk_size;
+//         int outgoing_chunk_len = chunk_sizes[outgoing_chunk_source];
         
-        /* Post non-blocking receive and send for this stage */
-        int send_issued = 0, recv_issued = 0;
+//         /* Post non-blocking receive and send for this stage */
+//         int send_issued = 0, recv_issued = 0;
         
-        /* Receive from previous rank (if not our own chunk on first stage) */
-        if (stage > 0 || rank != 0) {
-            MPI_Irecv(x + incoming_chunk_start, incoming_chunk_len, MPI_FLOAT, 
-                     prev_rank, stage, MPI_COMM_WORLD, &req_recv);
-            recv_issued = 1;
-        }
+//         /* Receive from previous rank (if not our own chunk on first stage) */
+//         if (stage > 0 || rank != 0) {
+//             MPI_Irecv(x + incoming_chunk_start, incoming_chunk_len, MPI_FLOAT, 
+//                      prev_rank, stage, MPI_COMM_WORLD, &req_recv);
+//             recv_issued = 1;
+//         }
         
-        /* Send to next rank */
-        MPI_Isend(x + outgoing_chunk_start, outgoing_chunk_len, MPI_FLOAT, 
-                 next_rank, stage, MPI_COMM_WORLD, &req_send);
-        send_issued = 1;
+//         /* Send to next rank */
+//         MPI_Isend(x + outgoing_chunk_start, outgoing_chunk_len, MPI_FLOAT, 
+//                  next_rank, stage, MPI_COMM_WORLD, &req_send);
+//         send_issued = 1;
         
-        /* Wait for both operations */
-        if (recv_issued) MPI_Wait(&req_recv, MPI_STATUS_IGNORE);
-        if (send_issued) MPI_Wait(&req_send, MPI_STATUS_IGNORE);
-    }
+//         /* Wait for both operations */
+//         if (recv_issued) MPI_Wait(&req_recv, MPI_STATUS_IGNORE);
+//         if (send_issued) MPI_Wait(&req_send, MPI_STATUS_IGNORE);
+//     }
     
-    free(chunk_sizes);
-    t_comm += MPI_Wtime() - t_start;
+//     free(chunk_sizes);
+//     t_comm += MPI_Wtime() - t_start;
 
-    /* Local SpMV after pipelined receive completes */
-    t_start = MPI_Wtime();
-    local_spvec(A_local, x, y, thread_count);
-    t_comp += MPI_Wtime() - t_start;
+//     /* Local SpMV after pipelined receive completes */
+//     t_start = MPI_Wtime();
+//     local_spvec(A_local, x, y, thread_count);
+//     t_comp += MPI_Wtime() - t_start;
 
-    /* Gather y results to rank 0 */
-    t_start = MPI_Wtime();
+//     /* Gather y results to rank 0 */
+//     t_start = MPI_Wtime();
     
-    MPI_Gather(&m_local, 1, MPI_INT, mpi_send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+//     MPI_Gather(&m_local, 1, MPI_INT, mpi_send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
     
-    if (rank == 0) {
-        mpi_displs[0] = 0;
-        for (int i = 1; i < size; i++) {
-            mpi_displs[i] = mpi_displs[i-1] + mpi_send_counts[i-1];
-        }
-    }
+//     if (rank == 0) {
+//         mpi_displs[0] = 0;
+//         for (int i = 1; i < size; i++) {
+//             mpi_displs[i] = mpi_displs[i-1] + mpi_send_counts[i-1];
+//         }
+//     }
     
-    MPI_Gatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    t_comm += MPI_Wtime() - t_start;
+//     MPI_Gatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
+//     t_comm += MPI_Wtime() - t_start;
 
-    *comm_time = t_comm;
-    *compute_time = t_comp;
-}
+//     *comm_time = t_comm;
+//     *compute_time = t_comp;
+// }
 
 /*------------------------------------------------------------------*/
 /* Communication Mode 5: Ring-based Reduction - y through ring to rank 0 */

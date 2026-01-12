@@ -246,7 +246,7 @@ int main(int argc, char* argv[]) {
 
     /* Mode 3: Async Collectives */
     strcpy(modes[num_modes].name, "Async_Collectives");
-    strcpy(modes[num_modes].description, "Non-blocking Ibcast and Igatherv with explicit overlap");
+    strcpy(modes[num_modes].description, "Asynchronous collectives: Ibcast for x, Iallgatherv for y to all ranks");
     run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
                   comm_async_collectives, num_iterations, thread_count);
     num_modes++;
@@ -422,16 +422,17 @@ void comm_ibcast_igatherv(int rank, int size, csr_matrix *A_local,
     MPI_Request req_bcast, req_gather;
     double t_start = MPI_Wtime();
     MPI_Ibcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_bcast);
+    
+    /* Wait for broadcast to complete before using x */
+    MPI_Wait(&req_bcast, MPI_STATUS_IGNORE);
     t_comm += MPI_Wtime() - t_start;
 
+    /* Computation: Local SpMV */
     t_start = MPI_Wtime();
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
 
-    t_start = MPI_Wtime();
-    MPI_Wait(&req_bcast, MPI_STATUS_IGNORE);
-    t_comm += MPI_Wtime() - t_start;
-
+    /* Communication: Non-blocking gather */
     t_start = MPI_Wtime();
     int *tmp_counts = (int *)malloc(size * sizeof(int));
     MPI_Allgather(&m_local, 1, MPI_INT, tmp_counts, 1, MPI_INT, MPI_COMM_WORLD);
@@ -454,40 +455,46 @@ void comm_ibcast_igatherv(int rank, int size, csr_matrix *A_local,
 }
 
 /*------------------------------------------------------------------*/
-/* Communication Mode 3: Async Collectives with explicit computation overlap */
+/* Communication Mode 3: Async Collectives (Ibcast + Iallgatherv) */
 void comm_async_collectives(int rank, int size, csr_matrix *A_local, 
                             float *x, float *y, int thread_count,
                             double *comm_time, double *compute_time) {
     double t_comm = 0.0, t_comp = 0.0;
+    MPI_Request req_bcast, req_allgather;
     
-    MPI_Request req_bcast, req_gather;
+    /* Asynchronous broadcast of x using Ibcast */
     double t_start = MPI_Wtime();
     MPI_Ibcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_bcast);
+    
+    /* Wait for broadcast (data dependency) */
+    MPI_Wait(&req_bcast, MPI_STATUS_IGNORE);
     t_comm += MPI_Wtime() - t_start;
 
+    /* Local SpMV computation */
     t_start = MPI_Wtime();
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
 
+    /* Prepare for asynchronous allgatherv - all ranks receive full y vector */
     t_start = MPI_Wtime();
-    MPI_Wait(&req_bcast, MPI_STATUS_IGNORE);
-    t_comm += MPI_Wtime() - t_start;
-
-    t_start = MPI_Wtime();
+    
+    /* Gather local row counts to all ranks */
     int *tmp_counts = (int *)malloc(size * sizeof(int));
     MPI_Allgather(&m_local, 1, MPI_INT, tmp_counts, 1, MPI_INT, MPI_COMM_WORLD);
     
-    if (rank == 0) {
-        mpi_displs[0] = 0;
-        for (int i = 0; i < size; i++) {
-            mpi_send_counts[i] = tmp_counts[i];
-            if (i > 0) mpi_displs[i] = mpi_displs[i-1] + tmp_counts[i-1];
-        }
+    /* All ranks compute displacements */
+    mpi_displs[0] = 0;
+    for (int i = 0; i < size; i++) {
+        mpi_send_counts[i] = tmp_counts[i];
+        if (i > 0) mpi_displs[i] = mpi_displs[i-1] + tmp_counts[i-1];
     }
     free(tmp_counts);
     
-    MPI_Igatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_gather);
-    MPI_Wait(&req_gather, MPI_STATUS_IGNORE);
+    /* Issue asynchronous Iallgatherv - all ranks get full result */
+    MPI_Iallgatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, MPI_COMM_WORLD, &req_allgather);
+    
+    /* Wait for async collective to complete */
+    MPI_Wait(&req_allgather, MPI_STATUS_IGNORE);
     t_comm += MPI_Wtime() - t_start;
 
     *comm_time = t_comm;
