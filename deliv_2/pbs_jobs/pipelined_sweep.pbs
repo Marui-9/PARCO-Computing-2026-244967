@@ -25,9 +25,8 @@
 set -e
 
 # Load required modules
-module purge
-module load mpich-3.2
 module load gcc91
+module load mpich-3.2.1--gcc-9.1.0
 
 # Change to working directory
 cd "$PBS_O_WORKDIR" || cd /home/jacob.marui/PARCO-Computing-2026-244967/deliv_2
