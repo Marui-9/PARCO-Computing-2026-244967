@@ -115,7 +115,7 @@ for MATRIX in "${MATRICES[@]}"; do
         # Run the benchmark
         # Use --bind-to none to let OpenMP handle thread binding
         mpirun -np $NP \
-            -bind-to none \
+            --bind-to none \
             ./src/test_config_mpi "$MATRIX" $ITERATIONS 2>&1 | tee "$OUTPUT_FILE"
         
         RUN_STATUS=$?
