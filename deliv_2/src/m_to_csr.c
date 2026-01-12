@@ -488,6 +488,7 @@ int import_matrix_distribute_mpi(
     if (rank == 0) {
         FILE *fp = fopen(filename, "r");
         char line[256];  /* Declare before any statements */
+        int is_pattern = 0;  /* Detect pattern matrices */
         
         if (!fp) {
             fprintf(stderr, "Error: Cannot open file %s\n", filename);
@@ -496,9 +497,14 @@ int import_matrix_distribute_mpi(
             return ENOENT;
         }
         
-        /* Read header */
+        /* Read header and detect pattern matrices */
         while (fgets(line, sizeof(line), fp)) {
-            if (line[0] == '%') continue;
+            if (line[0] == '%') {
+                if (strstr(line, "pattern")) {
+                    is_pattern = 1;
+                }
+                continue;
+            }
             if (sscanf(line, "%d %d %lld", &rows, &cols, &total_nnz) == 3) break;
         }
         
@@ -533,11 +539,22 @@ int import_matrix_distribute_mpi(
         
         while (fgets(line, sizeof(line), fp) && idx < total_nnz) {
             lines_read++;
-            if (sscanf(line, "%d %d %f", &r, &c, &val) == 3) {
-                all_row_ind[idx] = r - 1;  /* Convert to 0-indexed */
-                all_col_ind[idx] = c - 1;
-                all_values[idx] = val;
-                idx++;
+            if (is_pattern) {
+                /* Pattern matrices: read only row and column */
+                if (sscanf(line, "%d %d", &r, &c) == 2) {
+                    all_row_ind[idx] = r - 1;  /* Convert to 0-indexed */
+                    all_col_ind[idx] = c - 1;
+                    all_values[idx] = 1.0f;  /* Default value for pattern */
+                    idx++;
+                }
+            } else {
+                /* Real-valued matrices: read row, column, and value */
+                if (sscanf(line, "%d %d %f", &r, &c, &val) == 3) {
+                    all_row_ind[idx] = r - 1;  /* Convert to 0-indexed */
+                    all_col_ind[idx] = c - 1;
+                    all_values[idx] = val;
+                    idx++;
+                }
             }
         }
         fclose(fp);
