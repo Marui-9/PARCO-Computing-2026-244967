@@ -19,7 +19,7 @@
  * Notes:  
  *     - Tests 6 communication modes with configurable node counts
  *     - Matrix distributed row-wise across ranks
- *     - Fixed 48 threads per rank (optimal from NUMA analysis)
+ *     - 16 MPI ranks per node, 4 threads per rank (64 threads/node)
  *     - Outputs CSV: test_config_mpi_results.csv
  *     - Each configuration tested with multiple iterations for statistics
  */
@@ -118,8 +118,8 @@ int main(int argc, char* argv[]) {
     int thread_count;
     char *omp_env = getenv("OMP_NUM_THREADS");
     if (omp_env == NULL) {
-        /* If OMP_NUM_THREADS not set, use safe default of 24 threads per rank */
-        thread_count = 48;
+        /* If OMP_NUM_THREADS not set, use 4 threads per rank (16 ranks/node × 4 threads = 64 threads/node) */
+        thread_count = 4;
         omp_set_num_threads(thread_count);
     } else {
         thread_count = omp_get_max_threads();

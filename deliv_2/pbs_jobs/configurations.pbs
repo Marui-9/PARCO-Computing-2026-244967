@@ -1,0 +1,164 @@
+#!/bin/bash
+#PBS -N mpi_config_sweep
+#PBS -l select=11:ncpus=48:mpiprocs=12:ompthreads=4:mem=64gb
+#PBS -l walltime=04:00:00
+#PBS -q short_cpuQ
+#PBS -o logs/configurations_sweep.out
+#PBS -e logs/configurations_sweep.err
+#PBS -m abe
+
+#
+# PBS Job: MPI Process Count Sweep for SpMV Benchmark
+#
+# Resources requested:
+#   - 11 nodes (to support up to 128 MPI ranks with 12 ranks/node)
+#   - 48 cpus per node
+#   - 12 MPI processes per node (mpiprocs)
+#   - 4 OpenMP threads per MPI process (ompthreads)
+#   - 64GB memory per node
+#
+# Process counts tested: 2, 4, 8, 16, 24, 32, 48, 64, 72, 84, 96, 108, 128
+#
+
+# Exit on error
+set -e
+
+# Load required modules
+module purge
+module load mpich-3.2
+module load gcc91
+
+# Change to working directory
+cd "$PBS_O_WORKDIR" || cd /home/jacob.marui/PARCO-Computing-2026-244967/deliv_2
+
+# Create logs directory
+mkdir -p logs
+mkdir -p results/configurations_sweep
+mkdir -p results/test_results_Xnodes
+
+# Configuration
+PROCESS_COUNTS=(2 4 8 16 24 32 48 64 72 84 96 108 128)
+THREADS_PER_RANK=4
+ITERATIONS=30
+
+# Matrices to test (adjust paths as needed)
+MATRICES=(
+    "matrices/36k_0p17.mtx"
+    "matrices/98k_0p52.mtx"
+    "matrices/262k_0p0011.mtx"
+    "matrices/326k_0p0030.mtx"
+)
+
+# Set OpenMP environment
+export OMP_NUM_THREADS=$THREADS_PER_RANK
+export OMP_PROC_BIND=close
+export OMP_PLACES=cores
+export OMP_STACKSIZE=64M
+
+# Print job info
+echo "=============================================="
+echo "  MPI Configuration Sweep Benchmark"
+echo "=============================================="
+echo "Job ID: $PBS_JOBID"
+echo "Started: $(date)"
+echo "Nodes allocated: $(cat $PBS_NODEFILE | sort -u | wc -l)"
+echo "Node list: $(cat $PBS_NODEFILE | sort -u | tr '\n' ' ')"
+echo ""
+echo "Configuration:"
+echo "  Threads per MPI rank: $THREADS_PER_RANK"
+echo "  Iterations per test: $ITERATIONS"
+echo "  Process counts: ${PROCESS_COUNTS[*]}"
+echo "  Matrices: ${MATRICES[*]}"
+echo ""
+
+# Compile the benchmark
+echo "Compiling test_configurations_mpi.c..."
+cd src
+mpicc -g -Wall -O3 -fopenmp -o test_config_mpi \
+    test_configurations_mpi.c generator.c m_to_csr.c -lm
+
+if [ $? -ne 0 ]; then
+    echo "ERROR: Compilation failed"
+    exit 1
+fi
+echo "Compilation successful."
+echo ""
+
+cd ..
+
+# Summary results file
+SUMMARY_FILE="results/configurations_sweep/sweep_summary.csv"
+echo "num_procs,threads_per_proc,total_threads,matrix,status,runtime_sec" > "$SUMMARY_FILE"
+
+# Run benchmarks for each matrix and process count
+for MATRIX in "${MATRICES[@]}"; do
+    MATRIX_BASENAME=$(basename "$MATRIX" .mtx)
+    
+    echo "=============================================="
+    echo "  Matrix: $MATRIX"
+    echo "=============================================="
+    
+    for NP in "${PROCESS_COUNTS[@]}"; do
+        TOTAL_THREADS=$((NP * THREADS_PER_RANK))
+        
+        echo ""
+        echo "----------------------------------------------"
+        echo "Testing: $NP MPI ranks × $THREADS_PER_RANK threads = $TOTAL_THREADS total"
+        echo "----------------------------------------------"
+        
+        # Output file for this configuration
+        OUTPUT_FILE="results/configurations_sweep/${MATRIX_BASENAME}_${NP}procs.txt"
+        
+        # Record start time
+        START_TIME=$(date +%s)
+        
+        # Run the benchmark
+        # Use --bind-to none to let OpenMP handle thread binding
+        mpirun -np $NP \
+            -bind-to none \
+            ./src/test_config_mpi "$MATRIX" $ITERATIONS 2>&1 | tee "$OUTPUT_FILE"
+        
+        RUN_STATUS=$?
+        END_TIME=$(date +%s)
+        RUNTIME=$((END_TIME - START_TIME))
+        
+        if [ $RUN_STATUS -eq 0 ]; then
+            echo "$NP,$THREADS_PER_RANK,$TOTAL_THREADS,$MATRIX_BASENAME,success,$RUNTIME" >> "$SUMMARY_FILE"
+            echo "Completed in ${RUNTIME}s"
+        else
+            echo "$NP,$THREADS_PER_RANK,$TOTAL_THREADS,$MATRIX_BASENAME,failed,$RUNTIME" >> "$SUMMARY_FILE"
+            echo "WARNING: Test with $NP processes failed (exit code: $RUN_STATUS)"
+        fi
+        
+        echo ""
+    done
+done
+
+# Consolidate all CSV results
+echo ""
+echo "=============================================="
+echo "  Consolidating Results"
+echo "=============================================="
+
+CONSOLIDATED_CSV="results/configurations_sweep/all_results.csv"
+FIRST=1
+for CSV_FILE in results/test_results_Xnodes/test_config_mpi_results_*nodes.csv; do
+    if [ -f "$CSV_FILE" ]; then
+        if [ $FIRST -eq 1 ]; then
+            cat "$CSV_FILE" > "$CONSOLIDATED_CSV"
+            FIRST=0
+        else
+            tail -n +2 "$CSV_FILE" >> "$CONSOLIDATED_CSV"
+        fi
+    fi
+done
+
+echo "Consolidated results: $CONSOLIDATED_CSV"
+echo "Summary: $SUMMARY_FILE"
+
+echo ""
+echo "=============================================="
+echo "  Benchmark Complete"
+echo "=============================================="
+echo "Finished: $(date)"
+echo "Results in: results/configurations_sweep/"
