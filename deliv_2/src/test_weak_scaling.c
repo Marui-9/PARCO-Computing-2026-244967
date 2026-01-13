@@ -38,6 +38,7 @@
 #include <math.h>
 #include <errno.h>
 #include <time.h>
+#include <malloc.h>
 #include <omp.h>
 #include <mpi.h>
 #include "generator.h"
@@ -727,6 +728,11 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
     for (int i = 0; i < num_modes; i++) {
         fprintf(csv, "%d,%d,%lld,%d,%d,%lld,%.6f,%s,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%d,\"weak_scaling\"\n",
                 size, rows_per_proc, nnz_per_proc, m_global, n_global, nnz_global, 
+                actual_density, modes[i].name,
+                modes[i].avg_time * 1000, modes[i].std_dev * 1000, 
+                modes[i].min_time * 1000, modes[i].max_time * 1000,
+                modes[i].comm_time * 1000, modes[i].compute_time * 1000, 
+                iterations);
     }
 
     fclose(csv);
