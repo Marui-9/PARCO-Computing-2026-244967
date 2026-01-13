@@ -92,10 +92,6 @@ echo ""
 
 cd ..
 
-# Summary results file (job execution tracking, separate from main CSV)
-SUMMARY_FILE="results/pipelined_job_summary.csv"
-echo "num_procs,threads_per_proc,total_threads,matrix,status,runtime_sec" > "$SUMMARY_FILE"
-
 # Run benchmarks for each matrix and process count
 for MATRIX in "${MATRICES[@]}"; do
     MATRIX_BASENAME=$(basename "$MATRIX" .mtx)
@@ -112,28 +108,15 @@ for MATRIX in "${MATRICES[@]}"; do
         echo "Testing: $NP MPI ranks × $THREADS_PER_RANK threads = $TOTAL_THREADS total"
         echo "----------------------------------------------"
         
-        # Output file for this configuration
-        OUTPUT_FILE="results/${MATRIX_BASENAME}_${NP}procs_pipelined.txt"
-        
-        # Record start time
-        START_TIME=$(date +%s)
-        
         # Run the benchmark
-        # Use --bind-to none to let OpenMP handle thread binding
         mpirun -np $NP \
-            -bind-to none \
-            ./src/test_pipelined_mpi "$MATRIX" $ITERATIONS 2>&1 | tee "$OUTPUT_FILE"
+            --bind-to none \
+            ./src/test_pipelined_mpi "$MATRIX" $ITERATIONS
         
-        RUN_STATUS=$?
-        END_TIME=$(date +%s)
-        RUNTIME=$((END_TIME - START_TIME))
-        
-        if [ $RUN_STATUS -eq 0 ]; then
-            echo "$NP,$THREADS_PER_RANK,$TOTAL_THREADS,$MATRIX_BASENAME,success,$RUNTIME" >> "$SUMMARY_FILE"
-            echo "Completed in ${RUNTIME}s"
+        if [ $? -eq 0 ]; then
+            echo "Completed successfully"
         else
-            echo "$NP,$THREADS_PER_RANK,$TOTAL_THREADS,$MATRIX_BASENAME,failed,$RUNTIME" >> "$SUMMARY_FILE"
-            echo "WARNING: Test with $NP processes failed (exit code: $RUN_STATUS)"
+            echo "WARNING: Test with $NP processes failed"
         fi
         
         echo ""
@@ -148,4 +131,3 @@ echo "Finished: $(date)"
 echo ""
 echo "Results saved to: results/pipelined_results.csv"
 echo ""
-echo "All process counts (2-128) with all matrices tested."
