@@ -101,7 +101,7 @@ MATRICES_FOUND=0
 for m in "${MATRICES[@]}"; do
     if [ -f "$m" ]; then
         echo "  ✓ Found: $m"
-        ((MATRICES_FOUND++))
+        MATRICES_FOUND=$((MATRICES_FOUND + 1))
     else
         echo "  ✗ Missing: $m"
     fi
