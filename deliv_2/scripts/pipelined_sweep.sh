@@ -9,27 +9,19 @@ set -e  # Exit on error
 set -u  # Exit on undefined variable
 
 # Configuration
-PROCESS_COUNTS=(2 4 8 16 24 32 48 64 72 84 96 108 128)
+PROCESS_COUNTS=(2 4 8 16 32 64 96 128)
 THREADS_PER_RANK=4
-ITERATIONS=30
+ITERATIONS=12
 
 # Matrices to test (all matrices in deliv_2/matrices/)
 MATRICES=(
-    "matrices/2k_0p22.mtx"
-    "matrices/2k_0p52.mtx"
-    "matrices/5k_9p37.mtx"
-    "matrices/6k_6p3.mtx"
-    "matrices/9k_0p77.mtx"
-    "matrices/10k_1p5.mtx"
-    "matrices/11k_0p35.mtx"
-    "matrices/11k_0p38.mtx"
-    "matrices/15k_0p41.mtx"
-    "matrices/20k_0p38.mtx"
-    "matrices/25k_0p03.mtx"
-    "matrices/30k_0p05.mtx"
-    "matrices/40k_0p02.mtx"
-    "matrices/50k_0p008.mtx"
-    "matrices/60k_0p005.mtx"
+    "1438k_0p0016.mtx" 
+     "1565k_0p0024.mtx"  
+     "41292k_0p0001.mtx"  
+     "916k_0p0006.mtx"
+     "1508k_0p0012.mtx"  
+     "2097k_0p0001.mtx"  
+     "4848k_0p0003.mtx"
 )
 
 # Paths

@@ -44,7 +44,7 @@ mkdir -p results
 rm -f results/load_balance_results.csv
 
 # Configuration
-PROCESS_COUNTS=(2 4 8 16 24 32 48 64 72 84 96 108 128)
+PROCESS_COUNTS=(2 4 8 16 32 64 96 128)
 THREADS_PER_RANK=4
 ITERATIONS=12
 TIMEOUT=3600  # 1 hour per test

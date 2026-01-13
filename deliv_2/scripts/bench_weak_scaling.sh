@@ -25,7 +25,7 @@ THREADS_PER_RANK=4
 
 # Process counts to test (limited to 2-32 for valid weak scaling)
 # Beyond 32 procs, communication overhead becomes prohibitive
-PROCESS_COUNTS=(2 4 8 16 32)
+PROCESS_COUNTS=(2 4 8 16 32 64 128)
 
 # Directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
