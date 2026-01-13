@@ -50,7 +50,7 @@ mkdir -p results
 rm -f results/weak_scaling_results.csv
 
 # Configuration
-PROCESS_COUNTS=(2 4 8 16 32 48 64 72 84 96 108 128)
+PROCESS_COUNTS=(2 4 8 16 32 64 128)
 THREADS_PER_RANK=4
 ITERATIONS=10
 

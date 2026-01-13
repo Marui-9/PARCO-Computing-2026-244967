@@ -37,7 +37,7 @@ cd PARCO-Computing-2026-244967/deliv_2/ 2>/dev/null || true
 mkdir -p results
 
 # Configuration
-PROCESS_COUNTS=(2 4 8 16 32 48 64 72 84 96 108 128)
+PROCESS_COUNTS=(2 4 8 16 32 64 128)
 THREADS_PER_RANK=4
 ITERATIONS=10
 
