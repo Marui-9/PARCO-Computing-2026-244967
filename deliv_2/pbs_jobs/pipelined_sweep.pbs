@@ -29,10 +29,11 @@ module load gcc91
 module load mpich-3.2.1--gcc-9.1.0
 
 # Change to working directory
-cd "$PBS_O_WORKDIR" || cd /home/jacob.marui/PARCO-Computing-2026-244967/deliv_2
+echo "Initial directory: $(pwd)"
+cd PARCO-Computing-2026-244967/deliv_2/ 2>/dev/null || cd /home/jacob/Desktop/PARCO-Computing-2026-244967/deliv_2/ 2>/dev/null || true
+echo "Working directory: $(pwd)"
 
-# Create logs and results directories
-mkdir -p logs
+# Create results directory
 mkdir -p results
 
 # Configuration

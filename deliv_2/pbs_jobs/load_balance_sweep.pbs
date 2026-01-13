@@ -31,7 +31,8 @@ module load mpich-3.2.1--gcc-9.1.0
 # Navigate to project directory
 echo "=== Load Balance Strategy Sweep Benchmark ==="
 echo "Initial directory: $(pwd)"
-cd PARCO-Computing-2026-244967/deliv_2/ 2>/dev/null || true
+cd PARCO-Computing-2026-244967/deliv_2/ 2>/dev/null || cd /home/jacob/Desktop/PARCO-Computing-2026-244967/deliv_2/ 2>/dev/null || true
+echo "Working directory: $(pwd)"
 
 # Create results directory
 mkdir -p results
@@ -93,6 +94,24 @@ echo "Compilation successful."
 echo ""
 
 cd ..
+
+# Verify matrices exist before proceeding
+echo "Verifying matrix files..."
+MATRICES_FOUND=0
+for m in "${MATRICES[@]}"; do
+    if [ -f "$m" ]; then
+        echo "  ✓ Found: $m"
+        ((MATRICES_FOUND++))
+    else
+        echo "  ✗ Missing: $m"
+    fi
+done
+
+if [ "$MATRICES_FOUND" -eq 0 ]; then
+    echo "ERROR: No matrices found! Check MATRICES array paths."
+    exit 1
+fi
+echo ""
 
 # Clear previous results
 rm -f results/load_balance_results.csv
