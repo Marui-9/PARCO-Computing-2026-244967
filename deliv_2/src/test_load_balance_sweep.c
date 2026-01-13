@@ -27,16 +27,6 @@
 int m_global, n_global;
 long long nnz_global;
 
-/* CSR matrix structure (local) */
-typedef struct {
-    int rows;
-    int cols;
-    long long nnz;
-    int *row_ptr;
-    int *col_ind;
-    float *values;
-} csr_matrix;
-
 /* Function prototypes */
 void local_spvec(csr_matrix *A_local, float *x, float *y, int thread_count);
 double benchmark_strategy(const char *matrix_file, const char *strategy_name,
@@ -468,14 +458,9 @@ void print_results(const char *matrix_file, int num_iterations, int thread_count
     double baseline_speedup = 1.0;
     double efficiency_row = (baseline_speedup / size) * 100.0;
     
-    /* Write data rows - match configurations format with added imbalance column */
-    double speedup_nnz = time_row / time_nnz;
+    /* Calculate speedup and efficiency for all strategies */
     double efficiency_nnz = (speedup_nnz / size) * 100.0;
-    
-    double speedup_hyb5 = time_row / time_hyb5;
     double efficiency_hyb5 = (speedup_hyb5 / size) * 100.0;
-    
-    double speedup_hyb7 = time_row / time_hyb7;
     double efficiency_hyb7 = (speedup_hyb7 / size) * 100.0;
     
     /* ROW-BASED (baseline) - std_dev set to 0 for simplicity */
