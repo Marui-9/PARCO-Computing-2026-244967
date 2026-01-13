@@ -49,8 +49,8 @@ mkdir -p results
 rm -f results/weak_scaling_results.csv
 
 # Configuration
-# Limit to 32 procs max - beyond this, communication overhead dominates
-PROCESS_COUNTS=(2 4 8 16 32)
+# Limit to 128 procs max - beyond this, communication overhead dominates
+PROCESS_COUNTS=(2 4 8 16 32 64 128)
 THREADS_PER_RANK=2
 ITERATIONS=10
 
@@ -141,3 +141,16 @@ echo "Finished: $(date)"
 echo ""
 echo "Results saved to: results/weak_scaling_results.csv"
 echo ""
+# Verify results file was created
+if [ -f results/weak_scaling_results.csv ]; then
+    echo "CSV file verified. Line count:"
+    wc -l results/weak_scaling_results.csv
+    echo ""
+    echo "First few lines:"
+    head -3 results/weak_scaling_results.csv
+else
+    echo "ERROR: CSV results file not found at results/weak_scaling_results.csv"
+    exit 1
+fi
+
+echo "=============================================="
