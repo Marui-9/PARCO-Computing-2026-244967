@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
     }
 
     const char *matrix_file = argv[1];
-    int num_iterations = (argc == 3) ? atoi(argv[2]) : 50;
+    int num_iterations = (argc == 3) ? atoi(argv[2]) : 10;
     
     /* Determine thread count: use OMP_NUM_THREADS if set, otherwise safe default */
     int thread_count;
@@ -245,9 +245,9 @@ int main(int argc, char* argv[]) {
                   comm_bcast_reduce, num_iterations, thread_count);
     num_modes++;
 
-    /* Mode 2: Non-blocking Ibcast/Igatherv */
-    strcpy(modes[num_modes].name, "Ibcast/Igatherv");
-    strcpy(modes[num_modes].description, "Non-blocking broadcast (Ibcast) and gather (Igatherv)");
+    /* Mode 2: Non-blocking with Polling Overlap */
+    strcpy(modes[num_modes].name, "Ibcast+Overlap");
+    strcpy(modes[num_modes].description, "Non-blocking Ibcast/Igatherv with MPI_Test polling for comm progress");
     run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
                   comm_ibcast_igatherv, num_iterations, thread_count);
     num_modes++;
@@ -260,11 +260,11 @@ int main(int argc, char* argv[]) {
     // num_modes++;
 
     /* Mode 4: Async Collectives (Ibcast + Iallgatherv) */
-    strcpy(modes[num_modes].name, "Async_Collectives");
-    strcpy(modes[num_modes].description, "Asynchronous collectives: Ibcast for x, Iallgatherv for y to all ranks");
-    run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
-                  comm_async_collectives, num_iterations, thread_count);
-    num_modes++;
+    // strcpy(modes[num_modes].name, "Async_Collectives");
+    // strcpy(modes[num_modes].description, "Asynchronous collectives: Ibcast for x, Iallgatherv for y to all ranks");
+    // run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
+    //               comm_async_collectives, num_iterations, thread_count);
+    // num_modes++;
 
     /* Print results on rank 0 */
     if (global_rank == 0) {
@@ -376,26 +376,26 @@ void local_spvec(csr_matrix *A_local, float *x, float *y, int thread_count) {
 }
 
 /*------------------------------------------------------------------*/
-/* Communication Mode 1: Standard MPI_Bcast + MPI_Reduce */
+/* Communication Mode 1: Standard MPI_Bcast + MPI_Gatherv (blocking) */
 void comm_bcast_reduce(int rank, int size, csr_matrix *A_local, 
                        float *x, float *y, int thread_count,
                        double *comm_time, double *compute_time) {
     double t_comm = 0.0, t_comp = 0.0;
     
-    /* Broadcast x from rank 0 */
+    /* Blocking broadcast: all ranks wait until x is fully distributed */
     double t_start = MPI_Wtime();
     MPI_Bcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD);
     t_comm += MPI_Wtime() - t_start;
 
-    /* Local SpMV */
+    /* Local SpMV computation */
     t_start = MPI_Wtime();
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
 
-    /* Reduce y results to rank 0 with proper handling of uneven rows */
+    /* Gather y results to rank 0 using blocking collectives */
     t_start = MPI_Wtime();
     
-    /* Gather local row counts */
+    /* Collect local row counts from all ranks */
     MPI_Gather(&m_local, 1, MPI_INT, mpi_send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
     
     if (rank == 0) {
@@ -413,28 +413,47 @@ void comm_bcast_reduce(int rank, int size, csr_matrix *A_local,
 }
 
 /*------------------------------------------------------------------*/
-/* Communication Mode 2: Non-blocking Ibcast/Igatherv */
+/* Communication Mode 2: Non-blocking with Polling Overlap */
 void comm_ibcast_igatherv(int rank, int size, csr_matrix *A_local, 
                           float *x, float *y, int thread_count,
                           double *comm_time, double *compute_time) {
     double t_comm = 0.0, t_comp = 0.0;
     MPI_Request req_bcast, req_gather;
+    int bcast_complete = 0;
     
     /* Issue non-blocking broadcast of x */
-    double t_start = MPI_Wtime();
+    double t_comm_start = MPI_Wtime();
     MPI_Ibcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_bcast);
     
-    /* Wait for broadcast (data dependency - cannot proceed without x) */
-    MPI_Wait(&req_bcast, MPI_STATUS_IGNORE);
-    t_comm += MPI_Wtime() - t_start;
-
-    /* Local SpMV computation */
-    t_start = MPI_Wtime();
+    /* Polling strategy: Check for broadcast completion using MPI_Test.
+     * This allows MPI runtime to progress communication while we poll.
+     * Note: We cannot do the main SpMV computation here due to data dependency on x,
+     * but polling with MPI_Test can help progress communication faster than blocking wait.
+     */
+    int max_polls = 100;
+    for (int poll = 0; poll < max_polls && !bcast_complete; poll++) {
+        MPI_Test(&req_bcast, &bcast_complete, MPI_STATUS_IGNORE);
+        
+        if (!bcast_complete) {
+            /* Lightweight work to prevent busy-waiting and let MPI runtime progress */
+            /* In real scenarios, this could be: prefetching data, updating counters, etc. */
+            #pragma omp flush
+        }
+    }
+    
+    /* If broadcast still not complete after polling, wait for it (data dependency) */
+    if (!bcast_complete) {
+        MPI_Wait(&req_bcast, MPI_STATUS_IGNORE);
+    }
+    t_comm += MPI_Wtime() - t_comm_start;
+    
+    /* Local SpMV computation - must wait for x from broadcast */
+    double t_comp_start = MPI_Wtime();
     local_spvec(A_local, x, y, thread_count);
-    t_comp += MPI_Wtime() - t_start;
+    t_comp += MPI_Wtime() - t_comp_start;
 
     /* Prepare metadata for non-blocking gather */
-    t_start = MPI_Wtime();
+    double t_gather_start = MPI_Wtime();
     int *tmp_counts = (int *)malloc(size * sizeof(int));
     MPI_Allgather(&m_local, 1, MPI_INT, tmp_counts, 1, MPI_INT, MPI_COMM_WORLD);
     
@@ -447,12 +466,32 @@ void comm_ibcast_igatherv(int rank, int size, csr_matrix *A_local,
     }
     free(tmp_counts);
     
-    /* Issue non-blocking gather of results to rank 0 */
-    MPI_Igatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_gather);
+    /* Issue non-blocking gather - allows overlap with local finalization */
+    MPI_Igatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, 
+                 MPI_FLOAT, 0, MPI_COMM_WORLD, &req_gather);
     
-    /* Wait for gather to complete */
-    MPI_Wait(&req_gather, MPI_STATUS_IGNORE);
-    t_comm += MPI_Wtime() - t_start;
+    /* Overlap opportunity: Poll for gather completion while doing local work.
+     * In iterative solvers, this is where you'd prepare the next iteration,
+     * update convergence criteria, or perform local post-processing. */
+    int gather_complete = 0;
+    for (int poll = 0; poll < max_polls && !gather_complete; poll++) {
+        MPI_Test(&req_gather, &gather_complete, MPI_STATUS_IGNORE);
+        
+        if (!gather_complete) {
+            /* Example local work that doesn't depend on gathered results:
+             * - Compute local residuals
+             * - Prepare buffers for next iteration
+             * - Update local statistics
+             * Here we just do a lightweight operation to demonstrate the concept. */
+            #pragma omp flush
+        }
+    }
+    
+    /* Ensure gather completes before returning */
+    if (!gather_complete) {
+        MPI_Wait(&req_gather, MPI_STATUS_IGNORE);
+    }
+    t_comm += MPI_Wtime() - t_gather_start;
 
     *comm_time = t_comm;
     *compute_time = t_comp;
@@ -658,7 +697,7 @@ void comm_ibcast_igatherv(int rank, int size, csr_matrix *A_local,
 // }
 
 /*------------------------------------------------------------------*/
-/* Communication Mode 4: Async Collectives (Ibcast + Iallgatherv) */
+/* Communication Mode 3: Async Collectives (Ibcast + Iallgatherv) */
 void comm_async_collectives(int rank, int size, csr_matrix *A_local, 
                             float *x, float *y, int thread_count,
                             double *comm_time, double *compute_time) {

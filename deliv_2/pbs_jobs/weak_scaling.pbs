@@ -1,0 +1,137 @@
+#!/bin/bash
+#PBS -N weak_scaling_sweep
+#PBS -l select=8:ncpus=64:mpiprocs=16:ompthreads=4:mem=64gb
+#PBS -l walltime=06:00:00
+#PBS -q short_cpuQ
+#PBS -o weak_scaling_sweep.out
+#PBS -e weak_scaling_sweep.err
+#PBS -m abe
+
+#
+# PBS Job: Weak Scaling Benchmark for SpMV
+#
+# Resources requested:
+#   - 8 nodes with 64 cores each (512 cores total, no hyperthreading)
+#   - 16 MPI processes per node max (128 total)
+#   - 4 OpenMP threads per MPI process
+#   - 64GB memory per node
+#
+# Weak Scaling Strategy:
+#   - Keep work per process CONSTANT (rows_per_proc fixed)
+#   - Total matrix size scales with process count
+#   - Ideal: constant execution time as P increases
+#
+# Matrix sizes (with rows_per_proc=25000):
+#   2 procs:     50,000 rows
+#   4 procs:    100,000 rows
+#   8 procs:    200,000 rows
+#   16 procs:   400,000 rows
+#   32 procs:   800,000 rows
+#   64 procs: 1,600,000 rows
+#   128 procs:3,200,000 rows
+#
+
+# Exit on error
+set -e
+
+# Load required modules
+module load gcc91
+module load mpich-3.2.1--gcc-9.1.0
+
+# Navigate to project directory
+echo "=== Weak Scaling Benchmark ==="
+echo "Initial directory: $(pwd)"
+cd PARCO-Computing-2026-244967/deliv_2/ 2>/dev/null || true
+
+# Create results directory
+mkdir -p results
+
+# Remove old results file to start fresh
+rm -f results/weak_scaling_results.csv
+
+# Configuration
+PROCESS_COUNTS=(2 4 8 16 32 48 64 72 84 96 108 128)
+THREADS_PER_RANK=4
+ITERATIONS=10
+
+# Weak scaling parameters
+ROWS_PER_PROC=25000     # Each process handles 25k rows (constant work per process)
+DENSITY_PCT=0.01        # 0.01% density (sparse, realistic for large matrices)
+
+# Set OpenMP environment
+export OMP_NUM_THREADS=$THREADS_PER_RANK
+export OMP_PROC_BIND=close
+export OMP_PLACES=cores
+export OMP_STACKSIZE=64M
+
+# Print job info
+echo "=============================================="
+echo "  Weak Scaling Benchmark"
+echo "=============================================="
+echo "Job ID: $PBS_JOBID"
+echo "Started: $(date)"
+echo "Nodes allocated: $(cat $PBS_NODEFILE | sort -u | wc -l)"
+echo "Node list: $(cat $PBS_NODEFILE | sort -u | tr '\n' ' ')"
+echo ""
+echo "Configuration:"
+echo "  Threads per MPI rank: $THREADS_PER_RANK"
+echo "  Iterations per test: $ITERATIONS"
+echo "  Rows per process: $ROWS_PER_PROC"
+echo "  Target density: $DENSITY_PCT%"
+echo "  Process counts: ${PROCESS_COUNTS[*]}"
+echo ""
+echo "Weak Scaling Matrix Sizes:"
+for NP in "${PROCESS_COUNTS[@]}"; do
+    TOTAL_ROWS=$((NP * ROWS_PER_PROC))
+    echo "  $NP processes: $TOTAL_ROWS × $TOTAL_ROWS matrix"
+done
+echo ""
+
+# Compile the benchmark
+echo "Compiling test_weak_scaling.c..."
+cd src
+mpicc -std=c99 -g -Wall -O3 -fopenmp -o test_weak_scaling \
+    test_weak_scaling.c generator.c m_to_csr.c -lm
+
+if [ $? -ne 0 ]; then
+    echo "ERROR: Compilation failed"
+    exit 1
+fi
+echo "Compilation successful."
+echo ""
+
+cd ..
+
+# Run benchmarks for each process count
+for NP in "${PROCESS_COUNTS[@]}"; do
+    TOTAL_ROWS=$((NP * ROWS_PER_PROC))
+    TOTAL_THREADS=$((NP * THREADS_PER_RANK))
+    
+    echo "=============================================="
+    echo "  Process Count: $NP"
+    echo "  Matrix Size: $TOTAL_ROWS × $TOTAL_ROWS"
+    echo "  Total Threads: $TOTAL_THREADS"
+    echo "=============================================="
+    
+    # Run the benchmark
+    mpirun -np $NP \
+        --bind-to none \
+        ./src/test_weak_scaling $ROWS_PER_PROC $DENSITY_PCT $ITERATIONS
+    
+    if [ $? -eq 0 ]; then
+        echo "Completed successfully"
+    else
+        echo "WARNING: Test with $NP processes failed"
+    fi
+    
+    echo ""
+done
+
+echo ""
+echo "=============================================="
+echo "  Weak Scaling Benchmark Complete"
+echo "=============================================="
+echo "Finished: $(date)"
+echo ""
+echo "Results saved to: results/weak_scaling_results.csv"
+echo ""
