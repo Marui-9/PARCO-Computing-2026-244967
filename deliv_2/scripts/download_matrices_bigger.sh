@@ -194,12 +194,24 @@ main() {
     echo "Downloaded matrices in $OUTPUT_DIR:"
     ls -lh "$OUTPUT_DIR"/*.mtx 2>/dev/null | awk '{print "  " $9 " (" $5 ")"}' || echo "  (no matrices found)"
     
+        # Ensure read permissions on specific matrices
+    echo ""
+    echo "Setting read permissions on matrices..."
+    chmod +r "$OUTPUT_DIR/1438k_0p0016.mtx" 2>/dev/null || true
+    chmod +r "$OUTPUT_DIR/1565k_0p0024.mtx" 2>/dev/null || true
+    chmod +r "$OUTPUT_DIR/41292k_0p0001.mtx" 2>/dev/null || true
+    chmod +r "$OUTPUT_DIR/916k_0p0006.mtx" 2>/dev/null || true
+    chmod +r "$OUTPUT_DIR/1508k_0p0012.mtx" 2>/dev/null || true
+    chmod +r "$OUTPUT_DIR/2097k_0p0001.mtx" 2>/dev/null || true
+    chmod +r "$OUTPUT_DIR/4848k_0p0003.mtx" 2>/dev/null || true
+    
     # Calculate total size
     local total_size=$(du -sh "$OUTPUT_DIR" 2>/dev/null | awk '{print $1}')
     echo ""
     echo "Total download size: $total_size"
     echo "Matrix files ready for weak scaling benchmarks."
     echo "=============================================="
+
 }
 
 # Show usage
