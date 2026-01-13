@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -N mpi_config_sweep
-#PBS -l select=8:ncpus=64:mpiprocs=16:ompthreads=4:mem=64gb
+#PBS -l select=8:ncpus=32:mpiprocs=16:ompthreads=2:mem=64gb
 #PBS -l walltime=06:00:00
 #PBS -q short_cpuQ
 #PBS -o configurations_sweep.out
@@ -11,14 +11,14 @@
 # PBS Job: MPI Process Count Sweep for SpMV Benchmark
 #
 # Resources requested:
-#   - 8 nodes with 64 cores each (512 cores total, no hyperthreading)
+#   - 8 nodes with 32 cores each (256 cores total, no hyperthreading)
 #   - 16 MPI processes per node max (128 total)
-#   - 4 OpenMP threads per MPI process
+#   - 2 OpenMP threads per MPI process
 #   - 64GB memory per node
 #
-# With 8 nodes × 64 cores/node = 512 cores
-# With 4 threads/process: supports up to 128 MPI processes
-# Process counts tested: 2, 4, 8, 16, 24, 32, 48, 64, 72, 84, 96, 108, 128
+# With 8 nodes × 32 cores/node = 256 cores
+# With 2 threads/process: supports up to 128 MPI processes
+# Process counts tested: 2, 4, 8, 16, 32, 64, 128
 #
 
 # Exit on error
