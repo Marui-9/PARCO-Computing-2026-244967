@@ -3,7 +3,7 @@
  *
  * Purpose:  
  *     Comprehensive benchmark comparing load balancing strategies for distributed SpMV
- *     Tests: ROW-BASED, NNZ-BASED, HYBRID (α=0.5)
+ *     Tests: ROW-BASED, NNZ-BASED
  *     Sweeps across MPI process counts and matrices
  *
  * Compile:  mpicc -std=c99 -g -Wall -O3 -fopenmp -o test_lb_sweep \
@@ -41,9 +41,7 @@ void print_results(const char *matrix_file, int num_iterations, int thread_count
                   double time_row, double comp_row, double comm_row, 
                   double min_row, double max_row, long long nnz_row, double imb_row,
                   double time_nnz, double comp_nnz, double comm_nnz, 
-                  double min_nnz, double max_nnz, long long nnz_nnz, double imb_nnz,
-                  double time_hyb5, double comp_hyb5, double comm_hyb5, 
-                  double min_hyb5, double max_hyb5, long long nnz_hyb5, double imb_hyb5);
+                  double min_nnz, double max_nnz, long long nnz_nnz, double imb_nnz);
 
 /*------------------------------------------------------------------*/
 int main(int argc, char* argv[]) {
@@ -108,26 +106,10 @@ int main(int argc, char* argv[]) {
     
     MPI_Barrier(MPI_COMM_WORLD);
     
-    /* Strategy 3: HYBRID (α=0.5) */
-    double time_hyb5, compute_hyb5, comm_hyb5, min_hyb5, max_hyb5, imb_hyb5;
-    long long nnz_hyb5;
-    
-    if (rank == 0) {
-        printf("\n\nSTRATEGY 3: HYBRID (α=0.5, Balanced Blend)\n");
-        printf("--------------------------------------------------------------------------------\n");
-    }
-    
-    time_hyb5 = benchmark_strategy(matrix_file, "HYBRID-0.5", LB_HYBRID, 0.5,
-                                   num_iterations, thread_count, 
-                                   rank, size, &compute_hyb5, &comm_hyb5, &min_hyb5, &max_hyb5, &nnz_hyb5, &imb_hyb5);
-    
-    MPI_Barrier(MPI_COMM_WORLD);
-    
     /* Print results and comparison */
     print_results(matrix_file, num_iterations, thread_count, rank, size,
                  time_row, compute_row, comm_row, min_row, max_row, nnz_row, imb_row,
-                 time_nnz, compute_nnz, comm_nnz, min_nnz, max_nnz, nnz_nnz, imb_nnz,
-                 time_hyb5, compute_hyb5, comm_hyb5, min_hyb5, max_hyb5, nnz_hyb5, imb_hyb5);
+                 time_nnz, compute_nnz, comm_nnz, min_nnz, max_nnz, nnz_nnz, imb_nnz);
     
     MPI_Finalize();
     return 0;
@@ -372,9 +354,7 @@ void print_results(const char *matrix_file, int num_iterations, int thread_count
                   double time_row, double comp_row, double comm_row, 
                   double min_row, double max_row, long long nnz_row, double imb_row,
                   double time_nnz, double comp_nnz, double comm_nnz, 
-                  double min_nnz, double max_nnz, long long nnz_nnz, double imb_nnz,
-                  double time_hyb5, double comp_hyb5, double comm_hyb5, 
-                  double min_hyb5, double max_hyb5, long long nnz_hyb5, double imb_hyb5) {
+                  double min_nnz, double max_nnz, long long nnz_nnz, double imb_nnz) {
     
     if (rank != 0) return;
     
@@ -394,10 +374,6 @@ void print_results(const char *matrix_file, int num_iterations, int thread_count
     double speedup_nnz = time_row / time_nnz;
     printf("%-15s %12.3f %12.3f %12.3f %12.3f %12.3f×\n", 
            "NNZ-BASED", time_nnz, comp_nnz, comm_nnz, imb_nnz, speedup_nnz);
-    
-    double speedup_hyb5 = time_row / time_hyb5;
-    printf("%-15s %12.3f %12.3f %12.3f %12.3f %12.3f×\n", 
-           "HYBRID-0.5", time_hyb5, comp_hyb5, comm_hyb5, imb_hyb5, speedup_hyb5);
     
     printf("--------------------------------------------------------------------------------\n");
     printf("\n");
@@ -434,9 +410,8 @@ void print_results(const char *matrix_file, int num_iterations, int thread_count
     double baseline_speedup = 1.0;
     double efficiency_row = (baseline_speedup / size) * 100.0;
     
-    /* Calculate speedup and efficiency for all strategies */
+    /* Calculate speedup and efficiency for NNZ-BASED */
     double efficiency_nnz = (speedup_nnz / size) * 100.0;
-    double efficiency_hyb5 = (speedup_hyb5 / size) * 100.0;
     
     /* ROW-BASED (baseline) - std_dev set to 0 for simplicity */
     fprintf(fp, "%d,%s,%d,%d,%lld,%.4f,ROW-BASED,%.4f,0.0000,%.4f,%.4f,%.4f,%.4f,%.4f,%.2f,%.3f,%d,\"\"\n",
@@ -449,12 +424,6 @@ void print_results(const char *matrix_file, int num_iterations, int thread_count
             size, csv_matrix_name, m_global, n_global, nnz_global, density,
             time_nnz, min_nnz, max_nnz, comm_nnz, comp_nnz,
             speedup_nnz, efficiency_nnz, imb_nnz, num_iterations);
-    
-    /* HYBRID-0.5 */
-    fprintf(fp, "%d,%s,%d,%d,%lld,%.4f,HYBRID-0.5,%.4f,0.0000,%.4f,%.4f,%.4f,%.4f,%.4f,%.2f,%.3f,%d,\"\"\n",
-            size, csv_matrix_name, m_global, n_global, nnz_global, density,
-            time_hyb5, min_hyb5, max_hyb5, comm_hyb5, comp_hyb5,
-            speedup_hyb5, efficiency_hyb5, imb_hyb5, num_iterations);
     
     fclose(fp);
     printf("Results appended to: %s\n", csv_filename);

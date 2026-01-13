@@ -7,7 +7,7 @@
 #
 set -u
 
-EXE="./test_config_mpi"
+EXE="./src/test_config_mpi"
 OUT_CSV="results/configurations_results.csv"
 OUT_LOG="results/configurations.log"
 TIMEOUT_SECS=3600      # 60 minutes per matrix combo
