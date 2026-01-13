@@ -201,7 +201,7 @@ main() {
     # Calculate total size
     local total_size=$(du -sh "$OUTPUT_DIR" 2>/dev/null | awk '{print $1}')
     echo ""
-    echo "Total download size: $total_size (expected ~500 MB)"
+    echo "Total download size: $total_size"
     echo "Matrix files ready for benchmarking."
     echo "=============================================="
 }
