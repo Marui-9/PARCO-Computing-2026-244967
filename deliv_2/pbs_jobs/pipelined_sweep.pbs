@@ -38,7 +38,7 @@ mkdir -p results
 # Configuration
 PROCESS_COUNTS=(2 4 8 16 32 48 64 72 84 96 108 128)
 THREADS_PER_RANK=4
-ITERATIONS=12
+ITERATIONS=10
 
 # Matrices to test (larger matrices for meaningful MPI scaling)
 MATRICES=(
