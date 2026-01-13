@@ -80,7 +80,7 @@ void comm_ibcast_igatherv(int rank, int size, csr_matrix *A_local,
 void comm_async_collectives(int rank, int size, csr_matrix *A_local, 
                             float *x, float *y, int thread_count,
                             double *comm_time, double *compute_time);
-void comm_pipelined_chunked(int rank, int size, csr_matrix *A_local, 
+void comm_pipelined_chunked_optimized(int rank, int size, csr_matrix *A_local, 
                             float *x, float *y, int thread_count,
                             double *comm_time, double *compute_time);
 
@@ -255,7 +255,7 @@ int main(int argc, char* argv[]) {
     strcpy(modes[num_modes].name, "Pipelined_Chunked");
     strcpy(modes[num_modes].description, "x vector divided into chunks, broadcast + compute overlap");
     run_benchmark(&modes[num_modes], global_rank, global_size, A_local,
-                  comm_pipelined_chunked, num_iterations, thread_count);
+                  comm_pipelined_chunked_optimized, num_iterations, thread_count);
     num_modes++;
 
     /* Print results on rank 0 */
