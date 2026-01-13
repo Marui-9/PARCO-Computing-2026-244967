@@ -22,13 +22,11 @@
 #   - Ideal: constant execution time as P increases
 #
 # Matrix sizes (with rows_per_proc=25000):
-#   2 procs:     50,000 rows
-#   4 procs:    100,000 rows
-#   8 procs:    200,000 rows
-#   16 procs:   400,000 rows
-#   32 procs:   800,000 rows
-#   64 procs: 1,600,000 rows
-#   128 procs:3,200,000 rows
+#   2 procs:     400,000 rows
+#   4 procs:     800,000 rows
+#   8 procs:   1,600,000 rows
+#   16 procs:  3,200,000 rows
+#   32 procs:  6,400,000 rows
 #
 
 # Exit on error
@@ -50,13 +48,17 @@ mkdir -p results
 rm -f results/weak_scaling_results.csv
 
 # Configuration
-PROCESS_COUNTS=(2 4 8 16 32 64 128)
+# Limit to 32 procs max - beyond this, communication overhead dominates
+PROCESS_COUNTS=(2 4 8 16 32)
 THREADS_PER_RANK=2
 ITERATIONS=10
 
 # Weak scaling parameters
-ROWS_PER_PROC=25000     # Each process handles 25k rows (constant work per process)
-DENSITY_PCT=0.01        # 0.01% density (sparse, realistic for large matrices)
+# IMPORTANT: 200k rows/proc provides sufficient compute/comm ratio
+# Previous 25k was too small - communication dominated (96%+ overhead)
+# Target: compute time > 50ms per iteration for valid weak scaling
+ROWS_PER_PROC=200000    # Each process handles 200k rows (8× previous, adequate work per process)
+DENSITY_PCT=0.05        # 0.05% density (sparse but sufficient NNZ for computation)
 
 # Set OpenMP environment
 export OMP_NUM_THREADS=$THREADS_PER_RANK

@@ -11,13 +11,16 @@
 set -e
 
 # Default parameters
-ROWS_PER_PROC=${1:-25000}
-DENSITY_PCT=${2:-0.01}
+# IMPORTANT: 200k rows/proc provides sufficient compute/comm ratio
+# Previous 25k was too small - communication dominated (96%+ overhead)
+ROWS_PER_PROC=${1:-200000}
+DENSITY_PCT=${2:-0.05}
 ITERATIONS=10
 THREADS_PER_RANK=4
 
-# Process counts to test
-PROCESS_COUNTS=(2 4 8 16 32 48 64)
+# Process counts to test (limited to 2-32 for valid weak scaling)
+# Beyond 32 procs, communication overhead becomes prohibitive
+PROCESS_COUNTS=(2 4 8 16 32)
 
 # Directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

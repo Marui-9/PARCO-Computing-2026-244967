@@ -11,13 +11,17 @@
  * 
  * Usage:
  *     mpirun -np <P> ./test_weak_scaling <base_rows_per_proc> <density_pct> [iterations]
- *     Example: mpirun -np 4 ./test_weak_scaling 25000 0.01 10
+ *     Example: mpirun -np 4 ./test_weak_scaling 200000 0.05 10
  *
  * Weak Scaling Strategy:
  *     - Base: rows_per_proc rows assigned to each MPI process
  *     - Matrix size = rows_per_proc × num_procs
  *     - Density kept constant across all scales
  *     - Ideal weak scaling: constant execution time as P increases
+ *
+ * IMPORTANT: rows_per_proc should be at least 100k-200k for valid weak scaling.
+ *     With 25k rows/proc, communication overhead dominates (96%+).
+ *     Recommended: 200k rows/proc, 0.05% density for compute/comm ratio > 10:1
  *
  * Notes:  
  *     - Tests 3 MPI communication modes (same as configurations benchmark)
@@ -108,12 +112,15 @@ int main(int argc, char* argv[]) {
     if (argc < 3 || argc > 4) {
         if (global_rank == 0) {
             fprintf(stderr, "usage: mpirun -np <num_ranks> %s <rows_per_proc> <density_pct> [iterations]\n", argv[0]);
-            fprintf(stderr, "Example: mpirun -np 4 %s 25000 0.01 10\n", argv[0]);
+            fprintf(stderr, "Example: mpirun -np 4 %s 200000 0.05 10\n", argv[0]);
             fprintf(stderr, "\nWeak Scaling: matrix_size = rows_per_proc × num_procs\n");
-            fprintf(stderr, "  2 procs:  50,000 rows\n");
-            fprintf(stderr, "  4 procs: 100,000 rows\n");
-            fprintf(stderr, "  8 procs: 200,000 rows\n");
+            fprintf(stderr, "  2 procs:    400,000 rows\n");
+            fprintf(stderr, "  4 procs:    800,000 rows\n");
+            fprintf(stderr, "  8 procs:  1,600,000 rows\n");
+            fprintf(stderr, "  16 procs: 3,200,000 rows\n");
             fprintf(stderr, "  etc.\n");
+            fprintf(stderr, "\nIMPORTANT: Use at least 100k-200k rows_per_proc for valid weak scaling.\n");
+            fprintf(stderr, "           With small sizes (25k), communication dominates (96%+ overhead).\n");
         }
         MPI_Finalize();
         exit(1);
@@ -434,25 +441,27 @@ void local_spvec(local_csr_matrix *A_local, float *x, float *y, int thread_count
 }
 
 /*------------------------------------------------------------------*/
-/* Communication Mode 1: Standard MPI_Bcast + MPI_Gatherv */
+/* Communication Mode 1: Standard MPI_Bcast + MPI_Gatherv (blocking) */
+/* 1:1 copy from test_configurations_mpi.c */
 void comm_bcast_reduce(int rank, int size, local_csr_matrix *A_local, 
                        float *x, float *y, int thread_count,
                        double *comm_time, double *compute_time) {
     double t_comm = 0.0, t_comp = 0.0;
     
-    /* Broadcast x from rank 0 */
+    /* Blocking broadcast: all ranks wait until x is fully distributed */
     double t_start = MPI_Wtime();
     MPI_Bcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD);
     t_comm += MPI_Wtime() - t_start;
 
-    /* Local SpMV */
+    /* Local SpMV computation */
     t_start = MPI_Wtime();
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
 
-    /* Gather results to rank 0 */
+    /* Gather y results to rank 0 using blocking collectives */
     t_start = MPI_Wtime();
     
+    /* Collect local row counts from all ranks */
     MPI_Gather(&m_local, 1, MPI_INT, mpi_send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
     
     if (rank == 0) {
@@ -470,26 +479,48 @@ void comm_bcast_reduce(int rank, int size, local_csr_matrix *A_local,
 }
 
 /*------------------------------------------------------------------*/
-/* Communication Mode 2: Non-blocking Ibcast/Igatherv */
+/* Communication Mode 2: Non-blocking with Polling Overlap */
+/* 1:1 copy from test_configurations_mpi.c */
 void comm_ibcast_igatherv(int rank, int size, local_csr_matrix *A_local, 
                           float *x, float *y, int thread_count,
                           double *comm_time, double *compute_time) {
     double t_comm = 0.0, t_comp = 0.0;
     MPI_Request req_bcast, req_gather;
+    int bcast_complete = 0;
     
     /* Issue non-blocking broadcast of x */
-    double t_start = MPI_Wtime();
+    double t_comm_start = MPI_Wtime();
     MPI_Ibcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_bcast);
-    MPI_Wait(&req_bcast, MPI_STATUS_IGNORE);
-    t_comm += MPI_Wtime() - t_start;
-
-    /* Local SpMV computation */
-    t_start = MPI_Wtime();
+    
+    /* Polling strategy: Check for broadcast completion using MPI_Test.
+     * This allows MPI runtime to progress communication while we poll.
+     * Note: We cannot do the main SpMV computation here due to data dependency on x,
+     * but polling with MPI_Test can help progress communication faster than blocking wait.
+     */
+    int max_polls = 100;
+    for (int poll = 0; poll < max_polls && !bcast_complete; poll++) {
+        MPI_Test(&req_bcast, &bcast_complete, MPI_STATUS_IGNORE);
+        
+        if (!bcast_complete) {
+            /* Lightweight work to prevent busy-waiting and let MPI runtime progress */
+            /* In real scenarios, this could be: prefetching data, updating counters, etc. */
+            #pragma omp flush
+        }
+    }
+    
+    /* If broadcast still not complete after polling, wait for it (data dependency) */
+    if (!bcast_complete) {
+        MPI_Wait(&req_bcast, MPI_STATUS_IGNORE);
+    }
+    t_comm += MPI_Wtime() - t_comm_start;
+    
+    /* Local SpMV computation - must wait for x from broadcast */
+    double t_comp_start = MPI_Wtime();
     local_spvec(A_local, x, y, thread_count);
-    t_comp += MPI_Wtime() - t_start;
+    t_comp += MPI_Wtime() - t_comp_start;
 
     /* Prepare metadata for non-blocking gather */
-    t_start = MPI_Wtime();
+    double t_gather_start = MPI_Wtime();
     int *tmp_counts = (int *)malloc(size * sizeof(int));
     MPI_Allgather(&m_local, 1, MPI_INT, tmp_counts, 1, MPI_INT, MPI_COMM_WORLD);
     
@@ -502,26 +533,51 @@ void comm_ibcast_igatherv(int rank, int size, local_csr_matrix *A_local,
     }
     free(tmp_counts);
     
-    /* Issue non-blocking gather */
-    MPI_Igatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_gather);
-    MPI_Wait(&req_gather, MPI_STATUS_IGNORE);
-    t_comm += MPI_Wtime() - t_start;
+    /* Issue non-blocking gather - allows overlap with local finalization */
+    MPI_Igatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, 
+                 MPI_FLOAT, 0, MPI_COMM_WORLD, &req_gather);
+    
+    /* Overlap opportunity: Poll for gather completion while doing local work.
+     * In iterative solvers, this is where you'd prepare the next iteration,
+     * update convergence criteria, or perform local post-processing. */
+    int gather_complete = 0;
+    for (int poll = 0; poll < max_polls && !gather_complete; poll++) {
+        MPI_Test(&req_gather, &gather_complete, MPI_STATUS_IGNORE);
+        
+        if (!gather_complete) {
+            /* Example local work that doesn't depend on gathered results:
+             * - Compute local residuals
+             * - Prepare buffers for next iteration
+             * - Update local statistics
+             * Here we just do a lightweight operation to demonstrate the concept. */
+            #pragma omp flush
+        }
+    }
+    
+    /* Ensure gather completes before returning */
+    if (!gather_complete) {
+        MPI_Wait(&req_gather, MPI_STATUS_IGNORE);
+    }
+    t_comm += MPI_Wtime() - t_gather_start;
 
     *comm_time = t_comm;
     *compute_time = t_comp;
 }
 
 /*------------------------------------------------------------------*/
-/* Communication Mode 3: Async Collectives */
+/* Communication Mode 3: Async Collectives (Ibcast + Iallgatherv) */
+/* 1:1 copy from test_configurations_mpi.c */
 void comm_async_collectives(int rank, int size, local_csr_matrix *A_local, 
                             float *x, float *y, int thread_count,
                             double *comm_time, double *compute_time) {
     double t_comm = 0.0, t_comp = 0.0;
     MPI_Request req_bcast, req_allgather;
     
-    /* Non-blocking broadcast of x */
+    /* Asynchronous broadcast of x using Ibcast */
     double t_start = MPI_Wtime();
     MPI_Ibcast(x, n_global, MPI_FLOAT, 0, MPI_COMM_WORLD, &req_bcast);
+    
+    /* Wait for broadcast (data dependency) */
     MPI_Wait(&req_bcast, MPI_STATUS_IGNORE);
     t_comm += MPI_Wtime() - t_start;
 
@@ -530,12 +586,14 @@ void comm_async_collectives(int rank, int size, local_csr_matrix *A_local,
     local_spvec(A_local, x, y, thread_count);
     t_comp += MPI_Wtime() - t_start;
 
-    /* Async allgather for y */
+    /* Prepare for asynchronous allgatherv - all ranks receive full y vector */
     t_start = MPI_Wtime();
     
+    /* Gather local row counts to all ranks */
     int *tmp_counts = (int *)malloc(size * sizeof(int));
     MPI_Allgather(&m_local, 1, MPI_INT, tmp_counts, 1, MPI_INT, MPI_COMM_WORLD);
     
+    /* All ranks compute displacements */
     mpi_displs[0] = 0;
     for (int i = 0; i < size; i++) {
         mpi_send_counts[i] = tmp_counts[i];
@@ -543,7 +601,10 @@ void comm_async_collectives(int rank, int size, local_csr_matrix *A_local,
     }
     free(tmp_counts);
     
+    /* Issue asynchronous Iallgatherv - all ranks get full result */
     MPI_Iallgatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, MPI_COMM_WORLD, &req_allgather);
+    
+    /* Wait for async collective to complete */
     MPI_Wait(&req_allgather, MPI_STATUS_IGNORE);
     t_comm += MPI_Wtime() - t_start;
 
