@@ -13,20 +13,21 @@
 # Resources requested:
 #   - 8 nodes with 64 cores each (512 cores total, no hyperthreading)
 #   - 16 MPI processes per node max (128 total)
-#   - 4 OpenMP threads per MPI process
+#   - 2 OpenMP threads per MPI process
 #   - 64GB memory per node
 #
-# Weak Scaling Strategy:
-#   - Keep work per process CONSTANT (rows_per_proc fixed)
+# Weak Scaling Strategy (CORRECTED):
+#   - Keep NNZ per process CONSTANT (true weak scaling)
+#   - Rows per process fixed, density decreases as P increases
 #   - Total matrix size scales with process count
 #   - Ideal: constant execution time as P increases
 #
-# Matrix sizes (with rows_per_proc=25000):
-#   2 procs:     400,000 rows
-#   4 procs:     800,000 rows
-#   8 procs:   1,600,000 rows
-#   16 procs:  3,200,000 rows
-#   32 procs:  6,400,000 rows
+# Matrix sizes (with rows_per_proc=200k, nnz_per_proc=40M):
+#   2 procs:    400k×400k matrix,  80M total NNZ, density~0.050%
+#   4 procs:    800k×800k matrix, 160M total NNZ, density~0.025%
+#   8 procs:  1.6M×1.6M matrix,   320M total NNZ, density~0.0125%
+#  16 procs:  3.2M×3.2M matrix,   640M total NNZ, density~0.00625%
+#  32 procs:  6.4M×6.4M matrix,  1.28B total NNZ, density~0.003125%
 #
 
 # Exit on error
@@ -57,8 +58,8 @@ ITERATIONS=10
 # IMPORTANT: 200k rows/proc provides sufficient compute/comm ratio
 # Previous 25k was too small - communication dominated (96%+ overhead)
 # Target: compute time > 50ms per iteration for valid weak scaling
-ROWS_PER_PROC=200000    # Each process handles 200k rows (8× previous, adequate work per process)
-DENSITY_PCT=0.05        # 0.05% density (sparse but sufficient NNZ for computation)
+ROWS_PER_PROC=200000    # Each process handles 200k rows
+NNZ_PER_PROC=40000000   # 40M NNZ per process (constant work per process)
 
 # Set OpenMP environment
 export OMP_NUM_THREADS=$THREADS_PER_RANK
@@ -79,13 +80,14 @@ echo "Configuration:"
 echo "  Threads per MPI rank: $THREADS_PER_RANK"
 echo "  Iterations per test: $ITERATIONS"
 echo "  Rows per process: $ROWS_PER_PROC"
-echo "  Target density: $DENSITY_PCT%"
+echo "  Target NNZ per process: $NNZ_PER_PROC (~40M)"
 echo "  Process counts: ${PROCESS_COUNTS[*]}"
 echo ""
-echo "Weak Scaling Matrix Sizes:"
+echo "Weak Scaling Matrix Sizes (constant NNZ per process):"
 for NP in "${PROCESS_COUNTS[@]}"; do
     TOTAL_ROWS=$((NP * ROWS_PER_PROC))
-    echo "  $NP processes: $TOTAL_ROWS × $TOTAL_ROWS matrix"
+    TOTAL_NNZ=$((NP * NNZ_PER_PROC))
+    echo "  $NP processes: ${TOTAL_ROWS}×${TOTAL_ROWS} matrix, ~$((TOTAL_NNZ / 1000000))M total NNZ"
 done
 echo ""
 
@@ -107,18 +109,20 @@ cd ..
 # Run benchmarks for each process count
 for NP in "${PROCESS_COUNTS[@]}"; do
     TOTAL_ROWS=$((NP * ROWS_PER_PROC))
+    TOTAL_NNZ=$((NP * NNZ_PER_PROC))
     TOTAL_THREADS=$((NP * THREADS_PER_RANK))
     
     echo "=============================================="
     echo "  Process Count: $NP"
     echo "  Matrix Size: $TOTAL_ROWS × $TOTAL_ROWS"
+    echo "  Target Total NNZ: ~$((TOTAL_NNZ / 1000000))M"
     echo "  Total Threads: $TOTAL_THREADS"
     echo "=============================================="
     
     # Run the benchmark
     mpirun -np $NP \
         --bind-to none \
-        ./src/test_weak_scaling $ROWS_PER_PROC $DENSITY_PCT $ITERATIONS
+        ./src/test_weak_scaling $ROWS_PER_PROC $NNZ_PER_PROC $ITERATIONS
     
     if [ $? -eq 0 ]; then
         echo "Completed successfully"

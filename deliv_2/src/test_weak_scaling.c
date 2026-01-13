@@ -3,30 +3,32 @@
  *
  * Purpose:  
  *     Weak scaling benchmark for distributed SpMV with MPI.
- *     Keeps work per process constant by scaling matrix size with process count.
- *     Generates matrices on-the-fly based on process count.
+ *     Keeps work per process constant (NNZ per process) by decreasing density
+ *     as matrix size grows with process count.
  *
  * Compile:  mpicc -g -Wall -O3 -fopenmp -o test_weak_scaling \
  *               test_weak_scaling.c generator.c m_to_csr.c -lm
  * 
  * Usage:
- *     mpirun -np <P> ./test_weak_scaling <base_rows_per_proc> <density_pct> [iterations]
- *     Example: mpirun -np 4 ./test_weak_scaling 200000 0.05 10
+ *     mpirun -np <P> ./test_weak_scaling <rows_per_proc> <nnz_per_proc> [iterations]
+ *     Example: mpirun -np 4 ./test_weak_scaling 200000 40000000 10
  *
  * Weak Scaling Strategy:
- *     - Base: rows_per_proc rows assigned to each MPI process
- *     - Matrix size = rows_per_proc × num_procs
- *     - Density kept constant across all scales
+ *     - Each MPI process handles rows_per_proc rows
+ *     - Matrix size = rows_per_proc × num_procs (grows with P)
+ *     - NNZ per process = constant (nnz_per_proc parameter)
+ *     - Density automatically decreases as matrix size grows
  *     - Ideal weak scaling: constant execution time as P increases
  *
- * IMPORTANT: rows_per_proc should be at least 100k-200k for valid weak scaling.
- *     With 25k rows/proc, communication overhead dominates (96%+).
- *     Recommended: 200k rows/proc, 0.05% density for compute/comm ratio > 10:1
+ * Example with 200k rows/proc, 40M nnz/proc:
+ *     2 procs:  400k×400k matrix, density=0.050%, 80M total NNZ
+ *     4 procs:  800k×800k matrix, density=0.025%, 160M total NNZ
+ *     8 procs:  1.6M×1.6M matrix, density=0.0125%, 320M total NNZ
  *
  * Notes:  
  *     - Tests 3 MPI communication modes (same as configurations benchmark)
  *     - Matrix generated and distributed across ranks
- *     - 16 MPI ranks per node max, 4 threads per rank (64 threads/node)
+ *     - 16 MPI ranks per node max, 2 threads per rank
  *     - Outputs CSV: results/weak_scaling_results.csv
  */
 
@@ -79,7 +81,7 @@ typedef struct {
 } local_csr_matrix;
 
 /* Function prototypes */
-local_csr_matrix* generate_local_matrix(int local_rows, int global_cols, double density_pct, unsigned int seed);
+local_csr_matrix* generate_local_matrix(int local_rows, int global_cols, long long target_nnz, unsigned int seed);
 void first_touch_init(int thread_count);
 void local_spvec(local_csr_matrix *A_local, float *x, float *y, int thread_count);
 
@@ -101,7 +103,7 @@ void run_benchmark(CommMode *mode, int rank, int size, local_csr_matrix *A_local
 double calculate_std_dev(double times[], int count, double mean);
 int compare_doubles(const void *a, const void *b);
 void print_results(CommMode modes[], int num_modes, int rank, int size, 
-                   int rows_per_proc, double density_pct, int iterations);
+                   int rows_per_proc, long long nnz_per_proc, int iterations);
 
 /*------------------------------------------------------------------*/
 int main(int argc, char* argv[]) {
@@ -111,29 +113,31 @@ int main(int argc, char* argv[]) {
     
     if (argc < 3 || argc > 4) {
         if (global_rank == 0) {
-            fprintf(stderr, "usage: mpirun -np <num_ranks> %s <rows_per_proc> <density_pct> [iterations]\n", argv[0]);
-            fprintf(stderr, "Example: mpirun -np 4 %s 200000 0.05 10\n", argv[0]);
-            fprintf(stderr, "\nWeak Scaling: matrix_size = rows_per_proc × num_procs\n");
-            fprintf(stderr, "  2 procs:    400,000 rows\n");
-            fprintf(stderr, "  4 procs:    800,000 rows\n");
-            fprintf(stderr, "  8 procs:  1,600,000 rows\n");
-            fprintf(stderr, "  16 procs: 3,200,000 rows\n");
-            fprintf(stderr, "  etc.\n");
-            fprintf(stderr, "\nIMPORTANT: Use at least 100k-200k rows_per_proc for valid weak scaling.\n");
-            fprintf(stderr, "           With small sizes (25k), communication dominates (96%+ overhead).\n");
+            fprintf(stderr, "usage: mpirun -np <num_ranks> %s <rows_per_proc> <nnz_per_proc> [iterations]\n", argv[0]);
+            fprintf(stderr, "Example: mpirun -np 4 %s 200000 40000000 10\n", argv[0]);
+            fprintf(stderr, "\nWeak Scaling: Each process handles constant work (NNZ per process)\n");
+            fprintf(stderr, "  Matrix rows = rows_per_proc × num_procs (grows with P)\n");
+            fprintf(stderr, "  NNZ per process = constant (same work per process)\n");
+            fprintf(stderr, "  Density automatically decreases as matrix size grows\n");
+            fprintf(stderr, "\nExample with 200k rows/proc, 40M nnz/proc:\n");
+            fprintf(stderr, "  2 procs:    400k rows, density=0.050%%\n");
+            fprintf(stderr, "  4 procs:    800k rows, density=0.025%%\n");
+            fprintf(stderr, "  8 procs:  1,600k rows, density=0.0125%%\n");
+            fprintf(stderr, "  16 procs: 3,200k rows, density=0.00625%%\n");
+            fprintf(stderr, "\nThis ensures computation time remains constant per process.\n");
         }
         MPI_Finalize();
         exit(1);
     }
 
     int rows_per_proc = atoi(argv[1]);
-    double density_pct = atof(argv[2]);
+    long long nnz_per_proc = atoll(argv[2]);
     int num_iterations = (argc == 4) ? atoi(argv[3]) : 50;
     
     /* Validate parameters */
-    if (rows_per_proc <= 0 || density_pct <= 0 || density_pct > 100) {
+    if (rows_per_proc <= 0 || nnz_per_proc <= 0) {
         if (global_rank == 0) {
-            fprintf(stderr, "ERROR: Invalid parameters. rows_per_proc > 0, 0 < density_pct <= 100\n");
+            fprintf(stderr, "ERROR: Invalid parameters. rows_per_proc > 0, nnz_per_proc > 0\n");
         }
         MPI_Finalize();
         exit(1);
@@ -145,6 +149,13 @@ int main(int argc, char* argv[]) {
     m_local = rows_per_proc;
     row_start = global_rank * rows_per_proc;
     row_end = row_start + rows_per_proc;
+    
+    /* Calculate effective density for this process count 
+     * For true weak scaling: NNZ per process is constant
+     * density = nnz_per_proc / (rows_per_proc × n_global)
+     * As P increases, n_global increases, so density decreases
+     */
+    double effective_density_pct = 100.0 * (double)nnz_per_proc / ((double)rows_per_proc * (double)n_global);
     
     /* Determine thread count */
     int thread_count;
@@ -160,15 +171,18 @@ int main(int argc, char* argv[]) {
         printf("\n=== Weak Scaling Benchmark ===\n");
         printf("MPI Ranks: %d, Threads/rank: %d\n", global_size, thread_count);
         printf("Rows per process: %d\n", rows_per_proc);
-        printf("Target density: %.4f%%\n", density_pct);
+        printf("Target NNZ per process: %lld\n", nnz_per_proc);
+        printf("Effective density: %.6f%%\n", effective_density_pct);
         printf("Global matrix: %d × %d\n", m_global, n_global);
         printf("Iterations: %d\n\n", num_iterations);
         printf("Testing 3 MPI communication modes...\n\n");
     }
     
-    /* Generate local matrix portion - each rank generates its own rows */
+    /* Generate local matrix portion - each rank generates its own rows 
+     * Key: We pass nnz_per_proc directly to ensure constant work per process
+     */
     unsigned int seed = 42 + global_rank * 1000;  // Different seed per rank for variety
-    local_csr_matrix *A_local = generate_local_matrix(rows_per_proc, n_global, density_pct, seed);
+    local_csr_matrix *A_local = generate_local_matrix(rows_per_proc, n_global, nnz_per_proc, seed);
     
     if (!A_local) {
         fprintf(stderr, "Rank %d: Failed to generate local matrix\n", global_rank);
@@ -181,10 +195,14 @@ int main(int argc, char* argv[]) {
     MPI_Allreduce(&nnz_local, &nnz_global, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
     
     double actual_density = (nnz_global / (double)((long long)m_global * (long long)n_global)) * 100.0;
+    long long expected_total_nnz = nnz_per_proc * global_size;
     
     if (global_rank == 0) {
-        printf("Generated matrix: %d × %d, %lld NNZ (%.4f%% actual density)\n\n", 
-               m_global, n_global, nnz_global, actual_density);
+        printf("Generated matrix: %d × %d\n", m_global, n_global);
+        printf("  Expected total NNZ: %lld (%.2f M), Actual: %lld (%.2f M)\n", 
+               expected_total_nnz, expected_total_nnz / 1e6, nnz_global, nnz_global / 1e6);
+        printf("  Actual density: %.6f%%\n", actual_density);
+        printf("  NNZ per process: ~%lld (target: %lld)\n\n", nnz_global / global_size, nnz_per_proc);
     }
 
     /* Allocate and generate x_global on all ranks */
@@ -252,7 +270,7 @@ int main(int argc, char* argv[]) {
 
     /* Print results on rank 0 */
     if (global_rank == 0) {
-        print_results(modes, num_modes, global_rank, global_size, rows_per_proc, density_pct, num_iterations);
+        print_results(modes, num_modes, global_rank, global_size, rows_per_proc, nnz_per_proc, num_iterations);
     }
 
     /* Cleanup */
@@ -276,17 +294,18 @@ int main(int argc, char* argv[]) {
 }
 
 /*------------------------------------------------------------------*/
-/* Generate local CSR matrix with specified density */
-local_csr_matrix* generate_local_matrix(int local_rows, int global_cols, double density_pct, unsigned int seed) {
+/* Generate local CSR matrix with specified NNZ target (for weak scaling) */
+local_csr_matrix* generate_local_matrix(int local_rows, int global_cols, long long target_nnz, unsigned int seed) {
     local_csr_matrix *A = (local_csr_matrix *)malloc(sizeof(local_csr_matrix));
     if (!A) return NULL;
     
     A->rows = local_rows;
     A->cols = global_cols;
     
-    /* Estimate NNZ based on density */
-    double expected_nnz_per_row = (density_pct / 100.0) * global_cols;
-    long long estimated_nnz = (long long)(expected_nnz_per_row * local_rows * 1.2);  // 20% buffer
+    /* For true weak scaling, we want constant NNZ per process 
+     * Calculate expected NNZ per row to achieve target total NNZ */
+    double expected_nnz_per_row = (double)target_nnz / (double)local_rows;
+    long long estimated_nnz = (long long)(target_nnz * 1.2);  // 20% buffer
     if (estimated_nnz < local_rows) estimated_nnz = local_rows;  // At least one per row
     
     /* Allocate row_ptr */
@@ -313,63 +332,48 @@ local_csr_matrix* generate_local_matrix(int local_rows, int global_cols, double 
     long long nnz_count = 0;
     A->row_ptr[0] = 0;
     
-    double prob_threshold = density_pct / 100.0;
-    
     for (int i = 0; i < local_rows; i++) {
         int row_nnz = 0;
         
-        /* For very sparse matrices, use random column selection instead of full scan */
-        if (density_pct < 1.0) {
-            /* Target number of non-zeros for this row */
-            int target_nnz = (int)(expected_nnz_per_row);
-            if (target_nnz < 1) target_nnz = 1;
+        /* Target number of non-zeros for this row (with some randomness) */
+        int base_nnz = (int)(expected_nnz_per_row);
+        int variance = (base_nnz > 10) ? (rand() % (base_nnz / 5 + 1)) - (base_nnz / 10) : (rand() % 3) - 1;
+        int target_row_nnz = base_nnz + variance;
+        if (target_row_nnz < 1) target_row_nnz = 1;
+        if (target_row_nnz > global_cols) target_row_nnz = global_cols;
+        
+        /* Generate random column indices */
+        for (int j = 0; j < target_row_nnz && nnz_count + row_nnz < estimated_nnz; j++) {
+            int col = rand() % global_cols;
             
-            /* Add some randomness to target */
-            target_nnz = target_nnz + (rand() % 3) - 1;
-            if (target_nnz < 1) target_nnz = 1;
-            
-            /* Generate random column indices */
-            for (int j = 0; j < target_nnz && nnz_count + row_nnz < estimated_nnz; j++) {
-                int col = rand() % global_cols;
-                
-                /* Check for duplicates (simple linear search, OK for small target_nnz) */
-                int duplicate = 0;
-                for (int k = 0; k < row_nnz; k++) {
-                    if (col_ind_temp[nnz_count + k] == col) {
-                        duplicate = 1;
-                        break;
-                    }
-                }
-                
-                if (!duplicate) {
-                    col_ind_temp[nnz_count + row_nnz] = col;
-                    values_temp[nnz_count + row_nnz] = ((float)(rand() % 1000) / 100.0f) - 5.0f;
-                    row_nnz++;
+            /* Check for duplicates (simple linear search, OK for small target_row_nnz) */
+            int duplicate = 0;
+            for (int k = 0; k < row_nnz; k++) {
+                if (col_ind_temp[nnz_count + k] == col) {
+                    duplicate = 1;
+                    break;
                 }
             }
             
-            /* Sort column indices for this row (insertion sort, small arrays) */
-            for (int j = 1; j < row_nnz; j++) {
-                int key_col = col_ind_temp[nnz_count + j];
-                float key_val = values_temp[nnz_count + j];
-                int k = j - 1;
-                while (k >= 0 && col_ind_temp[nnz_count + k] > key_col) {
-                    col_ind_temp[nnz_count + k + 1] = col_ind_temp[nnz_count + k];
-                    values_temp[nnz_count + k + 1] = values_temp[nnz_count + k];
-                    k--;
-                }
-                col_ind_temp[nnz_count + k + 1] = key_col;
-                values_temp[nnz_count + k + 1] = key_val;
+            if (!duplicate) {
+                col_ind_temp[nnz_count + row_nnz] = col;
+                values_temp[nnz_count + row_nnz] = ((float)(rand() % 1000) / 100.0f) - 5.0f;
+                row_nnz++;
             }
-        } else {
-            /* For denser matrices, scan columns with probability */
-            for (int j = 0; j < global_cols && nnz_count + row_nnz < estimated_nnz; j++) {
-                if ((double)rand() / RAND_MAX < prob_threshold) {
-                    col_ind_temp[nnz_count + row_nnz] = j;
-                    values_temp[nnz_count + row_nnz] = ((float)(rand() % 1000) / 100.0f) - 5.0f;
-                    row_nnz++;
-                }
+        }
+        
+        /* Sort column indices for this row (insertion sort, small arrays) */
+        for (int j = 1; j < row_nnz; j++) {
+            int key_col = col_ind_temp[nnz_count + j];
+            float key_val = values_temp[nnz_count + j];
+            int k = j - 1;
+            while (k >= 0 && col_ind_temp[nnz_count + k] > key_col) {
+                col_ind_temp[nnz_count + k + 1] = col_ind_temp[nnz_count + k];
+                values_temp[nnz_count + k + 1] = values_temp[nnz_count + k];
+                k--;
             }
+            col_ind_temp[nnz_count + k + 1] = key_col;
+            values_temp[nnz_count + k + 1] = key_val;
         }
         
         /* Ensure at least one element per row (diagonal) */
@@ -680,7 +684,7 @@ double calculate_std_dev(double times[], int count, double mean) {
 
 /*------------------------------------------------------------------*/
 void print_results(CommMode modes[], int num_modes, int rank, int size, 
-                   int rows_per_proc, double density_pct, int iterations) {
+                   int rows_per_proc, long long nnz_per_proc, int iterations) {
     printf("\n=== Weak Scaling Results ===\n");
     printf("%-25s | Avg Time (ms) | Std Dev  | Comm (ms) | Comp (ms)\n", "Configuration");
     printf("%-25s | --------------|----------|-----------|----------\n", "---------------");
@@ -714,20 +718,15 @@ void print_results(CommMode modes[], int num_modes, int rank, int size,
 
     /* Write header if file doesn't exist */
     if (!file_exists) {
-        fprintf(csv, "num_procs,rows_per_proc,global_rows,global_cols,nnz,density_pct,config_name,avg_time_ms,std_dev_ms,min_time_ms,max_time_ms,comm_time_ms,compute_time_ms,iterations,notes\n");
+        fprintf(csv, "num_procs,rows_per_proc,nnz_per_proc,global_rows,global_cols,total_nnz,density_pct,config_name,avg_time_ms,std_dev_ms,min_time_ms,max_time_ms,comm_time_ms,compute_time_ms,iterations,notes\n");
     }
 
     /* Write data rows */
     double actual_density = (nnz_global / (double)((long long)m_global * (long long)n_global)) * 100.0;
     
     for (int i = 0; i < num_modes; i++) {
-        fprintf(csv, "%d,%d,%d,%d,%lld,%.6f,%s,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%d,\"weak_scaling\"\n",
-                size, rows_per_proc, m_global, n_global, nnz_global, 
-                actual_density, modes[i].name,
-                modes[i].avg_time * 1000, modes[i].std_dev * 1000, 
-                modes[i].min_time * 1000, modes[i].max_time * 1000,
-                modes[i].comm_time * 1000, modes[i].compute_time * 1000, 
-                iterations);
+        fprintf(csv, "%d,%d,%lld,%d,%d,%lld,%.6f,%s,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%d,\"weak_scaling\"\n",
+                size, rows_per_proc, nnz_per_proc, m_global, n_global, nnz_global, 
     }
 
     fclose(csv);

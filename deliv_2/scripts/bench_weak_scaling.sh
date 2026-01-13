@@ -2,19 +2,24 @@
 #
 # Weak Scaling Benchmark Script
 # 
-# Usage: ./bench_weak_scaling.sh [rows_per_proc] [density_pct] [iterations]
-# Example: ./bench_weak_scaling.sh 25000 0.01 10
+# Usage: ./bench_weak_scaling.sh [rows_per_proc] [nnz_per_proc] [iterations]
+# Example: ./bench_weak_scaling.sh 200000 40000000 10
 #
-# Weak Scaling: matrix size scales with process count, work per process constant
+# Weak Scaling: Each process handles constant work (NNZ per process)
+# - Matrix rows = rows_per_proc × num_procs (grows with P)
+# - NNZ per process = constant (same work per process)
+# - Density automatically decreases as matrix size grows
 #
 
 set -e
 
 # Default parameters
-# IMPORTANT: 200k rows/proc provides sufficient compute/comm ratio
-# Previous 25k was too small - communication dominated (96%+ overhead)
+# IMPORTANT: 200k rows/proc with 40M nnz/proc provides:
+#   - Good compute/comm ratio
+#   - Constant work per process as P increases
+#   - Density decreases as P increases to maintain constant NNZ
 ROWS_PER_PROC=${1:-200000}
-DENSITY_PCT=${2:-0.05}
+NNZ_PER_PROC=${2:-40000000}   # 40M NNZ per process (was 0.05% density)
 ITERATIONS=10
 THREADS_PER_RANK=4
 
@@ -45,10 +50,17 @@ echo "  Weak Scaling Benchmark"
 echo "=============================================="
 echo "Date: $(date)"
 echo "Rows per process: $ROWS_PER_PROC"
-echo "Target density: $DENSITY_PCT%"
+echo "Target NNZ per process: $NNZ_PER_PROC (~$((NNZ_PER_PROC / 1000000))M)"
 echo "Iterations: $ITERATIONS"
 echo "Threads per rank: $THREADS_PER_RANK"
 echo "Process counts: ${PROCESS_COUNTS[*]}"
+echo ""
+echo "Expected matrix sizes:"
+for NP in "${PROCESS_COUNTS[@]}"; do
+    TOTAL_ROWS=$((NP * ROWS_PER_PROC))
+    TOTAL_NNZ=$((NP * NNZ_PER_PROC))
+    printf "  %2d procs: %d×%d matrix, %.0fM total NNZ\n" $NP $TOTAL_ROWS $TOTAL_ROWS $((TOTAL_NNZ / 1000000))
+done
 echo ""
 
 # Compile if needed
@@ -65,15 +77,17 @@ fi
 # Run benchmarks
 for NP in "${PROCESS_COUNTS[@]}"; do
     TOTAL_ROWS=$((NP * ROWS_PER_PROC))
+    TOTAL_NNZ=$((NP * NNZ_PER_PROC))
     
     echo "----------------------------------------------"
     echo "Process Count: $NP"
     echo "Matrix Size: $TOTAL_ROWS × $TOTAL_ROWS"
+    echo "Expected Total NNZ: ~$((TOTAL_NNZ / 1000000))M"
     echo "----------------------------------------------"
     
     mpirun -np $NP \
         --bind-to none \
-        "$SRC_DIR/test_weak_scaling" $ROWS_PER_PROC $DENSITY_PCT $ITERATIONS
+        "$SRC_DIR/test_weak_scaling" $ROWS_PER_PROC $NNZ_PER_PROC $ITERATIONS
     
     echo ""
 done
