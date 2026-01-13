@@ -43,13 +43,13 @@ ITERATIONS=10
 
 # Test matrices (larger matrices for meaningful MPI scaling)
 MATRICES=(
-    "1438k_0p0016.mtx" 
-     "1565k_0p0024.mtx"  
-     "41292k_0p0001.mtx"  
-     "916k_0p0006.mtx"
-     "1508k_0p0012.mtx"  
-     "2097k_0p0001.mtx"  
-     "4848k_0p0003.mtx"
+    "matrices/1438k_0p0016.mtx" 
+    "matrices/1565k_0p0024.mtx"  
+    "matrices/41292k_0p0001.mtx"  
+    "matrices/916k_0p0006.mtx"
+    "matrices/1508k_0p0012.mtx"  
+    "matrices/2097k_0p0001.mtx"  
+    "matrices/4848k_0p0003.mtx"
 )
 
 # Set OpenMP environment
