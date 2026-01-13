@@ -514,18 +514,17 @@ void comm_async_collectives(int rank, int size, csr_matrix *A_local,
  * - Selective distribution: Avoids sending data that won't be used
  * - Background sends: Rank 0 sends happen in background during computation
  */
-void comm_pipelined_chunked(int rank, int size, csr_matrix *A_local, 
-                            float *x, float *y, int thread_count,
-                            double *comm_time, double *compute_time) {
+/* Optimized Communication Mode 4: Pipelined with Preprocessing */
+void comm_pipelined_chunked_optimized(int rank, int size, csr_matrix *A_local, 
+                                       float *x, float *y, int thread_count,
+                                       double *comm_time, double *compute_time) {
     double t_comm = 0.0, t_comp = 0.0;
     
-    /* Determine number of chunks */
     int num_chunks = (global_size < 4) ? 4 : global_size * 2;
     if (num_chunks > n_global) num_chunks = n_global;
-    
     int chunk_size = (n_global + num_chunks - 1) / num_chunks;
     
-    /* Phase 1: Determine which chunks this rank needs (preprocessing) */
+    /* Phase 1: Determine which chunks this rank needs */
     int *need_chunk = (int *)calloc(num_chunks, sizeof(int));
     if (!need_chunk) {
         fprintf(stderr, "Rank %d: Failed to allocate need_chunk\n", rank);
@@ -533,7 +532,6 @@ void comm_pipelined_chunked(int rank, int size, csr_matrix *A_local,
         exit(1);
     }
     
-    /* Scan local matrix to see which column ranges have non-zeros */
     for (long long j = 0; j < A_local->nnz; j++) {
         int col = A_local->col_ind[j];
         int chunk_id = col / chunk_size;
@@ -542,7 +540,71 @@ void comm_pipelined_chunked(int rank, int size, csr_matrix *A_local,
         }
     }
     
-    /* Phase 2: Exchange communication plan - gather all ranks' needs at rank 0 */
+    /* Phase 2: Preprocess CSR - build per-chunk index structure */
+    typedef struct {
+        int row;
+        long long nz_start;
+        long long nz_end;
+    } ChunkRowData;
+    
+    ChunkRowData **chunk_data = (ChunkRowData **)calloc(num_chunks, sizeof(ChunkRowData *));
+    int *chunk_row_count = (int *)calloc(num_chunks, sizeof(int));
+    
+    if (!chunk_data || !chunk_row_count) {
+        fprintf(stderr, "Rank %d: Failed to allocate chunk structures\n", rank);
+        MPI_Finalize();
+        exit(1);
+    }
+    
+    /* Count rows per chunk */
+    for (int i = 0; i < m_local; i++) {
+        int chunks_in_row[num_chunks];
+        memset(chunks_in_row, 0, num_chunks * sizeof(int));
+        
+        for (long long j = A_local->row_ptr[i]; j < A_local->row_ptr[i + 1]; j++) {
+            int col = A_local->col_ind[j];
+            int chunk_id = col / chunk_size;
+            if (chunk_id < num_chunks && !chunks_in_row[chunk_id]) {
+                chunks_in_row[chunk_id] = 1;
+                chunk_row_count[chunk_id]++;
+            }
+        }
+    }
+    
+    /* Allocate chunk data arrays */
+    for (int c = 0; c < num_chunks; c++) {
+        if (chunk_row_count[c] > 0) {
+            chunk_data[c] = (ChunkRowData *)malloc(chunk_row_count[c] * sizeof(ChunkRowData));
+            if (!chunk_data[c]) {
+                fprintf(stderr, "Rank %d: Failed to allocate chunk_data[%d]\n", rank, c);
+                MPI_Finalize();
+                exit(1);
+            }
+        }
+    }
+    
+    /* Build chunk indices - store row and NZ range for each chunk */
+    int *chunk_idx = (int *)calloc(num_chunks, sizeof(int));
+    for (int i = 0; i < m_local; i++) {
+        for (long long j = A_local->row_ptr[i]; j < A_local->row_ptr[i + 1]; j++) {
+            int col = A_local->col_ind[j];
+            int chunk_id = col / chunk_size;
+            if (chunk_id < num_chunks) {
+                int idx = chunk_idx[chunk_id];
+                if (idx == 0 || chunk_data[chunk_id][idx-1].row != i) {
+                    chunk_data[chunk_id][idx].row = i;
+                    chunk_data[chunk_id][idx].nz_start = j;
+                    chunk_data[chunk_id][idx].nz_end = j + 1;
+                    chunk_idx[chunk_id]++;
+                } else {
+                    chunk_data[chunk_id][idx-1].nz_end = j + 1;
+                }
+            }
+        }
+    }
+    free(chunk_idx);
+    
+    /* Phase 3: Exchange communication plan */
     int *all_needs = NULL;
     if (rank == 0) {
         all_needs = (int *)malloc(size * num_chunks * sizeof(int));
@@ -565,16 +627,18 @@ void comm_pipelined_chunked(int rank, int size, csr_matrix *A_local,
     
     MPI_Barrier(MPI_COMM_WORLD);
     
-    /* Allocate chunk buffer for receiving/sending - single buffer is safe with blocking receives */
-    float *x_chunk = NULL;
-    if (posix_memalign((void**)&x_chunk, 64, chunk_size * sizeof(float)) != 0) {
-        fprintf(stderr, "Rank %d: Failed to allocate x_chunk\n", rank);
-        MPI_Finalize();
-        exit(1);
+    /* Allocate double buffers for overlap */
+    float *x_chunk[2];
+    for (int b = 0; b < 2; b++) {
+        if (posix_memalign((void**)&x_chunk[b], 64, chunk_size * sizeof(float)) != 0) {
+            fprintf(stderr, "Rank %d: Failed to allocate x_chunk[%d]\n", rank, b);
+            MPI_Finalize();
+            exit(1);
+        }
     }
     
-    /* Allocate request arrays for non-blocking sends (rank 0 only) */
     MPI_Request *send_reqs = NULL;
+    MPI_Request recv_req = MPI_REQUEST_NULL;
     
     if (rank == 0) {
         send_reqs = (MPI_Request *)malloc(size * num_chunks * sizeof(MPI_Request));
@@ -585,12 +649,10 @@ void comm_pipelined_chunked(int rank, int size, csr_matrix *A_local,
         }
     }
     
-    /* Phase 3: Rank 0 posts all non-blocking sends upfront */
+    /* Phase 4: Rank 0 posts all sends */
     int send_count = 0;
-    
     t_comm_start = MPI_Wtime();
     if (rank == 0) {
-        /* Rank 0 sends chunks to all ranks that need them (except itself) */
         for (int c = 0; c < num_chunks; c++) {
             int chunk_start = c * chunk_size;
             int chunk_end = (c == num_chunks - 1) ? n_global : (c + 1) * chunk_size;
@@ -606,53 +668,98 @@ void comm_pipelined_chunked(int rank, int size, csr_matrix *A_local,
     }
     t_comm += MPI_Wtime() - t_comm_start;
     
-    /* Phase 4: Process chunks sequentially with pipelined receive */
+    /* Phase 5: Pipelined processing with double buffering */
+    int current_buf = 0;
+    int next_chunk_to_prefetch = -1;
+    
+    /* Find first chunk to prefetch */
     for (int c = 0; c < num_chunks; c++) {
-        if (!need_chunk[c]) continue;  /* Skip chunks this rank doesn't need */
+        if (need_chunk[c]) {
+            next_chunk_to_prefetch = c;
+            break;
+        }
+    }
+    
+    for (int c = 0; c < num_chunks; c++) {
+        if (!need_chunk[c]) continue;
         
         int chunk_start = c * chunk_size;
         int chunk_end = (c == num_chunks - 1) ? n_global : (c + 1) * chunk_size;
         int actual_chunk_size = chunk_end - chunk_start;
         
-        /* Receive this chunk (or use local x if rank 0) */
+        /* Receive current chunk */
         t_comm_start = MPI_Wtime();
         if (rank == 0) {
-            /* Rank 0 has x locally, just copy from local buffer */
-            memcpy(x_chunk, x + chunk_start, actual_chunk_size * sizeof(float));
+            memcpy(x_chunk[current_buf], x + chunk_start, actual_chunk_size * sizeof(float));
         } else {
-            /* Other ranks receive chunk from rank 0 */
-            MPI_Recv(x_chunk, actual_chunk_size, MPI_FLOAT, 0, c, 
+            MPI_Recv(x_chunk[current_buf], actual_chunk_size, MPI_FLOAT, 0, c, 
                      MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
         t_comm += MPI_Wtime() - t_comm_start;
         
-        /* Compute SpMV contribution using this chunk */
+        /* Prefetch next chunk in background (non-blocking) if available */
+        if (rank != 0 && next_chunk_to_prefetch >= 0 && next_chunk_to_prefetch > c) {
+            int next_start = next_chunk_to_prefetch * chunk_size;
+            int next_end = (next_chunk_to_prefetch == num_chunks - 1) ? n_global : 
+                           (next_chunk_to_prefetch + 1) * chunk_size;
+            int next_size = next_end - next_start;
+            
+            t_comm_start = MPI_Wtime();
+            MPI_Irecv(x_chunk[1 - current_buf], next_size, MPI_FLOAT, 0, 
+                     next_chunk_to_prefetch, MPI_COMM_WORLD, &recv_req);
+            t_comm += MPI_Wtime() - t_comm_start;
+        }
+        
+        /* Compute using preprocessed chunk structure - NO atomic needed! */
         double t_comp_start = MPI_Wtime();
-        #pragma omp parallel for schedule(dynamic) num_threads(thread_count) \
-            default(none) shared(A_local, x_chunk, y, m_local, chunk_start, chunk_end, thread_count)
-        for (int i = 0; i < m_local; i++) {
+        float *x_buf = x_chunk[current_buf];
+        
+        #pragma omp parallel for schedule(dynamic, 8) num_threads(thread_count) \
+            default(none) shared(chunk_data, chunk_row_count, A_local, x_buf, y, \
+                                 c, chunk_start, chunk_end)
+        for (int r = 0; r < chunk_row_count[c]; r++) {
+            int i = chunk_data[c][r].row;
             float sum = 0.0f;
+            
             #pragma omp simd reduction(+:sum)
-            for (long long j = A_local->row_ptr[i]; j < A_local->row_ptr[i + 1]; j++) {
+            for (long long j = chunk_data[c][r].nz_start; j < chunk_data[c][r].nz_end; j++) {
                 int col = A_local->col_ind[j];
                 if (col >= chunk_start && col < chunk_end) {
-                    sum += A_local->values[j] * x_chunk[col - chunk_start];
+                    sum += A_local->values[j] * x_buf[col - chunk_start];
                 }
             }
-            #pragma omp atomic
-            y[i] += sum;
+            y[i] += sum;  // NO ATOMIC - each thread has unique i
         }
         t_comp += MPI_Wtime() - t_comp_start;
+        
+        /* Wait for prefetch to complete before next iteration */
+        if (recv_req != MPI_REQUEST_NULL) {
+            t_comm_start = MPI_Wtime();
+            MPI_Wait(&recv_req, MPI_STATUS_IGNORE);
+            t_comm += MPI_Wtime() - t_comm_start;
+            recv_req = MPI_REQUEST_NULL;
+        }
+        
+        /* Find next chunk to prefetch */
+        next_chunk_to_prefetch = -1;
+        for (int nc = c + 1; nc < num_chunks; nc++) {
+            if (need_chunk[nc]) {
+                next_chunk_to_prefetch = nc;
+                break;
+            }
+        }
+        
+        current_buf = 1 - current_buf;
     }
     
-    /* Wait for all sends to complete (rank 0 only) */
+    /* Wait for all sends */
     if (rank == 0 && send_count > 0) {
         t_comm_start = MPI_Wtime();
         MPI_Waitall(send_count, send_reqs, MPI_STATUSES_IGNORE);
         t_comm += MPI_Wtime() - t_comm_start;
     }
     
-    /* Phase 5: Gather y results to rank 0 */
+    /* Phase 6: Gather results */
     t_comm_start = MPI_Wtime();
     MPI_Gather(&m_local, 1, MPI_INT, mpi_send_counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
     
@@ -663,12 +770,18 @@ void comm_pipelined_chunked(int rank, int size, csr_matrix *A_local,
         }
     }
     
-    MPI_Gatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(y, m_local, MPI_FLOAT, mpi_y_global, mpi_send_counts, mpi_displs, 
+                MPI_FLOAT, 0, MPI_COMM_WORLD);
     t_comm += MPI_Wtime() - t_comm_start;
     
     /* Cleanup */
     free(need_chunk);
-    free(x_chunk);
+    free(chunk_row_count);
+    for (int c = 0; c < num_chunks; c++) {
+        if (chunk_data[c]) free(chunk_data[c]);
+    }
+    free(chunk_data);
+    for (int b = 0; b < 2; b++) free(x_chunk[b]);
     if (rank == 0) {
         free(all_needs);
         free(send_reqs);
