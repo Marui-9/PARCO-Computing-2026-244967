@@ -201,20 +201,26 @@ def generate_recommendations(df):
     by_efficiency = sorted(strategies, key=lambda s: metrics.get(s, {}).get('avg_efficiency', 0), reverse=True)
     
     print("**1. Load Balance Quality**")
-    print(f"   Best → Worst: {' > '.join(by_imbalance)}")
-    if by_imbalance[0] in metrics:
-        best_imb = metrics[by_imbalance[0]]['avg_imbalance']
-        worst_imb = metrics[by_imbalance[-1]]['avg_imbalance']
-        improvement = ((worst_imb - best_imb) / worst_imb) * 100
-        print(f"   {by_imbalance[0]} reduces imbalance by {improvement:.1f}% vs {by_imbalance[-1]}")
+    # Filter by_imbalance to only include strategies that exist in metrics
+    by_imbalance_valid = [s for s in by_imbalance if s in metrics]
+    if by_imbalance_valid:
+        print(f"   Best → Worst: {' > '.join(by_imbalance_valid)}")
+        if len(by_imbalance_valid) > 1:
+            best_imb = metrics[by_imbalance_valid[0]]['avg_imbalance']
+            worst_imb = metrics[by_imbalance_valid[-1]]['avg_imbalance']
+            improvement = ((worst_imb - best_imb) / worst_imb) * 100
+            print(f"   {by_imbalance_valid[0]} reduces imbalance by {improvement:.1f}% vs {by_imbalance_valid[-1]}")
     
     print("\n**2. Raw Performance (Speed)**")
-    print(f"   Fastest → Slowest: {' > '.join(by_speed)}")
-    if by_speed[0] in metrics:
-        fastest = metrics[by_speed[0]]['avg_time']
-        slowest = metrics[by_speed[-1]]['avg_time']
-        speedup = slowest / fastest
-        print(f"   {by_speed[0]} is {speedup:.2f}× faster than {by_speed[-1]}")
+    # Filter by_speed to only include strategies that exist in metrics
+    by_speed_valid = [s for s in by_speed if s in metrics]
+    if by_speed_valid:
+        print(f"   Fastest → Slowest: {' > '.join(by_speed_valid)}")
+        if len(by_speed_valid) > 1 and by_speed_valid[0] in metrics and by_speed_valid[-1] in metrics:
+            fastest = metrics[by_speed_valid[0]]['avg_time']
+            slowest = metrics[by_speed_valid[-1]]['avg_time']
+            speedup = slowest / fastest
+            print(f"   {by_speed_valid[0]} is {speedup:.2f}× faster than {by_speed_valid[-1]}")
     
     print("\n**3. Parallel Efficiency**")
     print(f"   Best → Worst: {' > '.join(by_efficiency)}")
@@ -237,14 +243,11 @@ def generate_recommendations(df):
             nnz_wins += 1
         elif winner == 'ROW-BASED':
             row_wins += 1
-        elif winner == 'HYBRID-0.5':
-            hyb_wins += 1
     
     total = len(proc_counts)
     
     print(f"\n   - NNZ-BASED wins in {nnz_wins}/{total} process counts ({(nnz_wins/total*100):.0f}%)")
     print(f"   - ROW-BASED wins in {row_wins}/{total} process counts ({(row_wins/total*100):.0f}%)")
-    print(f"   - HYBRID-0.5 wins in {hyb_wins}/{total} process counts ({(hyb_wins/total*100):.0f}%)")
     
     # Specific recommendations
     print("\n**5. Use Case Recommendations:**")

@@ -128,24 +128,13 @@ def plot_speedup(avg_data, output_dir):
     print(f"Saved: {output_path}")
     plt.close()
 
-def plot_efficiency(avg_data, output_dir):
+def plot_efficiency(avg_data, output_dir, pipelined_data=None):
     """Plot parallel efficiency vs number of processes."""
     fig, ax = plt.subplots(figsize=(10, 6))
     
     configs = sorted(avg_data['config_name'].unique())
     colors = plt.cm.tab10(np.linspace(0, 1, len(configs)))
     markers = ['o', 's', '^', 'D', 'v', '<', '>', 'p', '*', 'h']
-    
-    # Plot 100% efficiency line
-    proc_counts = sorted(avg_data['num_procs'].unique())
-    ax.axhline(y=100, color='k', linestyle='--', linewidth=2, 
-               label='Ideal (100%)', alpha=0.7)
-    
-    # Plot efficiency thresholds
-    ax.axhline(y=70, color='green', linestyle=':', linewidth=1.5, 
-               label='Good (70%)', alpha=0.5)
-    ax.axhline(y=50, color='orange', linestyle=':', linewidth=1.5, 
-               label='Acceptable (50%)', alpha=0.5)
     
     for i, config in enumerate(configs):
         config_data = avg_data[avg_data['config_name'] == config].sort_values('num_procs')
@@ -154,12 +143,22 @@ def plot_efficiency(avg_data, output_dir):
                 marker=markers[i % len(markers)], color=colors[i], 
                 label=config, linewidth=2, markersize=7)
     
+    # Add pipelined data if available
+    if pipelined_data is not None and len(pipelined_data) > 0:
+        pipelined_avg = pipelined_data.sort_values('num_procs')
+        ax.plot(pipelined_avg['num_procs'], pipelined_avg['efficiency_pct'],
+                marker='*', color='red', linestyle='--',
+                label='Pipelined_Chunked', linewidth=2, markersize=9)
+    
     ax.set_xlabel('Number of Processes', fontweight='bold')
     ax.set_ylabel('Parallel Efficiency (%)', fontweight='bold')
     ax.set_title('Parallel Efficiency vs Process Count\n(Average across all matrices)', 
                  fontweight='bold')
     ax.set_xscale('log', base=2)
-    ax.set_ylim(bottom=0, top=min(110, avg_data['efficiency_pct'].max() * 1.1))
+    max_eff = avg_data['efficiency_pct'].max()
+    if pipelined_data is not None and len(pipelined_data) > 0:
+        max_eff = max(max_eff, pipelined_data['efficiency_pct'].max())
+    ax.set_ylim(bottom=0, top=min(110, max_eff * 1.1))
     ax.grid(True, which='both', alpha=0.3, linestyle='--')
     ax.legend(loc='best', framealpha=0.9, ncol=2 if len(configs) > 4 else 1)
     
@@ -340,10 +339,12 @@ def main():
     # Determine paths
     script_dir = Path(__file__).parent
     csv_path = script_dir / "../../results/configurations_results.csv"
+    pipelined_csv_path = script_dir / "../../results/pipelined_results.csv"
     output_dir = script_dir / "../../plots"
     
     if not csv_path.exists():
         csv_path = Path("results/configurations_results.csv")
+        pipelined_csv_path = Path("results/pipelined_results.csv")
         output_dir = Path("plots")
     
     # Create output directory
@@ -362,6 +363,16 @@ def main():
     print(f"Process counts: {sorted(df['num_procs'].unique())}")
     print(f"Matrices: {len(df['matrix'].unique())}")
     
+    # Load pipelined data if available
+    pipelined_avg = None
+    if pipelined_csv_path.exists():
+        try:
+            pipelined_df = pd.read_csv(pipelined_csv_path)
+            print(f"\nLoaded {len(pipelined_df)} pipelined data points")
+            pipelined_avg = calculate_averages(pipelined_df)
+        except Exception as e:
+            print(f"Warning: Could not load pipelined data: {e}")
+    
     # Calculate averages
     print("\nCalculating averages across matrices...")
     avg_data = calculate_averages(df)
@@ -370,7 +381,7 @@ def main():
     print("\nGenerating plots...")
     plot_strong_scaling(avg_data, output_dir)
     plot_speedup(avg_data, output_dir)
-    plot_efficiency(avg_data, output_dir)
+    plot_efficiency(avg_data, output_dir, pipelined_data=pipelined_avg)
     plot_combined(avg_data, output_dir)
     plot_config_comparison(avg_data, output_dir)
     
