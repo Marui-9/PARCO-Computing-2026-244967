@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -N pipelined_sweep
-#PBS -l select=8:ncpus=32:mpiprocs=16:ompthreads=2:mem=64gb
+#PBS -l select=8:ncpus=64:mpiprocs=16:ompthreads=4:mem=64gb
 #PBS -l walltime=06:00:00
 #PBS -q short_cpuQ
 #PBS -o pipelined_sweep.out
@@ -38,7 +38,7 @@ mkdir -p results
 
 # Configuration
 PROCESS_COUNTS=(2 4 8 16 32 64 128)
-THREADS_PER_RANK=2
+THREADS_PER_RANK=4
 ITERATIONS=10
 
 # Matrices to test (larger matrices for meaningful MPI scaling)

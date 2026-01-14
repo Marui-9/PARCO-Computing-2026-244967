@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -N mpi_config_sweep
-#PBS -l select=8:ncpus=32:mpiprocs=16:ompthreads=2:mem=64gb
+#PBS -l select=8:ncpus=64:mpiprocs=16:ompthreads=4:mem=64gb
 #PBS -l walltime=06:00:00
 #PBS -q short_cpuQ
 #PBS -o configurations_sweep.out
@@ -38,18 +38,18 @@ mkdir -p results
 
 # Configuration
 PROCESS_COUNTS=(2 4 8 16 32 64 128)
-THREADS_PER_RANK=2
+THREADS_PER_RANK=4
 ITERATIONS=10
 
 # Matrices to test (larger matrices for meaningful MPI scaling)
 MATRICES=(
     "matrices/41292k_0p0001.mtx"  
-    "matrices/916k_0p0006.mtx"
-    "matrices/1438k_0p0016.mtx" 
-    "matrices/1565k_0p0024.mtx"  
+    "matrices/916k_0p0006.mtx" 
     "matrices/1508k_0p0012.mtx"  
     "matrices/2097k_0p0001.mtx"  
     "matrices/4848k_0p0003.mtx"
+    "matrices/1438k_0p0016.mtx" 
+    "matrices/1565k_0p0024.mtx" 
 )
 
 # Set OpenMP environment
