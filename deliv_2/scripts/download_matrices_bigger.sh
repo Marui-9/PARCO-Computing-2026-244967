@@ -42,7 +42,7 @@ BASE_URL="https://suitesparse-collection-website.herokuapp.com/MM"
 # Suitable for weak scaling with 200k rows/proc at 16-32 processes
 declare -A MATRICES=(
     # Large sparse matrices (1.5M-5M rows with substantial NNZ)
-    ["SNAP/soc-LiveJournal1"]="soc-LiveJournal1"          # 4.8M rows, 69M nnz - social network
+   # ["SNAP/soc-LiveJournal1"]="soc-LiveJournal1"          # 4.8M rows, 69M nnz - social network
     ["Janna/Flan_1565"]="Flan_1565"                       # 1.5M rows, 60M nnz - structural
     ["Janna/Geo_1438"]="Geo_1438"                         # 1.4M rows, 32M nnz - structural
     ["LAW/it-2004"]="it-2004"                             # 1.9M rows, 39M nnz - web graph
@@ -234,9 +234,9 @@ usage() {
     echo "Output: Matrices saved to ./matrices/ with naming convention:"
     echo "        {rows_in_k}k_{density%}.mtx"
     echo ""
-    echo "Examples:"
+    echo "Example:"
     echo "  1500k_0p0267.mtx = 1.5M rows, 0.0267% density"
-    echo "  4800k_0p0003.mtx = 4.8M rows, 0.0003% density (soc-LiveJournal1)"
+  #  echo "  4800k_0p0003.mtx = 4.8M rows, 0.0003% density (soc-LiveJournal1)"
 }
 
 if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
