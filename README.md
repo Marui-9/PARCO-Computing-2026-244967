@@ -485,17 +485,6 @@ Use `./scripts/download_matrices_mpi.sh` to download matrices.
 
 **Note:** Large matrices (>1GB) are not included in the repository. Download scripts fetch from SuiteSparse Matrix Collection.
 
-### Matrix Format
-
-All matrices use **Matrix Market coordinate format (.mtx)**:
-```
-%%MatrixMarket matrix coordinate real general
-% comments
-<rows> <cols> <nnz>
-<row> <col> <value>
-<row> <col> <value>
-...
-```
 
 Converted to **CSR (Compressed Sparse Row)** format at runtime for efficient SpMV.
 
