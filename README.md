@@ -1,369 +1,415 @@
 # PARCO-Computing-2026-244967 
 # Deliverable 2
 
-Parallel sparse matrix-vector multiplication (SpMV) benchmark using OpenMP with SIMD optimizations.
+Distributed sparse matrix-vector multiplication (SpMV) benchmark using MPI + OpenMP hybrid parallelization.
 
-This project implements a three-phase optimization approach:
-1. **Phase 1**: Single-socket optimization (1-24 threads)
-2. **Phase 2**: NUMA-aware multi-socket optimization (24-96 threads) 
-3. **Phase 3**: Memory-level kernel optimizations (register blocking, prefetching, alignment) 
+This project implements a distributed-memory parallel SpMV with:
+1. **MPI Inter-node Communication**: Row-wise matrix distribution across MPI ranks
+2. **OpenMP Intra-node Parallelism**: Multithreaded computation within each rank
+3. **Communication Optimization**: Multiple communication strategies (blocking, non-blocking, pipelined)
+4. **Load Balancing**: Row-based and NNZ-based distribution strategies
 
 ## Project Structure
 
 ```
-PARCO-Computing-2026-244967/
+deliv_2/
 ├── src/                         # C source code
-│   ├── main.c                  # Main SpMV program
-│   ├── test_configurations.c   # Single-node config testing (Phase 1)
-│   ├── test_configurations_numa.c # NUMA-aware config testing (Phase 2)
-│   ├── mtrvec.c                # Matrix-vector multiplication utilities
-│   ├── generator.c             # Matrix generation utilities
-│   ├── m_to_csr.c              # Matrix Market to CSR conversion
-│   ├── multiply.c              # SpMV kernel implementations
-│   ├── generator.h, multiply.h, m_to_csr.h  # Header files
-│   └── *.o                     # Compiled object files
-├── matrices/                    # Sparse matrices (.mtx)
-│   └── *.mtx                   # Benchmark matrices (various sizes; 13 matrices appear in results)
+│   ├── main.c                  # Main MPI+OpenMP SpMV program
+│   ├── test_configurations_mpi.c # MPI communication mode testing
+│   ├── test_pipelined_mpi.c    # Pipelined communication experiments
+│   ├── test_weak_scaling.c     # Weak scaling benchmark
+│   ├── test_load_balance_sweep.c # Load balancing strategy comparison
+│   ├── load_balance.c/h        # Load balancing implementations
+│   ├── generator.c/h           # Matrix generation utilities
+│   ├── m_to_csr.c/h            # Matrix Market to CSR conversion
+│   ├── multiply.c/h            # SpMV kernel implementations
+│   └── mtrvec.c                # Matrix-vector multiplication utilities
+├── matrices/                    # Sparse matrices (.mtx) - download required
+│   └── *.mtx                   # Large benchmark matrices (916k-4.8M rows)
 ├── scripts/                     # Benchmark and analysis scripts
-│   ├── bench_matrices.sh               # Run speedup benchmarks across matrices (writes results/matrices_results.csv)
-│   ├── bench_configurations.sh         # Compare 30 OpenMP configurations (Phase 1)
-│   ├── bench_configurations_numa.sh    # NUMA-aware configuration benchmark (Phase 2)
-│   ├── bench_memory_optimizations.sh   # Memory/kernel optimization experiments (Phase 3)
-│   ├── analyze_strong_scaling.py       # Strong-scaling analysis and plotting
-│   ├── analyze_memory_optimizations.py # Analyze memory-optimization experiment results
-│   ├── analyze_configurations_text.py  # Text-summary analysis of configuration results
-│   ├── plot_speedup.py                 # Generate speedup curves from matrices_results.csv
-│   ├── plot_configurations.py          # Generate configuration comparison plots
-│   ├── plot_configurations_numa.py     # NUMA-specific configuration plots
-│   ├── plot_cache.py                   # Cache-related plots
-│   └── (other helpers)                 # Additional plotting and runner scripts
+│   ├── configurations.sh       # MPI communication mode sweep
+│   ├── pipelined_sweep.sh      # Pipelined communication benchmark
+│   ├── bench_weak_scaling.sh   # Weak scaling benchmark
+│   ├── load_balance_sweep.sh   # Load balancing strategy sweep
+│   ├── download_matrices_mpi.sh # Download benchmark matrices
+│   └── python_scripts/         # Analysis and plotting scripts
+│       ├── analyze_configurations.py   # Communication mode analysis
+│       ├── analyze_pipelined.py        # Pipelined mode analysis
+│       ├── analyze_weak_scaling.py     # Weak scaling analysis
+│       ├── analyze_strong_scaling.py   # Strong scaling analysis
+│       ├── analyze_load_balance.py     # Load balancing analysis
+│       ├── plot_configurations.py      # Generate configuration plots
+│       ├── plot_mpi_speedup.py         # MPI speedup plots
+│       └── plot_mpi_efficiency.py      # MPI efficiency plots
 ├── pbs_jobs/                    # PBS cluster job scripts
-│   ├── run_numa_bench.pbs      # NUMA benchmark job (Phase 2)
-│   ├── run_config_bench.pbs    # Configuration benchmark job
-│   ├── run_benchmarks.pbs      # General benchmark job
-│   ├── run_cache_valgrind.pbs  # Cache valgrind job
-│   ├── test_single_matrix.pbs  # Single matrix test job
-│   ├── array.pbs               # PBS array job script
-│   ├── *.out, *.err            # Job output/error logs
-│   └── *.pbs                   # Additional job scripts
+│   ├── configurations.pbs      # Communication mode benchmark job
+│   ├── pipelined_sweep.pbs     # Pipelined benchmark job
+│   ├── weak_scaling.pbs        # Weak scaling benchmark job
+│   └── load_balance_sweep.pbs  # Load balance benchmark job
 ├── results/                     # Benchmark output data
-│   ├── configurations_results.csv # Phase 1: 3,893 measurements
-│   ├── configurations_results.txt # Phase 1: Detailed log
-│   ├── configurations_numa_results.csv # Phase 2: NUMA results
-│   ├── configurations_numa_results.txt # Phase 2: Detailed log
-│   ├── matrices_results.csv    # Speedup benchmark results
-│   └── cache_valgrind_results.csv # Cache analysis results
+│   ├── configurations_results.csv  # Communication mode results
+│   ├── pipelined_results.csv       # Pipelined mode results
+│   ├── weak_scaling_results.csv    # Weak scaling results
+│   └── load_balance_results.csv    # Load balancing results
 ├── plots/                       # Generated figures (PNG)
-│   ├── average_efficiency_vs_threads.png
-│   ├── average_speedup_vs_threads.png
-│   ├── memory_optimization_improvement.png
-│   ├── numa_scaling_efficiency_doubling.png
-│   ├── numa_speedup_vs_threads_binding.png
-│   ├── speedup_per_matrix_subplots.png
-│   ├── speedup_vs_threads.png
-│   ├── speedup_vs_threads_best.png
-│   ├── strong_scaling_best_configs.png
-│   └── *.png                   # Additional visualizations
-├── executable                   # Main SpMV program (compiled)
-├── test_config                  # Phase 1 testing tool (compiled)
-├── test_config_numa             # Phase 2 testing tool (compiled)
-├── executable_cache_valgrind    # Valgrind-instrumented executable
-├── mtrvec, rowmajor, tocsr      # Utility executables
-├── *.o                          # Compiled object files
-├── Makefile                     # Build configuration
-├── README.md                    # This file (project documentation)
-<!-- Additional documentation files (not included in this repository) -->
-├── .gitignore                   # Git ignore rules
-└── *.err, *.out                 # Build/run logs
+│   ├── efficiency_vs_procs.png
+│   ├── speedup_vs_procs.png
+│   ├── strong_scaling.png
+│   ├── config_comparison_bars.png
+│   └── configurations_combined.png
+├── Makefile                     # Build configuration (MPI + OpenMP)
+└── README.md                    # This file (project documentation)
 ```
 
 ## Quick Start
 
 ### Prerequisites
-- **Compiler**: GCC ≥ 9.1 with OpenMP 4.5+ support
-- **System**: x86-64 CPU with AVX2 (AVX-512 optional)
-- **Memory**: ≥ 16GB RAM recommended
+- **MPI**: MPICH 3.2.1 or compatible MPI implementation
+- **Compiler**: GCC ≥ 9.1 with OpenMP support
+- **System**: Linux cluster with multi-node capability
+- **Memory**: ≥ 16GB RAM per node recommended
 - **Python** (optional): For analysis scripts (matplotlib, pandas, numpy)
 
 ### Build All Executables
 
 **Using Makefile:**
 ```bash
-make
+cd deliv_2
+make all          # Build main executable (mtrvec)
+make test_mpi     # Build MPI configuration tester
+make test_pipelined  # Build pipelined benchmark
+make test_weak    # Build weak scaling benchmark
 ```
 
-This compiles three executables:
-- `executable` - Main SpMV program for single matrix runs
-- `test_config` - Phase 1: Single-node configuration testing (1-24 threads)
-- `test_config_numa` - Phase 2: NUMA-aware configuration testing (24-96 threads)
+This compiles the following executables:
+- `mtrvec` - Main MPI+OpenMP SpMV program
+- `test_config_mpi` - Communication mode benchmark
+- `test_pipelined_mpi` - Pipelined communication experiments
+- `test_weak_scaling` - Weak scaling benchmark
 
-**Manual Compilation (without make):**
+**Manual Compilation:**
 
 ```bash
+# Set MPI compiler path (adjust for your system)
+export MPICC=/apps/mpich-3.2.1--gcc-9.1.0/bin/mpicc
+
 # Compile main executable
-gcc -O3 -Wall -Wextra -march=native -fopenmp -o executable \
+$MPICC -O3 -Wall -Wextra -march=native -fopenmp -DMPI_ENABLED -o mtrvec \
     src/main.c src/generator.c src/m_to_csr.c -lm
 
-# Compile Phase 1 configuration tester
-gcc -O3 -Wall -Wextra -march=native -fopenmp -o test_config \
-    src/test_configurations.c src/generator.c src/m_to_csr.c -lm
+# Compile MPI configuration tester
+$MPICC -O3 -Wall -fopenmp -o test_config_mpi \
+    src/test_configurations_mpi.c src/generator.c src/m_to_csr.c -lm
 
-# Compile Phase 2 NUMA configuration tester
-gcc -O3 -Wall -Wextra -march=native -fopenmp -o test_config_numa \
-    src/test_configurations_numa.c src/generator.c src/m_to_csr.c -lm
+# Compile pipelined benchmark
+$MPICC -O3 -Wall -fopenmp -o test_pipelined_mpi \
+    src/test_pipelined_mpi.c src/generator.c src/m_to_csr.c -lm
+
+# Compile weak scaling benchmark
+$MPICC -O3 -Wall -fopenmp -o test_weak_scaling \
+    src/test_weak_scaling.c src/generator.c src/m_to_csr.c -lm
 ```
 
 **Notes:**
 - `-O3`: Aggressive optimization
-- `-march=native`: Optimize for current CPU (enables AVX2/AVX-512)
+- `-march=native`: Optimize for current CPU
 - `-fopenmp`: Enable OpenMP support
+- `-DMPI_ENABLED`: Enable MPI code paths
 - `-lm`: Link math library
+
+### Download Benchmark Matrices
+
+```bash
+# Download matrices for MPI benchmarks (916k - 4.8M rows)
+./scripts/download_matrices_mpi.sh
+```
 
 ### Clean Build
 
 ```bash
 make clean
-make
+make all test_mpi test_pipelined test_weak
 ```
 
 ---
 
 ## Running Executables
 
-### 1. Basic SpMV Execution
+### 1. Basic MPI+OpenMP SpMV Execution
 
-Run sparse matrix-vector multiplication with specified thread count:
+Run distributed sparse matrix-vector multiplication:
 
 ```bash
-./executable <threads> <matrix_file>
+mpirun -np <num_ranks> ./mtrvec <threads_per_rank> <matrix_file>
 ```
 
 **Examples:**
 ```bash
-# Run with 8 threads on a small matrix
-./executable 8 matrices/2k_0p22.mtx
+# Run with 4 MPI ranks, 4 threads each on a medium matrix
+mpirun -np 4 ./mtrvec 4 matrices/916k_0p0006.mtx
 
-# Run with 24 threads on a larger matrix
-./executable 24 matrices/15k_0p41.mtx
+# Run with 8 MPI ranks, 4 threads each
+mpirun -np 8 ./mtrvec 4 matrices/1508k_0p0012.mtx
 
-# Serial execution (1 thread)
-./executable 1 matrices/6k_6p3.mtx
+# Run with 2 MPI ranks (minimum) for testing
+mpirun -np 2 ./mtrvec 4 matrices/916k_0p0006.mtx
 ```
 
 **Output:**
-- Matrix dimensions and density
+- Matrix dimensions, density, and NNZ count
+- MPI rank and thread configuration
 - Execution time (milliseconds)
-- Speedup vs. serial baseline
+- Speedup and efficiency metrics
 
 ---
 
-### 2. Phase 1: Single-Node Configuration Testing
+### 2. MPI Communication Mode Testing
 
-Compare 30 OpenMP configurations on a single NUMA node (1-24 threads):
+Compare different MPI communication strategies:
 
 ```bash
-./test_config <threads> <matrix_file> <iterations>
+mpirun -np <num_ranks> ./src/test_config_mpi <matrix_file> [iterations]
 ```
 
 **Examples:**
 ```bash
-# Quick test: 8 threads, 10 iterations
-./test_config 8 matrices/6k_6p3.mtx 10
+# Test with 4 MPI ranks, 12 iterations
+mpirun -np 4 ./src/test_config_mpi matrices/916k_0p0006.mtx 12
 
-# Full statistical test: 24 threads, 30 iterations (recommended)
-./test_config 24 matrices/10k_1p5.mtx 30
+# Test with 8 MPI ranks
+mpirun -np 8 ./src/test_config_mpi matrices/1508k_0p0012.mtx 12
 
-# Low thread count comparison
-./test_config 4 matrices/2k_0p22.mtx 30
+# Test with maximum ranks
+mpirun -np 128 ./src/test_config_mpi matrices/1438k_0p0016.mtx 12
 ```
 
-**What it tests (30 configurations):**
-- **Static scheduling**: default, chunk=8/16/32/64
-- **Dynamic scheduling**: chunk=8/16/32/64
-- **Guided scheduling**: chunk=8/16/32/64
-- **Auto scheduling**: chunk=8/16/32/64
-- **SIMD variants**: Static/Dynamic/Guided + SIMD (chunk 8/16/32/64)
-- **Thread affinity**: SIMD + `proc_bind(close)` for cache locality
-- **Cache alignment**: Combined optimizations
+**Communication modes tested:**
+1. **MPI_Bcast+Gatherv** - Standard blocking collective operations
+2. **Ibcast+Igatherv** - Non-blocking collectives with computation overlap
 
 **Output format:**
 ```
-Configuration Name    Time(ms)  Speedup  Efficiency  Improvement
-Static+SIMD+c32       1.234     925.0x   96.8%       +12.5%
-Guided+SIMD+c32       1.156     1047.2x  98.2%       +0.0% (baseline)
-...
+Mode                  Time(ms)  Comm(ms)  Compute(ms)  Speedup  Efficiency
+MPI_Bcast+Gatherv     12.34     10.5      1.84         2.5×     62.5%
+Ibcast+Overlap        11.89     9.8       2.09         2.6×     65.0%
 ```
 
 ---
 
-### 3. Phase 2: NUMA-Aware Configuration Testing
+### 3. Pipelined Communication Testing
 
-Test NUMA-optimized configurations across multiple sockets (24-96 threads):
+Test pipelined communication-computation overlap:
 
 ```bash
-./test_config_numa <threads> <matrix_file> [iterations]
+mpirun -np <num_ranks> ./src/test_pipelined_mpi <matrix_file> [iterations]
 ```
 
 **Examples:**
 ```bash
-# Test on single socket (24 threads)
-./test_config_numa 24 10k_1p5.mtx 10
+# Test pipelined mode with 4 ranks
+mpirun -np 4 ./src/test_pipelined_mpi matrices/916k_0p0006.mtx 12
 
-# Test on two sockets (48 threads)
-./test_config_numa 48 15k_0p41.mtx 10
-
-# Test on all four sockets (96 threads)
-./test_config_numa 96 60k_0p005.mtx 10
-
-# Default iterations (10 if omitted)
-./test_config_numa 72 30k_0p05.mtx
+# Test with 32 ranks
+mpirun -np 32 ./src/test_pipelined_mpi matrices/1508k_0p0012.mtx 12
 ```
 
-**What it tests (3 NUMA configurations):**
-1. **Static+SIMD+spread** - Multi-socket thread distribution (best performance)
-2. **Static+SIMD+close** - Single-socket binding (NUMA locality comparison)
-3. **Dynamic+SIMD+spread** - Dynamic load balancing for irregular matrices
+**Communication strategies compared:**
+1. **Standard blocking** - MPI_Bcast + MPI_Gatherv
+2. **Non-blocking** - Ibcast + Igatherv
+3. **Async collectives** - Ibcast + Igatherv with explicit overlap
+4. **Pipelined chunked** - Chunked broadcast with immediate computation
 
-**Output format:**
-Similar to Phase 1, but optimized for NUMA effects and cross-socket communication.
+---
 
-**Note:** Phase 2 uses the same matrices from `matrices/` directory, tested at higher thread counts (24-96).
+### 4. Weak Scaling Benchmark
+
+Test weak scaling (constant work per process):
+
+```bash
+mpirun -np <num_ranks> ./src/test_weak_scaling <rows_per_proc> <nnz_per_proc> [iterations]
+```
+
+**Examples:**
+```bash
+# Default: 200k rows/proc, 40M NNZ/proc
+mpirun -np 4 ./src/test_weak_scaling 200000 40000000 10
+
+# Larger problem: 500k rows/proc
+mpirun -np 8 ./src/test_weak_scaling 500000 100000000 10
+```
+
+**Weak scaling strategy:**
+- Each process handles `rows_per_proc` rows
+- Matrix size = rows_per_proc × num_procs (grows with P)
+- NNZ per process = constant (same work per process)
+- Ideal weak scaling: constant execution time as P increases
 
 ---
 
 ## Running Benchmark Scripts
 
-### Phase 1: Full Single-Node Benchmarks
-
-#### Configuration Comparison (Comprehensive)
+### Communication Mode Sweep
 
 ```bash
-./scripts/bench_configurations.sh
+./scripts/configurations.sh [matrix_file] [iterations]
 ```
 
 **What it does:**
-- Tests all 30 configurations
-- Across all 15 matrices in `matrices/`
-- At 10 thread counts: 1, 2, 4, 8, 12, 16, 18, 20, 22, 24
-- **Total: 4,500 possible measurements** (3,893 completed successfully)
-- Runtime: ~2-3 hours
-- Output: `results/configurations_results.csv` and `results/configurations_results.txt`
+- Tests 2 communication modes (Bcast+Gatherv, Ibcast+Overlap)
+- Sweeps process counts: 2, 4, 8, 16, 32, 64, 96, 128
+- Uses 4 threads per MPI rank
+- 12 iterations per configuration
+- Output: `results/configurations_results.csv`
 
-**Use when:** You want comprehensive optimization analysis
-
-#### Speedup-Focused Benchmarks
-
-```bash
-./scripts/bench_matrices.sh
-```
-
-**What it does:**
-- Tests best configurations for speedup analysis
-- Multiple thread counts per matrix
-- Faster than full configuration comparison
-- Output: `results/` directory
-
-**Use when:** You want quick speedup curves
+**Use when:** Comparing communication strategies at different scales
 
 ---
 
-### Phase 2: NUMA-Aware Benchmarks
-
-#### Local Execution
+### Pipelined Communication Sweep
 
 ```bash
-./scripts/bench_configurations_numa.sh
+./scripts/pipelined_sweep.sh
 ```
 
 **What it does:**
-- Tests 3 NUMA-aware configurations
-- Across 15 matrices in `matrices/`
-- At 4 thread counts: 24, 48, 72, 96
-- **Total: 180 measurements** (3 configs × 15 matrices × 4 thread counts)
-- Runtime: ~4-6 hours (30 min timeout per test)
-- Output: `results/configurations_numa_results.csv` and `.txt`
+- Tests 4 pipelined communication strategies
+- Sweeps process counts: 2, 4, 8, 16, 32, 64, 96, 128
+- Tests multiple matrices (916k - 4.8M rows)
+- Output: `results/pipelined_results.csv`
 
-**Requirements:**
-- Multi-socket NUMA system
-- Matrices in `matrices/` directory
-- `test_config_numa` executable compiled
+**Use when:** Evaluating pipelined communication-computation overlap
 
-#### Cluster Execution (PBS)
+---
+
+### Weak Scaling Benchmark
 
 ```bash
-# Submit to cluster queue
-qsub pbs_jobs/run_numa_bench.pbs
+./scripts/bench_weak_scaling.sh [rows_per_proc] [nnz_per_proc] [iterations]
+```
+
+**What it does:**
+- Tests weak scaling (constant work per process)
+- Default: 200k rows/proc, 40M NNZ/proc
+- Sweeps process counts: 2, 4, 8, 16, 32, 64, 128
+- Output: `results/weak_scaling_results.csv`
+
+**Use when:** Measuring scalability with growing problem size
+
+---
+
+### Load Balancing Strategy Sweep
+
+```bash
+./scripts/load_balance_sweep.sh
+```
+
+**What it does:**
+- Tests 2 load balancing strategies: ROW-BASED, NNZ-BASED
+- Sweeps process counts: 2, 4, 8, 16, 32, 64, 96, 128
+- Tests all matrices in `matrices/` directory
+- Output: `results/load_balance_results.csv`
+
+**Use when:** Comparing row-based vs NNZ-based distribution
+
+---
+
+### Cluster Execution (PBS)
+
+```bash
+# Submit communication mode benchmark
+qsub pbs_jobs/configurations.pbs
+
+# Submit pipelined benchmark
+qsub pbs_jobs/pipelined_sweep.pbs
+
+# Submit weak scaling benchmark
+qsub pbs_jobs/weak_scaling.pbs
+
+# Submit load balance benchmark
+qsub pbs_jobs/load_balance_sweep.pbs
 
 # Check job status
 qstat
 
 # View output
-cat numa_bench.out
-cat numa_bench.err
+cat configurations.out
+cat configurations.err
 ```
-
-**PBS script details:**
-- Queue: `short_cpuQ`
-- Walltime: 6 hours
-- Resources: 4 nodes × 24 cores = 96 cores
-- Auto-compiles `test_config_numa` with GCC 9.1.0
-- Runs `bench_configurations_numa.sh`
-- Results in `results/configurations_numa_results.csv`
 
 ---
 
 ## Analysis and Visualization
 
-### Analyze Phase 1 Results
+### Analyze Communication Mode Results
 
 ```bash
-# Comprehensive configuration analysis (text summary)
-python3 scripts/analyze_configurations_text.py
-
-# Strong scaling analysis with detailed plots
-python3 scripts/analyze_strong_scaling.py
-```
-
-```bash
-# Print per-thread average parallel efficiency (mean/std/count in %)
-python3 scripts/print_avg_eff.py
-```
-
-- **Generates:**
-- SIMD impact analysis (typical improvements vary by matrix)
-- Thread affinity benefits (~5% gain)
-- Optimal configurations per matrix type
-- Scaling efficiency across thread counts
-- Speedup summary (from `results/matrices_results.csv`):
-  - **Mean speedup:** 1192.55× (117 numeric entries)
-  - **Median speedup:** 465.7×
-  - **Peak (max) speedup observed:** 6152.31×
-  - **Unique matrices in that results file:** 15
-- Plots saved to `plots/`
-
-### Analyze Phase 2 Results (When Available)
-
-```bash
-python3 scripts/analyze_configurations_numa.py
+python3 scripts/python_scripts/analyze_configurations.py
 ```
 
 **Analyzes:**
-- NUMA node scaling efficiency (24→48→72→96 threads)
-- Cross-socket communication overhead
-- Memory affinity impact
-- Optimal binding policies (close vs. spread)
+- Communication mode performance comparison
+- Speedup and efficiency across process counts
+- Communication vs computation time breakdown
+- Best communication strategy per scale
+
+### Analyze Pipelined Results
+
+```bash
+python3 scripts/python_scripts/analyze_pipelined.py
+```
+
+**Analyzes:**
+- Pipelined communication overhead reduction
+- Speedup gains from computation-communication overlap
+- Optimal chunk sizes for pipelining
+- Comparison with baseline strategies
+
+### Analyze Weak Scaling Results
+
+```bash
+python3 scripts/python_scripts/analyze_weak_scaling.py
+```
+
+**Analyzes:**
+- Weak scaling efficiency (ideal = 100%)
+- Communication overhead growth with scale
+- Scaling breakdown points
+- Comparison across communication modes
+
+### Analyze Strong Scaling Results
+
+```bash
+python3 scripts/python_scripts/analyze_strong_scaling.py
+```
+
+**Analyzes:**
+- Strong scaling speedup (ideal = P×)
+- Parallel efficiency at different scales
+- Amdahl's law fit
+- Performance saturation points
+
+### Analyze Load Balancing Results
+
+```bash
+python3 scripts/python_scripts/analyze_load_balance.py
+```
+
+**Analyzes:**
+- ROW-BASED vs NNZ-BASED performance
+- Load imbalance impact on efficiency
+- Optimal strategy per matrix structure
 
 ### Generate Visualizations
 
 ```bash
-# Speedup curves
-python3 scripts/plot_speedup.py
+# Configuration comparison plots
+python3 scripts/python_scripts/plot_configurations.py
 
-# Configuration comparison heatmaps
-python3 scripts/plot_configurations.py
+# MPI speedup plots
+python3 scripts/python_scripts/plot_mpi_speedup.py
 
-# Cache performance analysis
-python3 scripts/plot_cache.py
+# MPI efficiency plots
+python3 scripts/python_scripts/plot_mpi_efficiency.py
 ```
 
 **Output:** PNG files in `plots/` directory
@@ -372,72 +418,72 @@ python3 scripts/plot_cache.py
 
 ## Understanding Results Files
 
-### configurations_results.csv (Phase 1)
+### configurations_results.csv
 
-3,893 rows containing:
+Communication mode benchmark results containing:
 - Matrix name, dimensions, density, NNZ count
-- Thread count (1-24)
-- Configuration name and binding policy
-- Execution time (milliseconds)
-- Speedup vs. serial baseline
-- Parallel efficiency percentage
-- Standard deviation
-- Improvement vs. best configuration
+- Process count (2-128)
+- Communication mode (MPI_Bcast+Gatherv, Ibcast+Overlap)
+- Total execution time (milliseconds)
+- Communication time and compute time breakdown
+- Speedup and parallel efficiency
 
-### configurations_numa_results.csv (Phase 2)
+### pipelined_results.csv
 
-180 rows (when complete) containing:
-- Matrix name, dimensions, density, NNZ count  
-- Thread count (24, 48, 72, 96)
-- NUMA configuration and binding policy
-- Execution time (milliseconds)
-- Speedup and efficiency metrics
-- Cross-socket scaling characteristics
+Pipelined communication results containing:
+- Matrix name and properties
+- Process count
+- Communication strategy (Standard, Non-blocking, Async, Pipelined)
+- Execution time and overhead metrics
+- Speedup relative to blocking baseline
 
-### Benchmark Logs (.txt files)
+### weak_scaling_results.csv
 
-Human-readable detailed output:
-- Timestamp and system information
-- Per-matrix, per-thread-count results
-- Configuration rankings
-- Debug output for failed tests
+Weak scaling benchmark results containing:
+- Process count
+- Rows per process, NNZ per process
+- Total matrix size
+- Execution time (should be constant for ideal scaling)
+- Weak scaling efficiency
 
----## Matrix Files
+### load_balance_results.csv
+
+Load balancing comparison results containing:
+- Matrix name and properties
+- Process count
+- Load balancing strategy (ROW-BASED, NNZ-BASED)
+- Execution time
+- Load imbalance metrics
+
+---
+
+## Matrix Files
 
 ### Naming Convention
 
 Matrix files follow the pattern: `{size}_{density}.mtx`
 
-- **Size**: Rounded dimensions in thousands (k)
+- **Size**: Rounded dimensions in thousands (k) or millions (M)
 - **Density**: Percentage with 'p' as decimal point
 
 **Examples:**
-- `2k_0p23.mtx` → 2,000×2,000 matrix, 0.23% density
-- `6k_6p28.mtx` → 6,000×6,000 matrix, 6.28% density
-- `15k_0p41.mtx` → 15,449×15,449 matrix, 0.41% density
+- `916k_0p0006.mtx` → 916,000×916,000 matrix, 0.0006% density
+- `1508k_0p0012.mtx` → 1,508,000×1,508,000 matrix, 0.0012% density
+- `2097k_0p0001.mtx` → 2,097,000×2,097,000 matrix, 0.0001% density
 
-### Available Matrices
+### Benchmark Matrices (Download Required)
 
-**matrices/ directory:** 15 matrices
-| File | Dimensions | Density | Category |
-|------|------------|---------|----------|
-| 2k_0p22.mtx | ~2,000 × 2,000 | 0.22% | Ultra-sparse |
-| 2k_0p52.mtx | ~2,000 × 2,000 | 0.52% | Sparse |
-| 5k_9p37.mtx | ~5,000 × 5,000 | 9.37% | Very dense |
-| 6k_6p3.mtx | ~6,000 × 6,000 | 6.3% | Dense |
-| 9k_0p77.mtx | ~9,000 × 9,000 | 0.77% | Sparse |
-| 10k_1p5.mtx | ~10,000 × 10,000 | 1.50% | Moderately sparse |
-| 11k_0p35.mtx | ~11,000 × 11,000 | 0.35% | Sparse |
-| 11k_0p38.mtx | ~11,000 × 11,000 | 0.38% | Sparse |
-| 15k_0p41.mtx | ~15,000 × 15,000 | 0.41% | Sparse |
-| 20k_0p38.mtx | ~20,000 × 20,000 | 0.38% | Sparse |
-| 25k_0p03.mtx | ~25,000 × 25,000 | 0.03% | Ultra-sparse |
-| 30k_0p05.mtx | ~30,000 × 30,000 | 0.05% | Ultra-sparse |
-| 40k_0p02.mtx | ~40,000 × 40,000 | 0.02% | Ultra-sparse |
-| 50k_0p008.mtx | ~50,000 × 50,000 | 0.008% | Extreme ultra-sparse |
-| 60k_0p005.mtx | ~60,000 × 60,000 | 0.005% | Extreme ultra-sparse |
+Use `./scripts/download_matrices_mpi.sh` to download matrices.
 
-**Note:** All matrices are used for both Phase 1 and Phase 2 testing.
+| File | Dimensions | Density | NNZ (approx) |
+|------|------------|---------|--------------|
+| 916k_0p0006.mtx | 916k × 916k | 0.0006% | ~5M |
+| 1438k_0p0016.mtx | 1,438k × 1,438k | 0.0016% | ~33M |
+| 1508k_0p0012.mtx | 1,508k × 1,508k | 0.0012% | ~27M |
+| 1565k_0p0024.mtx | 1,565k × 1,565k | 0.0024% | ~59M |
+| 2097k_0p0001.mtx | 2,097k × 2,097k | 0.0001% | ~4.4M |
+
+**Note:** Large matrices (>1GB) are not included in the repository. Download scripts fetch from SuiteSparse Matrix Collection.
 
 ### Matrix Format
 
@@ -453,48 +499,43 @@ All matrices use **Matrix Market coordinate format (.mtx)**:
 
 Converted to **CSR (Compressed Sparse Row)** format at runtime for efficient SpMV.
 
----## Key Performance Results
+---
 
-### Phase 1: Single-Node Optimization (COMPLETED)
+## Key Performance Results
 
-From 3,893 benchmark measurements across 30 configurations:
+### Communication Mode Analysis
 
-**Overall Performance:**
-- **Average speedup**: 2,624× across all thread counts (3,893× at 24 threads)
-- **Peak speedup**: 50,087× maximum achieved
-- **Best configuration**: Static+SIMD+Align+Affin (with cache alignment and affinity)
+From benchmark measurements across 2-128 MPI processes:
 
-**Optimization Impact Hierarchy:**
-1. **SIMD Vectorization**: 72× single-thread improvement (dominant factor)
-   - Transforms scalar baseline to vectorized SIMD implementation
-   - Non-negotiable for performance
-2. **Cache Alignment**: +28% average (+35% on ultra-sparse)
-3. **Static Scheduling**: +16% over dynamic/guided (925× vs 805×)
-4. **Thread Affinity**: +5% via `proc_bind(close)`
+**Communication Strategies:**
+- **MPI_Bcast+Gatherv**: Best overall performance at all scales
+- **Ibcast+Overlap**: Marginal improvement at 4-64 processes
 
-**Scaling by Matrix Density:**
-- **Ultra-sparse** (<0.5% density): 1,647× average speedup
-  - 85%+ parallel efficiency through 8 threads
-  - 50-60% efficiency at 18 threads
-- **Moderately sparse** (0.5-1.5%): Scale well to 12 threads (75%+ efficiency)
-- **Dense** (>3%): 190× average speedup
-  - Peak at 4-8 threads due to memory bandwidth saturation
+**Scaling Observations:**
+- Parallel efficiency drops from ~50% at 2 processes to <1% at 128 processes
+- Communication overhead dominates: 93%+ of total time at 2 processes, 99%+ at 128 processes
+- Memory-bound workload limits scalability beyond 8-16 processes
 
-**Thread Scaling:**
-- Near-linear scaling to 8-12 threads
-- Plateau at 16-24 threads (single socket limit)
-- Memory bandwidth becomes bottleneck beyond 18 threads
+### Pipelined Communication Results
 
-### Phase 2: NUMA Multi-Node Optimization (IN PROGRESS)
+**Pipelined vs Blocking:**
+- Average 8.5% overhead reduction in pipelined mode
+- 5-7% speedup gains in 4-64 process range
+- Limited benefit at extreme scales (2 or 128 processes)
 
-Testing NUMA-aware configurations for 24-96 threads across 4 sockets.
+### Weak Scaling Analysis
 
-**Expected gains:**
-- Cross-socket scaling efficiency
-- Memory locality optimization
-- Thread-to-socket binding strategies
+**Weak Scaling Efficiency:**
+- ~22% average efficiency across all scales
+- Efficiency collapse beyond 2-4 processes
+- Communication overhead grows faster than computation
 
-**Status:** Benchmarks currently being collected with `bench_configurations_numa.sh`
+### Load Balancing Comparison
+
+**ROW-BASED vs NNZ-BASED:**
+- ROW-BASED marginally better (1.02× average speedup)
+- Both strategies achieve ~15% efficiency
+- Matrix structure has larger impact than distribution strategy
 
 ---
 
@@ -505,154 +546,56 @@ All experimental artifacts are version-controlled for full reproducibility.
 **Repository:** https://github.com/Marui-9/PARCO-Computing-2026-244967
 
 **Hardware Requirements:**
-- x86-64 CPU with AVX2 support (AVX-512 optional)
-- ≥ 8GB RAM
-- Linux environment
-- Multi-socket NUMA system recommended for Phase 2
+- Linux cluster with MPI support
+- Multi-node capability (2-128 MPI ranks)
+- ≥ 16GB RAM per node
+- High-speed interconnect recommended (InfiniBand, etc.)
 
 **Software Requirements:**
-- GCC ≥ 9.1 with OpenMP 4.5+
+- MPICH 3.2.1 or compatible MPI implementation
+- GCC ≥ 9.1 with OpenMP support
 - Python 3 (optional): matplotlib, pandas, numpy for analysis
 
 **Complete Workflow:**
 ```bash
 # 1. Clone repository
 git clone https://github.com/Marui-9/PARCO-Computing-2026-244967.git
-cd PARCO-Computing-2026-244967
+cd PARCO-Computing-2026-244967/deliv_2
 
-# 2. Build executables
-make
+# 2. Download benchmark matrices
+./scripts/download_matrices_mpi.sh
 
-# 3. Quick test
-./executable 8 matrices/10k_1p5.mtx
+# 3. Build executables
+make all test_mpi test_pipelined test_weak
 
-# 4. Configuration comparison (single matrix)
-./test_config 24 matrices/6k_6p3.mtx 30
+# 4. Quick test (2 MPI ranks)
+mpirun -np 2 ./mtrvec 4 matrices/916k_0p0006.mtx
 
-# 5. Full Phase 1 benchmarks (~2-3 hours)
-./scripts/bench_configurations.sh
+# 5. Run communication mode benchmark
+./scripts/configurations.sh
 
-# 6. Analyze results
-python3 scripts/analyze_configurations_text.py
-python3 scripts/analyze_strong_scaling.py
+# 6. Run pipelined benchmark
+./scripts/pipelined_sweep.sh
 
-# 7. Generate visualizations
-python3 scripts/plot_speedup.py
+# 7. Run weak scaling benchmark
+./scripts/bench_weak_scaling.sh
 
-# 8. NUMA benchmarks (cluster with 96 cores)
-qsub pbs_jobs/run_numa_bench.pbs
+# 8. Analyze results
+python3 scripts/python_scripts/analyze_configurations.py
+python3 scripts/python_scripts/analyze_weak_scaling.py
+
+# 9. Generate visualizations
+python3 scripts/python_scripts/plot_configurations.py
+
+# 10. Cluster submission (PBS)
+qsub pbs_jobs/configurations.pbs
+qsub pbs_jobs/weak_scaling.pbs
 ```
 
 **Expected Results:**
-- `results/configurations_results.csv`: 3,893 measurements
-  - `plots/`: Speedup curves, efficiency analysis
-- Performance matching published results (2,624× average speedup across all thread counts)
+- `results/configurations_results.csv`: Communication mode benchmark data
+- `results/pipelined_results.csv`: Pipelined communication data
+- `results/weak_scaling_results.csv`: Weak scaling benchmark data
+- `plots/`: Efficiency and speedup visualizations
 
 ---
-
-## Troubleshooting
-
-### Compilation Issues
-
-**Error: OpenMP not supported**
-```bash
-# Check GCC version
-gcc --version  # Should be ≥ 9.1
-
-# Install newer GCC if needed
-# On Ubuntu/Debian:
-sudo apt-get install gcc-9 g++-9
-```
-
-**Error: Undefined reference to `posix_memalign`**
-```bash
-# Ensure -lm flag is included (already in Makefile)
-make clean && make
-```
-
-### Runtime Issues
-
-**Error: Matrix file not found**
-```bash
-# Check file exists
-ls -lh matrices/*.mtx
-
-# Use relative path from project root
-./executable 8 matrices/2k_0p23.mtx  # Correct
-./executable 8 2k_0p23.mtx           # Wrong (unless in matrices/)
-```
-
-**Error: Segmentation fault**
-```bash
-# Likely insufficient memory for large matrices
-# Check available memory
-free -h
-
-# Try smaller matrix or fewer threads
-./executable 4 matrices/2k_0p22.mtx
-```
-
-**NUMA benchmarks produce no output**
-```bash
-# Check matrices/ directory exists and has files
-ls -lh matrices/
-
-# Verify test_config_numa is compiled
-ls -lh test_config_numa
-
-# Check error log for details
-cat results/configurations_numa_results.txt
-
-# Try manual test with a smaller matrix
-./test_config_numa 24 10k_1p5.mtx 1
-```
-
-### Analysis Script Issues
-
-**Error: Module not found (matplotlib/pandas/numpy)**
-```bash
-# Install Python dependencies
-pip3 install matplotlib pandas numpy
-
-# Or using conda
-conda install matplotlib pandas numpy
-```
-
-**Error: No data to plot**
-```bash
-# Ensure benchmark CSV files exist
-ls -lh results/*.csv
-
-# Run benchmarks first
-./scripts/bench_configurations.sh
-```
-
----
-
-## Citation
-
-If you use this code in your research, please cite:
-
-```bibtex
-@misc{marchesin2026parco,
-  author = {Marchesin, Jacopo},
-  title = {Parallel Sparse Matrix-Vector Multiplication Using OpenMP with SIMD Optimizations},
-  year = {2026},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/Marui-9/PARCO-Computing-2026-244967}},
-  note = {Course: Introduction to Parallel Computing, University of Trento}
-}
-```
-
----
-
-## License
-
-This project is developed for educational purposes as part of the Introduction to Parallel Computing course (2025-2026) at the University of Trento.
-
-## Author
-
-**Jacopo Marchesin** (ID: 244967)  
-Email: jacopo.marchesin@studenti.unitn.it  
-Course: Introduction to Parallel Computing (2025-2026)
